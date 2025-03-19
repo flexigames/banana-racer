@@ -24,7 +24,6 @@ const VEHICLE_MODELS = [
   'vehicle-truck',
   'vehicle-suv',
   'vehicle-monster-truck',
-  'vehicle-vintage-racer',
   'vehicle-racer-low',
   'vehicle-speedster',
 ];
@@ -86,6 +85,11 @@ io.on('connection', (socket) => {
   // Handle banana drops
   socket.on('dropBanana', (data) => {
     handleBananaDrop(playerId, data);
+  });
+
+  // Handle banana collisions
+  socket.on('hitBanana', (data) => {
+    handleBananaHit(playerId, data.bananaId);
   });
 
   // Handle disconnection
@@ -201,6 +205,26 @@ function handleBananaDrop(playerId, data) {
       console.log(`Banana ${bananaId} expired`);
     }
   }, 10000);
+}
+
+function handleBananaHit(playerId, bananaId) {
+  const player = players[playerId];
+  if (!player) return;
+  
+  // Find the banana in the array
+  const bananaIndex = bananas.findIndex(b => b.id === bananaId);
+  if (bananaIndex === -1) return;
+  
+  // Remove the banana from the array
+  const hitBanana = bananas.splice(bananaIndex, 1)[0];
+  
+  // Notify all players about the banana being hit
+  io.emit('bananaHit', { 
+    id: bananaId,
+    hitBy: playerId
+  });
+  
+  console.log(`Player ${playerId} hit banana ${bananaId}`);
 }
 
 // Clean up inactive players every 30 seconds

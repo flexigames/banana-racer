@@ -14,6 +14,7 @@ class MultiplayerManager {
     this.onPlayerUpdated = null;
     this.onBananaDropped = null;
     this.onBananaExpired = null;
+    this.onBananaHit = null;
   }
 
   connect(serverUrl = 'http://localhost:8080') {
@@ -175,6 +176,18 @@ class MultiplayerManager {
             this.onBananaExpired(data.id);
           }
         });
+        
+        this.socket.on('bananaHit', (data) => {
+          console.log(`Banana ${data.id} was hit by player ${data.hitBy}`);
+          
+          // Remove from local banana list
+          this.bananas = this.bananas.filter(b => b.id !== data.id);
+          
+          // Notify callback
+          if (this.onBananaHit) {
+            this.onBananaHit(data.id, data.hitBy);
+          }
+        });
 
       } catch (error) {
         console.error('Error creating Socket.IO connection:', error);
@@ -211,6 +224,14 @@ class MultiplayerManager {
     this.socket.emit('dropBanana', {
       position,
       rotation
+    });
+  }
+
+  hitBanana(bananaId) {
+    if (!this.socket || !this.connected) return;
+    
+    this.socket.emit('hitBanana', {
+      bananaId
     });
   }
 }

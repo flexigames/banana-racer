@@ -157,11 +157,11 @@ const CarGame = () => {
       carRef.current.triggerSpinOut();
     }
     
-    // Remove the banana locally (server will also send expiration event)
+    // Remove the banana locally (server will also broadcast to all clients)
     setBananas(prev => prev.filter(b => b.id !== bananaId));
     
-    // Notify server about banana hit (optional enhancement)
-    // This could be added later to synchronize banana removal on hit
+    // Notify server about banana hit
+    multiplayerManager.hitBanana(bananaId);
   };
   
   // Connect to multiplayer server
@@ -202,6 +202,17 @@ const CarGame = () => {
         multiplayerManager.onBananaExpired = (bananaId) => {
           console.log("Banana expired event received", bananaId);
           setBananas(prev => prev.filter(b => b.id !== bananaId));
+        };
+        
+        multiplayerManager.onBananaHit = (bananaId, hitByPlayerId) => {
+          console.log(`Banana hit event received: ${bananaId} hit by ${hitByPlayerId}`);
+          setBananas(prev => prev.filter(b => b.id !== bananaId));
+          
+          // If the current player didn't trigger this hit, play a sound or show visual indicator
+          if (hitByPlayerId !== multiplayerManager.playerId) {
+            console.log(`Player ${hitByPlayerId} hit a banana`);
+            // Optional: Play sound or show notification
+          }
         };
       })
       .catch(error => {
