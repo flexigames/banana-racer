@@ -4,18 +4,18 @@ import { useModelWithMaterials, prepareModel } from '../lib/loaders';
 const Track = () => {
   // Load track pieces
   const cornerSmall = useModelWithMaterials(
-    '/assets/track-narrow-corner-small-ramp.obj',
-    '/assets/track-narrow-corner-small-ramp.mtl'
+    '/banana-racer/assets/track-narrow-corner-small-ramp.obj',
+    '/banana-racer/assets/track-narrow-corner-small-ramp.mtl'
   );
   
   const cornerLarge = useModelWithMaterials(
-    '/assets/track-narrow-corner-large.obj',
-    '/assets/track-narrow-corner-large.mtl'
+    '/banana-racer/assets/track-narrow-corner-large.obj',
+    '/banana-racer/assets/track-narrow-corner-large.mtl'
   );
   
   const gate = useModelWithMaterials(
-    '/assets/gate.obj',
-    '/assets/gate.mtl'
+    '/banana-racer/assets/gate.obj',
+    '/banana-racer/assets/gate.mtl'
   );
   
   // Prepare models
