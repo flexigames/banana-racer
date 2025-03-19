@@ -79,6 +79,7 @@ const CarGame = () => {
             position={player.position}
             rotation={player.rotation}
             speed={player.speed || 0}
+            color={player.color}
           />
         ))}
       </Canvas>
@@ -103,7 +104,18 @@ const CarGame = () => {
         <div>
           <h5>Remote Players:</h5>
           {Object.values(remotePlayers).map(player => (
-            <div key={`debug-${player.id}`}>
+            <div key={`debug-${player.id}`} style={{
+              display: 'flex',
+              alignItems: 'center',
+              margin: '4px 0'
+            }}>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                backgroundColor: `hsl(${player.color ? Math.round(player.color.h * 360) : 0}deg, ${player.color ? Math.round(player.color.s * 100) : 0}%, ${player.color ? Math.round(player.color.l * 100) : 0}%)`,
+                marginRight: '8px',
+                borderRadius: '50%',
+              }} />
               ID: {player.id.substring(0, 6)} | 
               Pos: ({player.position.x.toFixed(1)}, {player.position.y.toFixed(1)}, {player.position.z.toFixed(1)})
             </div>

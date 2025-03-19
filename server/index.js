@@ -15,6 +15,16 @@ const io = new Server(httpServer, {
 // Store connected players
 const players = {};
 
+// Generate a random color in HSL format
+function generateRandomColor() {
+  // Use HSL for more vibrant and distinct colors
+  return {
+    h: Math.random(),   // hue: 0-1 (maps to 0-360 degrees)
+    s: 0.8,             // saturation: fixed at 80%
+    l: 0.5              // lightness: fixed at 50%
+  };
+}
+
 console.log(`Starting Socket.IO server on port ${PORT}`);
 
 io.on('connection', (socket) => {
@@ -26,13 +36,17 @@ io.on('connection', (socket) => {
     position: { x: 0, y: 0.1, z: 0 },
     rotation: 0,
     speed: 0,
+    color: generateRandomColor(),
     lastUpdate: Date.now()
   };
 
   console.log(`Player ${playerId} connected (socket: ${socket.id})`);
 
   // Send initial player ID
-  socket.emit('init', { id: playerId });
+  socket.emit('init', { 
+    id: playerId,
+    color: players[playerId].color
+  });
 
   // Automatically join the global world
   initializePlayer(socket, playerId);
@@ -78,7 +92,8 @@ function initializePlayer(socket, playerId) {
       id: p.id,
       position: p.position,
       rotation: p.rotation,
-      speed: p.speed
+      speed: p.speed,
+      color: p.color
     }));
     
   socket.emit('worldJoined', { players: existingPlayers });
@@ -89,7 +104,8 @@ function initializePlayer(socket, playerId) {
       id: playerId,
       position: player.position,
       rotation: player.rotation,
-      speed: player.speed
+      speed: player.speed,
+      color: player.color
     }
   });
   
@@ -111,7 +127,8 @@ function handlePlayerUpdate(playerId, data) {
     id: playerId,
     position: player.position,
     rotation: player.rotation,
-    speed: player.speed
+    speed: player.speed,
+    color: player.color
   });
 }
 

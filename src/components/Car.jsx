@@ -38,6 +38,32 @@ const Car = forwardRef((props, ref) => {
     return clone;
   }, [vehicleModel]);
   
+  // Apply the player's color to the model whenever it changes
+  useEffect(() => {
+    if (!clonedModel || !multiplayerManager.playerColor) return;
+    
+    // Get the player's color from the server
+    const playerColor = multiplayerManager.playerColor;
+    const color = new THREE.Color().setHSL(
+      playerColor.h,
+      playerColor.s,
+      playerColor.l
+    );
+    
+    // Apply the color to all materials in the model
+    clonedModel.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(mat => {
+            mat.color.set(color);
+          });
+        } else {
+          child.material.color.set(color);
+        }
+      }
+    });
+  }, [clonedModel, multiplayerManager.playerColor]);
+  
   // Car movement state
   const movement = useRef({
     forward: 0,

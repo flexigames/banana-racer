@@ -5,6 +5,7 @@ class MultiplayerManager {
     this.socket = null;
     this.connected = false;
     this.playerId = null;
+    this.playerColor = null;
     this.players = {};
     this.onPlayerJoined = null;
     this.onPlayerLeft = null;
@@ -48,7 +49,8 @@ class MultiplayerManager {
         // Game-specific events
         this.socket.on('init', (data) => {
           this.playerId = data.id;
-          console.log(`Initialized with player ID: ${this.playerId}`);
+          this.playerColor = data.color;
+          console.log(`Initialized with player ID: ${this.playerId}, color:`, this.playerColor);
         });
 
         this.socket.on('worldJoined', (data) => {
@@ -62,6 +64,10 @@ class MultiplayerManager {
             if (typeof player.speed === 'undefined') {
               player.speed = 0;
             }
+            // Ensure color property exists
+            if (!player.color) {
+              player.color = { h: 0, s: 0.8, l: 0.5 }; // Default color
+            }
             if (this.onPlayerJoined) {
               this.onPlayerJoined(player);
             }
@@ -74,6 +80,10 @@ class MultiplayerManager {
           // Ensure speed property exists
           if (typeof newPlayer.speed === 'undefined') {
             newPlayer.speed = 0;
+          }
+          // Ensure color property exists
+          if (!newPlayer.color) {
+            newPlayer.color = { h: 0, s: 0.8, l: 0.5 }; // Default color
           }
           this.players[newPlayer.id] = newPlayer;
           
@@ -102,6 +112,11 @@ class MultiplayerManager {
             this.players[updatedPlayerId].rotation = data.rotation;
             this.players[updatedPlayerId].speed = data.speed || 0;
             
+            // Update color if provided
+            if (data.color) {
+              this.players[updatedPlayerId].color = data.color;
+            }
+            
             if (this.onPlayerUpdated) {
               this.onPlayerUpdated(this.players[updatedPlayerId]);
             }
@@ -120,6 +135,7 @@ class MultiplayerManager {
       this.socket.disconnect();
       this.connected = false;
       this.playerId = null;
+      this.playerColor = null;
       this.players = {};
     }
   }

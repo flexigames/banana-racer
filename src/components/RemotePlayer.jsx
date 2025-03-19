@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { useModelWithMaterials } from '../lib/loaders';
 import { useFrame } from '@react-three/fiber';
 
-const RemotePlayer = ({ playerId, position, rotation, speed = 0 }) => {
+const RemotePlayer = ({ playerId, position, rotation, speed = 0, color }) => {
   const car = useRef();
   const targetPosition = useRef(new THREE.Vector3(position.x, position.y, position.z));
   const targetRotation = useRef(rotation);
@@ -11,18 +11,28 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0 }) => {
   const lastPosition = useRef(new THREE.Vector3(position.x, position.y, position.z));
   const lastUpdateTime = useRef(Date.now());
   
-  // Generate a color based on player ID
-  const color = useMemo(() => {
-    const hash = playerId.split('').reduce((acc, char) => {
-      return char.charCodeAt(0) + ((acc << 5) - acc);
-    }, 0);
-    
-    return new THREE.Color().setHSL(
-      Math.abs(hash % 360) / 360,
-      0.8,
-      0.5
-    );
-  }, [playerId]);
+  // Convert the server color to a THREE.Color object
+  const playerColor = useMemo(() => {
+    if (color) {
+      // Use the server-provided color if available
+      return new THREE.Color().setHSL(
+        color.h,
+        color.s,
+        color.l
+      );
+    } else {
+      // Fallback to generating a color from the player ID
+      const hash = playerId.split('').reduce((acc, char) => {
+        return char.charCodeAt(0) + ((acc << 5) - acc);
+      }, 0);
+      
+      return new THREE.Color().setHSL(
+        Math.abs(hash % 360) / 360,
+        0.8,
+        0.5
+      );
+    }
+  }, [playerId, color]);
   
   // Load the vehicle model directly
   const vehicleModel = useModelWithMaterials(
@@ -30,7 +40,7 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0 }) => {
     '/assets/vehicle-racer.mtl'
   );
   
-  // Create a cloned model with a unique color
+  // Create a cloned model with the player's color
   const coloredModel = useMemo(() => {
     if (!vehicleModel) return null;
     
@@ -42,18 +52,18 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0 }) => {
         if (Array.isArray(child.material)) {
           child.material = child.material.map(mat => {
             const newMat = mat.clone();
-            newMat.color.set(color);
+            newMat.color.set(playerColor);
             return newMat;
           });
         } else if (child.material) {
           child.material = child.material.clone();
-          child.material.color.set(color);
+          child.material.color.set(playerColor);
         }
       }
     });
     
     return clone;
-  }, [vehicleModel, color]);
+  }, [vehicleModel, playerColor]);
   
   // Update target values when position/rotation props change
   useEffect(() => {
