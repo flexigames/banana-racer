@@ -7,9 +7,8 @@ const wss = new WebSocket.Server({ port: PORT });
 
 // Store connected players
 const players = {};
-const rooms = {};
 
-console.log('WebSocket server started on port 8080');
+console.log(`WebSocket server started on port ${PORT}`);
 
 wss.on('connection', (ws) => {
   // Assign unique ID to each connection
@@ -17,7 +16,6 @@ wss.on('connection', (ws) => {
   players[playerId] = {
     id: playerId,
     ws: ws,
-    room: null,
     position: { x: 0, y: 0.1, z: 0 },
     rotation: 0,
     lastUpdate: Date.now()
@@ -31,20 +29,17 @@ wss.on('connection', (ws) => {
     id: playerId
   }));
 
+  // Automatically join the global world
+  initializePlayer(playerId);
+
   // Handle messages from clients
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message.toString());
       
       switch (data.type) {
-        case 'join':
-          handleJoinRoom(playerId, data.room);
-          break;
         case 'update':
           handlePlayerUpdate(playerId, data);
-          break;
-        case 'chat':
-          handleChatMessage(playerId, data.message);
           break;
       }
     } catch (error) {
@@ -54,27 +49,11 @@ wss.on('connection', (ws) => {
 
   // Handle disconnection
   ws.on('close', () => {
-    const roomId = players[playerId].room;
-    
-    // Remove player from room
-    if (roomId && rooms[roomId]) {
-      const index = rooms[roomId].players.indexOf(playerId);
-      if (index !== -1) {
-        rooms[roomId].players.splice(index, 1);
-      }
-      
-      // Notify other players about disconnection
-      broadcastToRoom(roomId, {
-        type: 'playerLeft',
-        id: playerId
-      });
-      
-      // Clean up empty rooms
-      if (rooms[roomId].players.length === 0) {
-        delete rooms[roomId];
-        console.log(`Room ${roomId} deleted (empty)`);
-      }
-    }
+    // Notify other players about disconnection
+    broadcastToAll({
+      type: 'playerLeft',
+      id: playerId
+    }, [playerId]);
     
     // Remove player
     delete players[playerId];
@@ -82,38 +61,11 @@ wss.on('connection', (ws) => {
   });
 });
 
-function handleJoinRoom(playerId, roomId) {
+function initializePlayer(playerId) {
   const player = players[playerId];
   
-  // Leave current room if in one
-  if (player.room && rooms[player.room]) {
-    const index = rooms[player.room].players.indexOf(playerId);
-    if (index !== -1) {
-      rooms[player.room].players.splice(index, 1);
-    }
-    
-    broadcastToRoom(player.room, {
-      type: 'playerLeft',
-      id: playerId
-    });
-  }
-  
-  // Create room if it doesn't exist
-  if (!rooms[roomId]) {
-    rooms[roomId] = {
-      id: roomId,
-      players: [],
-      created: Date.now()
-    };
-    console.log(`Room ${roomId} created`);
-  }
-  
-  // Join new room
-  rooms[roomId].players.push(playerId);
-  player.room = roomId;
-  
-  // Position players in different spots based on how many are in the room
-  const playerCount = rooms[roomId].players.length;
+  // Position players in different spots based on how many are in the world
+  const playerCount = Object.keys(players).length;
   const spacing = 3; // Space between players
   
   // Reset player position - spread players out in a line
@@ -126,19 +78,20 @@ function handleJoinRoom(playerId, roomId) {
   
   console.log(`Positioned player ${playerId} at:`, player.position);
   
-  // Send room info to player
+  // Send world info to player with all other players
   player.ws.send(JSON.stringify({
-    type: 'roomJoined',
-    room: roomId,
-    players: rooms[roomId].players.map(id => ({
-      id,
-      position: players[id].position,
-      rotation: players[id].rotation
-    })).filter(p => p.id !== playerId)
+    type: 'worldJoined',
+    players: Object.values(players)
+      .filter(p => p.id !== playerId)
+      .map(p => ({
+        id: p.id,
+        position: p.position,
+        rotation: p.rotation
+      }))
   }));
   
-  // Notify other players
-  broadcastToRoom(roomId, {
+  // Notify other players about the new player
+  broadcastToAll({
     type: 'playerJoined',
     player: {
       id: playerId,
@@ -147,7 +100,7 @@ function handleJoinRoom(playerId, roomId) {
     }
   }, [playerId]);
   
-  console.log(`Player ${playerId} joined room ${roomId}`);
+  console.log(`Player ${playerId} joined the world`);
 }
 
 function handlePlayerUpdate(playerId, data) {
@@ -159,34 +112,19 @@ function handlePlayerUpdate(playerId, data) {
   player.rotation = data.rotation;
   player.lastUpdate = Date.now();
   
-  // Broadcast to other players in the same room
-  if (player.room) {
-    broadcastToRoom(player.room, {
-      type: 'playerUpdate',
-      id: playerId,
-      position: player.position,
-      rotation: player.rotation
-    }, [playerId]);
-  }
-}
-
-function handleChatMessage(playerId, message) {
-  const player = players[playerId];
-  if (!player || !player.room) return;
-  
-  broadcastToRoom(player.room, {
-    type: 'chat',
+  // Broadcast to other players
+  broadcastToAll({
+    type: 'playerUpdate',
     id: playerId,
-    message: message
-  });
+    position: player.position,
+    rotation: player.rotation
+  }, [playerId]);
 }
 
-function broadcastToRoom(roomId, data, excludeIds = []) {
-  if (!rooms[roomId]) return;
-  
-  rooms[roomId].players.forEach(playerId => {
-    if (!excludeIds.includes(playerId) && players[playerId]) {
-      players[playerId].ws.send(JSON.stringify(data));
+function broadcastToAll(data, excludeIds = []) {
+  Object.values(players).forEach(player => {
+    if (!excludeIds.includes(player.id)) {
+      player.ws.send(JSON.stringify(data));
     }
   });
 }

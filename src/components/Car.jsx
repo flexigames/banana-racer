@@ -1,9 +1,10 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useModelWithMaterials } from '../lib/loaders';
 import { updateVehiclePhysics, updateObjectPosition } from '../lib/physics';
 import { useVehicleControls } from '../lib/input';
 import multiplayerManager from '../lib/multiplayer';
+import { useModelWithMaterials } from '../lib/loaders';
+import * as THREE from 'three';
 
 const Car = forwardRef((props, ref) => {
   const car = useRef();
@@ -12,11 +13,30 @@ const Car = forwardRef((props, ref) => {
   // Expose the car ref to parent components
   useImperativeHandle(ref, () => car.current);
   
-  // Load the vehicle-racer model with materials
+  // Load the vehicle model directly
   const vehicleModel = useModelWithMaterials(
     '/assets/vehicle-racer.obj',
     '/assets/vehicle-racer.mtl'
   );
+  
+  // Create a cloned model to avoid sharing materials with other components
+  const clonedModel = useMemo(() => {
+    if (!vehicleModel) return null;
+    
+    const clone = vehicleModel.clone();
+    // Ensure all materials are cloned
+    clone.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map(m => m.clone());
+        } else {
+          child.material = child.material.clone();
+        }
+      }
+    });
+    
+    return clone;
+  }, [vehicleModel]);
   
   // Car movement state
   const movement = useRef({
@@ -98,12 +118,16 @@ const Car = forwardRef((props, ref) => {
     teleportToPlayer
   }));
 
+  if (!clonedModel) {
+    return null;
+  }
+
   return (
     <group ref={car} position={[0, 0.1, 0]}>
       <primitive 
-        object={vehicleModel} 
+        object={clonedModel} 
         scale={[0.5, 0.5, 0.5]} 
-        rotation={[0, Math.PI, 0]}
+        rotation={[0, Math.PI, 0]} 
       />
     </group>
   );

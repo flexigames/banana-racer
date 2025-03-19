@@ -3,12 +3,10 @@ class MultiplayerManager {
     this.socket = null;
     this.connected = false;
     this.playerId = null;
-    this.room = null;
     this.players = {};
     this.onPlayerJoined = null;
     this.onPlayerLeft = null;
     this.onPlayerUpdated = null;
-    this.onChatMessage = null;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
   }
@@ -43,7 +41,6 @@ class MultiplayerManager {
             setTimeout(() => this.connect(serverUrl), 2000);
           } else {
             this.playerId = null;
-            this.room = null;
             this.players = {};
           }
         };
@@ -71,9 +68,8 @@ class MultiplayerManager {
         console.log(`Initialized with player ID: ${this.playerId}`);
         break;
         
-      case 'roomJoined':
-        this.room = message.room;
-        console.log(`Joined room: ${this.room} with ${message.players.length} other players`);
+      case 'worldJoined':
+        console.log(`Joined world with ${message.players.length} other players`);
         
         // Initialize other players
         message.players.forEach(player => {
@@ -120,32 +116,22 @@ class MultiplayerManager {
         }
         break;
         
-      case 'chat':
-        if (this.onChatMessage) {
-          this.onChatMessage(message.id, message.message);
-        }
-        break;
-        
       default:
         console.warn(`Unknown message type: ${message.type}`);
     }
   }
 
-  joinRoom(roomId) {
-    if (!this.connected) {
-      console.warn('Cannot join room: not connected');
-      return;
+  disconnect() {
+    if (this.socket) {
+      this.socket.close();
+      this.connected = false;
+      this.playerId = null;
+      this.players = {};
     }
-    
-    console.log(`Joining room: ${roomId}`);
-    this.socket.send(JSON.stringify({
-      type: 'join',
-      room: roomId
-    }));
   }
 
   updatePosition(position, rotation) {
-    if (!this.connected || !this.room) return;
+    if (!this.connected) return;
     
     this.socket.send(JSON.stringify({
       type: 'update',
@@ -153,24 +139,8 @@ class MultiplayerManager {
       rotation
     }));
   }
-
-  sendChatMessage(message) {
-    if (!this.connected || !this.room) {
-      console.warn('Cannot send chat: not in a room');
-      return;
-    }
-    
-    this.socket.send(JSON.stringify({
-      type: 'chat',
-      message
-    }));
-  }
-
-  disconnect() {
-    if (this.socket) {
-      this.socket.close(1000, "Intentional disconnect");
-    }
-  }
 }
 
-export default new MultiplayerManager(); 
+// Export a singleton instance
+const multiplayerManager = new MultiplayerManager();
+export default multiplayerManager; 
