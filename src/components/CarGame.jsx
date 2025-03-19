@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera } from '@react-three/drei';
+import { PerspectiveCamera, Grid } from '@react-three/drei';
 import Car from './Car';
 import RemotePlayer from './RemotePlayer';
 import Banana from './Banana';
 import multiplayerManager from '../lib/multiplayer';
 import * as THREE from 'three';
+import ScatteredElements from './ScatteredElements';
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -258,12 +259,28 @@ const CarGame = () => {
           intensity={1}
         />
         
-        {/* Ground */}
+        {/* Ground with grid for better movement visibility */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[100, 100]} />
-          <meshBasicMaterial color="#4a7023" />
+          <meshStandardMaterial color="#4a7023" />
         </mesh>
-      
+        
+        {/* Grid overlay for visual movement reference */}
+        <Grid 
+          position={[0, 0.01, 0]} 
+          args={[100, 100]} 
+          cellSize={2}
+          cellThickness={0.6}
+          cellColor="#388004"
+          sectionSize={10}
+          sectionThickness={1.5}
+          sectionColor="#2d6605"
+          fadeDistance={50}
+          infiniteGrid
+        />
+        
+        {/* Scattered rocks and elements to make movement more visible */}
+        <ScatteredElements />
         
         {/* Player car */}
         <Car ref={carRef} />
