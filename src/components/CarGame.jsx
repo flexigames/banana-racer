@@ -59,6 +59,41 @@ const FollowCamera = ({ target }) => {
   );
 };
 
+// Component to handle collision detection and game logic
+const GameLogic = ({ carRef, bananas, onBananaHit }) => {
+  const COLLISION_THRESHOLD = 0.8; // Distance for collision detection
+  
+  // Check for collisions each frame
+  useFrame(() => {
+    if (!carRef.current || carRef.current.isSpinningOut?.()) return;
+    
+    const carPosition = new THREE.Vector3(
+      carRef.current.position.x,
+      carRef.current.position.y,
+      carRef.current.position.z
+    );
+    
+    // Check collision with each banana
+    bananas.forEach(banana => {
+      const bananaPosition = new THREE.Vector3(
+        banana.position.x,
+        banana.position.y,
+        banana.position.z
+      );
+      
+      const distance = carPosition.distanceTo(bananaPosition);
+      
+      // If close enough to banana, trigger collision
+      if (distance < COLLISION_THRESHOLD) {
+        console.log(`Collision detected with banana ${banana.id} at distance ${distance.toFixed(2)}`);
+        onBananaHit(banana.id);
+      }
+    });
+  });
+  
+  return null; // This component doesn't render anything
+};
+
 const CarGame = () => {
   const carRef = useRef();
   const [remotePlayers, setRemotePlayers] = useState({});
@@ -115,6 +150,20 @@ const CarGame = () => {
     console.log('Requested banana drop at', bananaPosition);
   };
   
+  // Handle banana collision
+  const handleBananaHit = (bananaId) => {
+    // Trigger car spinout
+    if (carRef.current && carRef.current.triggerSpinOut) {
+      carRef.current.triggerSpinOut();
+    }
+    
+    // Remove the banana locally (server will also send expiration event)
+    setBananas(prev => prev.filter(b => b.id !== bananaId));
+    
+    // Notify server about banana hit (optional enhancement)
+    // This could be added later to synchronize banana removal on hit
+  };
+  
   // Connect to multiplayer server
   useEffect(() => {
     multiplayerManager.connect()
@@ -169,6 +218,13 @@ const CarGame = () => {
       <Canvas>
         {/* Always use follow camera */}
         <FollowCamera target={carRef} />
+        
+        {/* Game logic with collision detection */}
+        <GameLogic 
+          carRef={carRef} 
+          bananas={bananas} 
+          onBananaHit={handleBananaHit} 
+        />
         
         {/* Basic lighting */}
         <ambientLight intensity={0.8} />

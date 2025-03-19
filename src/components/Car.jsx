@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { updateVehiclePhysics, updateObjectPosition } from '../lib/physics';
 import { useVehicleControls } from '../lib/input';
@@ -9,6 +9,10 @@ import VehicleModel from './VehicleModel';
 const Car = forwardRef((props, ref) => {
   const car = useRef();
   const lastUpdateTime = useRef(0);
+  const [spinningOut, setSpinningOut] = useState(false);
+  const spinTimer = useRef(null);
+  const spinDirection = useRef(1); // 1 or -1 for spin direction
+  const spinSpeed = useRef(0);
   
   // Expose the car ref to parent components
   useImperativeHandle(ref, () => car.current);
@@ -45,15 +49,79 @@ const Car = forwardRef((props, ref) => {
     }
   }, []);
 
+  // Function to trigger spin out when hitting a banana
+  const triggerSpinOut = () => {
+    if (spinningOut) return; // Already spinning out
+    
+    // Store current speed before stopping
+    spinSpeed.current = movement.current.speed;
+    
+    // Set spinning out state
+    setSpinningOut(true);
+    
+    // Block controls during spinout
+    movement.current.forward = 0;
+    movement.current.turn = 0;
+    // Don't completely zero out speed to avoid position jumps
+    movement.current.speed *= 0.5; // Reduce speed but don't stop completely
+    
+    // Random spin direction
+    spinDirection.current = Math.random() > 0.5 ? 1 : -1;
+    
+    // Clear any existing timer
+    if (spinTimer.current) {
+      clearTimeout(spinTimer.current);
+    }
+    
+    // Set timeout to recover from spinout after 2 seconds
+    spinTimer.current = setTimeout(() => {
+      setSpinningOut(false);
+      spinTimer.current = null;
+    }, 2000);
+    
+    // Notify about the collision
+    console.log("Hit a banana! Spinning out for 2 seconds");
+  };
+
+  // Track spinout progress
+  const spinProgress = useRef(0);
+  const MAX_SPIN_RATE = 10; // Maximum spin rate
+
   // Update physics each frame
   useFrame((state, delta) => {
     if (!car.current) return;
     
-    // Update physics
-    updateVehiclePhysics(movement.current, delta);
-    
-    // Update position
-    updateObjectPosition(car.current, movement.current, delta);
+    if (spinningOut) {
+      // When spinning out, gradually decrease the spinning rate
+      // Calculate spin rate based on a decreasing curve
+      spinProgress.current += delta;
+      const spinDuration = 2; // Should match the spinout timer duration
+      const normalizedTime = Math.min(spinProgress.current / spinDuration, 1);
+      
+      // Start fast, then slow down - using a cosine easing
+      const spinRate = MAX_SPIN_RATE * Math.cos(normalizedTime * Math.PI * 0.5);
+      
+      // Apply the spin
+      car.current.rotation.y += spinDirection.current * delta * spinRate;
+      
+      // Apply a slight forward movement to avoid complete stopping
+      const forwardSpeed = movement.current.speed * 0.8;
+      const moveX = Math.sin(car.current.rotation.y) * forwardSpeed * delta;
+      const moveZ = Math.cos(car.current.rotation.y) * forwardSpeed * delta;
+      
+      car.current.position.x += moveX;
+      car.current.position.z += moveZ;
+      
+      // Gradually decrease speed
+      movement.current.speed *= 0.95;
+    } else {
+      // Reset spin progress when not spinning
+      spinProgress.current = 0;
+      
+      // Normal driving physics
+      updateVehiclePhysics(movement.current, delta);
+      updateObjectPosition(car.current, movement.current, delta);
+    }
     
     // Ensure the car stays on the ground
     car.current.position.y = 0.1;
@@ -100,10 +168,12 @@ const Car = forwardRef((props, ref) => {
     }
   };
 
-  // Expose the teleport function
+  // Expose the car ref and functions to parent components
   useImperativeHandle(ref, () => ({
     ...car.current,
-    teleportToPlayer
+    teleportToPlayer,
+    triggerSpinOut,
+    isSpinningOut: () => spinningOut
   }));
 
   return (
