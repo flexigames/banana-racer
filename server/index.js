@@ -1,59 +1,50 @@
-const WebSocket = require('ws');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 
-// Create WebSocket server on port specified by environment variable or default to 8080
+// Create HTTP server and Socket.IO server
 const PORT = process.env.PORT || 8080;
-const wss = new WebSocket.Server({ port: PORT });
+const httpServer = createServer();
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Store connected players
 const players = {};
 
-console.log(`WebSocket server started on port ${PORT}`);
+console.log(`Starting Socket.IO server on port ${PORT}`);
 
-wss.on('connection', (ws) => {
+io.on('connection', (socket) => {
   // Assign unique ID to each connection
   const playerId = uuidv4();
   players[playerId] = {
     id: playerId,
-    ws: ws,
+    socket: socket.id,
     position: { x: 0, y: 0.1, z: 0 },
     rotation: 0,
     lastUpdate: Date.now()
   };
 
-  console.log(`Player ${playerId} connected`);
+  console.log(`Player ${playerId} connected (socket: ${socket.id})`);
 
   // Send initial player ID
-  ws.send(JSON.stringify({
-    type: 'init',
-    id: playerId
-  }));
+  socket.emit('init', { id: playerId });
 
   // Automatically join the global world
-  initializePlayer(playerId);
+  initializePlayer(socket, playerId);
 
-  // Handle messages from clients
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message.toString());
-      
-      switch (data.type) {
-        case 'update':
-          handlePlayerUpdate(playerId, data);
-          break;
-      }
-    } catch (error) {
-      console.error('Error processing message:', error);
-    }
+  // Handle position updates
+  socket.on('update', (data) => {
+    handlePlayerUpdate(playerId, data);
   });
 
   // Handle disconnection
-  ws.on('close', () => {
+  socket.on('disconnect', () => {
     // Notify other players about disconnection
-    broadcastToAll({
-      type: 'playerLeft',
-      id: playerId
-    }, [playerId]);
+    socket.broadcast.emit('playerLeft', { id: playerId });
     
     // Remove player
     delete players[playerId];
@@ -61,7 +52,7 @@ wss.on('connection', (ws) => {
   });
 });
 
-function initializePlayer(playerId) {
+function initializePlayer(socket, playerId) {
   const player = players[playerId];
   
   // Position players in different spots based on how many are in the world
@@ -79,26 +70,24 @@ function initializePlayer(playerId) {
   console.log(`Positioned player ${playerId} at:`, player.position);
   
   // Send world info to player with all other players
-  player.ws.send(JSON.stringify({
-    type: 'worldJoined',
-    players: Object.values(players)
-      .filter(p => p.id !== playerId)
-      .map(p => ({
-        id: p.id,
-        position: p.position,
-        rotation: p.rotation
-      }))
-  }));
+  const existingPlayers = Object.values(players)
+    .filter(p => p.id !== playerId)
+    .map(p => ({
+      id: p.id,
+      position: p.position,
+      rotation: p.rotation
+    }));
+    
+  socket.emit('worldJoined', { players: existingPlayers });
   
   // Notify other players about the new player
-  broadcastToAll({
-    type: 'playerJoined',
+  socket.broadcast.emit('playerJoined', {
     player: {
       id: playerId,
       position: player.position,
       rotation: player.rotation
     }
-  }, [playerId]);
+  });
   
   console.log(`Player ${playerId} joined the world`);
 }
@@ -113,19 +102,10 @@ function handlePlayerUpdate(playerId, data) {
   player.lastUpdate = Date.now();
   
   // Broadcast to other players
-  broadcastToAll({
-    type: 'playerUpdate',
+  io.emit('playerUpdate', {
     id: playerId,
     position: player.position,
     rotation: player.rotation
-  }, [playerId]);
-}
-
-function broadcastToAll(data, excludeIds = []) {
-  Object.values(players).forEach(player => {
-    if (!excludeIds.includes(player.id)) {
-      player.ws.send(JSON.stringify(data));
-    }
   });
 }
 
@@ -135,8 +115,17 @@ setInterval(() => {
   Object.keys(players).forEach(playerId => {
     const player = players[playerId];
     if (now - player.lastUpdate > 30000) {
-      player.ws.close();
-      console.log(`Player ${playerId} timed out (inactive)`);
+      const socket = io.sockets.sockets.get(player.socket);
+      if (socket) {
+        socket.disconnect(true);
+        console.log(`Player ${playerId} timed out (inactive)`);
+      }
+      delete players[playerId];
     }
   });
-}, 30000); 
+}, 30000);
+
+// Start the server
+httpServer.listen(PORT, () => {
+  console.log(`Socket.IO server running on port ${PORT}`);
+}); 

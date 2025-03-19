@@ -1,3 +1,5 @@
+import { io } from "socket.io-client";
+
 class MultiplayerManager {
   constructor() {
     this.socket = null;
@@ -7,123 +9,106 @@ class MultiplayerManager {
     this.onPlayerJoined = null;
     this.onPlayerLeft = null;
     this.onPlayerUpdated = null;
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
   }
 
-  connect(serverUrl = 'wss://banana-racer.onrender.com') {
+  connect(serverUrl = 'https://banana-racer.onrender.com') {
     return new Promise((resolve, reject) => {
       try {
         console.log('Attempting to connect to multiplayer server...');
-        this.socket = new WebSocket(serverUrl);
+        this.socket = io(serverUrl, {
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000
+        });
 
-        this.socket.onopen = () => {
+        // Set up event handlers
+        this.socket.on('connect', () => {
           console.log('Connected to multiplayer server');
           this.connected = true;
-          this.reconnectAttempts = 0;
           resolve();
-        };
+        });
 
-        this.socket.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          this.connected = false;
+        this.socket.on('connect_error', (error) => {
+          console.error('Connection error:', error);
           reject(error);
-        };
+        });
 
-        this.socket.onclose = (event) => {
-          console.log(`Disconnected from multiplayer server: ${event.code} ${event.reason}`);
+        this.socket.on('disconnect', (reason) => {
+          console.log(`Disconnected from server: ${reason}`);
           this.connected = false;
           
-          // Only attempt to reconnect if it wasn't a clean close
-          if (!event.wasClean && this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++;
-            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-            setTimeout(() => this.connect(serverUrl), 2000);
-          } else {
-            this.playerId = null;
-            this.players = {};
+          if (reason === 'io server disconnect') {
+            // The disconnection was initiated by the server, need to reconnect manually
+            this.socket.connect();
           }
-        };
+        });
 
-        this.socket.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            console.log('Received message:', message.type);
-            this.handleMessage(message);
-          } catch (error) {
-            console.error('Error parsing message:', error);
+        // Game-specific events
+        this.socket.on('init', (data) => {
+          this.playerId = data.id;
+          console.log(`Initialized with player ID: ${this.playerId}`);
+        });
+
+        this.socket.on('worldJoined', (data) => {
+          console.log(`Joined world with ${data.players.length} other players`);
+          
+          // Initialize other players
+          data.players.forEach(player => {
+            console.log(`Adding existing player: ${player.id}`);
+            this.players[player.id] = player;
+            if (this.onPlayerJoined) {
+              this.onPlayerJoined(player);
+            }
+          });
+        });
+
+        this.socket.on('playerJoined', (data) => {
+          const newPlayer = data.player;
+          console.log(`Player joined: ${newPlayer.id} at position:`, newPlayer.position);
+          this.players[newPlayer.id] = newPlayer;
+          
+          if (this.onPlayerJoined) {
+            this.onPlayerJoined(newPlayer);
           }
-        };
+        });
+
+        this.socket.on('playerLeft', (data) => {
+          const leftPlayerId = data.id;
+          console.log(`Player left: ${leftPlayerId}`);
+          const leftPlayer = this.players[leftPlayerId];
+          
+          if (leftPlayer && this.onPlayerLeft) {
+            this.onPlayerLeft(leftPlayer);
+          }
+          
+          delete this.players[leftPlayerId];
+        });
+
+        this.socket.on('playerUpdate', (data) => {
+          const updatedPlayerId = data.id;
+          
+          if (updatedPlayerId !== this.playerId && this.players[updatedPlayerId]) {
+            this.players[updatedPlayerId].position = data.position;
+            this.players[updatedPlayerId].rotation = data.rotation;
+            
+            if (this.onPlayerUpdated) {
+              this.onPlayerUpdated(this.players[updatedPlayerId]);
+            }
+          }
+        });
+
       } catch (error) {
-        console.error('Error creating WebSocket connection:', error);
+        console.error('Error creating Socket.IO connection:', error);
         reject(error);
       }
     });
   }
 
-  handleMessage(message) {
-    switch (message.type) {
-      case 'init':
-        this.playerId = message.id;
-        console.log(`Initialized with player ID: ${this.playerId}`);
-        break;
-        
-      case 'worldJoined':
-        console.log(`Joined world with ${message.players.length} other players`);
-        
-        // Initialize other players
-        message.players.forEach(player => {
-          console.log(`Adding existing player: ${player.id}`);
-          this.players[player.id] = player;
-          if (this.onPlayerJoined) {
-            this.onPlayerJoined(player);
-          }
-        });
-        break;
-        
-      case 'playerJoined':
-        const newPlayer = message.player;
-        console.log(`Player joined: ${newPlayer.id} at position:`, newPlayer.position);
-        this.players[newPlayer.id] = newPlayer;
-        
-        if (this.onPlayerJoined) {
-          this.onPlayerJoined(newPlayer);
-        }
-        break;
-        
-      case 'playerLeft':
-        const leftPlayerId = message.id;
-        console.log(`Player left: ${leftPlayerId}`);
-        const leftPlayer = this.players[leftPlayerId];
-        
-        if (leftPlayer && this.onPlayerLeft) {
-          this.onPlayerLeft(leftPlayer);
-        }
-        
-        delete this.players[leftPlayerId];
-        break;
-        
-      case 'playerUpdate':
-        const updatedPlayerId = message.id;
-        
-        if (this.players[updatedPlayerId]) {
-          this.players[updatedPlayerId].position = message.position;
-          this.players[updatedPlayerId].rotation = message.rotation;
-          
-          if (this.onPlayerUpdated) {
-            this.onPlayerUpdated(this.players[updatedPlayerId]);
-          }
-        }
-        break;
-        
-      default:
-        console.warn(`Unknown message type: ${message.type}`);
-    }
-  }
-
   disconnect() {
     if (this.socket) {
-      this.socket.close();
+      this.socket.disconnect();
       this.connected = false;
       this.playerId = null;
       this.players = {};
@@ -131,13 +116,12 @@ class MultiplayerManager {
   }
 
   updatePosition(position, rotation) {
-    if (!this.connected) return;
+    if (!this.socket || !this.connected) return;
     
-    this.socket.send(JSON.stringify({
-      type: 'update',
+    this.socket.emit('update', {
       position,
       rotation
-    }));
+    });
   }
 }
 

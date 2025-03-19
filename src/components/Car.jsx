@@ -61,6 +61,8 @@ const Car = forwardRef((props, ref) => {
 
   // Update physics each frame
   useFrame((state, delta) => {
+    if (!car.current) return;
+    
     // Update physics
     updateVehiclePhysics(movement.current, delta);
     
@@ -68,25 +70,23 @@ const Car = forwardRef((props, ref) => {
     updateObjectPosition(car.current, movement.current, delta);
     
     // Ensure the car stays on the ground
-    if (car.current) {
-      car.current.position.y = 0.1;
+    car.current.position.y = 0.1;
+    
+    // Send position updates to server (limit to 10 updates per second)
+    if (state.clock.elapsedTime - lastUpdateTime.current > 0.1) {
+      lastUpdateTime.current = state.clock.elapsedTime;
       
-      // Send position updates to server (limit to 10 updates per second)
-      if (state.clock.elapsedTime - lastUpdateTime.current > 0.1) {
-        lastUpdateTime.current = state.clock.elapsedTime;
+      if (multiplayerManager.connected) {
+        // Format position with precision to reduce network traffic
+        const position = {
+          x: parseFloat(car.current.position.x.toFixed(2)),
+          y: parseFloat(car.current.position.y.toFixed(2)),
+          z: parseFloat(car.current.position.z.toFixed(2))
+        };
         
-        if (multiplayerManager.connected && multiplayerManager.room) {
-          // Only send updates if position has changed significantly
-          const position = {
-            x: parseFloat(car.current.position.x.toFixed(2)),
-            y: parseFloat(car.current.position.y.toFixed(2)),
-            z: parseFloat(car.current.position.z.toFixed(2))
-          };
-          
-          const rotation = parseFloat(car.current.rotation.y.toFixed(2));
-          
-          multiplayerManager.updatePosition(position, rotation);
-        }
+        const rotation = parseFloat(car.current.rotation.y.toFixed(2));
+        
+        multiplayerManager.updatePosition(position, rotation);
       }
     }
   });

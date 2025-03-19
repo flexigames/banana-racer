@@ -16,9 +16,11 @@
     "cannon-es": "^0.20.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "three": "^0.150.1",
-    "ws": "^8.13.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
