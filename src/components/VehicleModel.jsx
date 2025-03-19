@@ -21,8 +21,8 @@ const VehicleModel = ({ vehicleType = 'vehicle-racer', color = null, scale = [0.
   
   // Load the vehicle model based on the vehicle type
   const vehicleModel = useModelWithMaterials(
-    `/assets/${modelName}.obj`,
-    `/assets/${modelName}.mtl`
+    `/banana-racer/assets/${modelName}.obj`,
+    `/banana-racer/assets/${modelName}.mtl`
   );
   
   // Create a cloned model to avoid sharing materials

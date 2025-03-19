@@ -7,10 +7,8 @@ const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Allow all origins (in production, you might want to restrict this)
-    methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 

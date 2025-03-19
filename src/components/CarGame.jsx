@@ -4,7 +4,6 @@ import { PerspectiveCamera } from '@react-three/drei';
 import Car from './Car';
 import RemotePlayer from './RemotePlayer';
 import Banana from './Banana';
-import Ramp from './Ramp';
 import multiplayerManager from '../lib/multiplayer';
 import * as THREE from 'three';
 
@@ -264,25 +263,7 @@ const CarGame = () => {
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial color="#4a7023" />
         </mesh>
-        
-        {/* Add ramps */}
-        <Ramp 
-          position={[10, 0, 5]} 
-          rotation={[0, 0, 0]} 
-          width={6}
-          length={10}
-          height={2}
-          color="#FF7700"
-        />
-        
-        <Ramp 
-          position={[-10, 0, -8]} 
-          rotation={[0, Math.PI / 2, 0]} 
-          width={7}
-          length={12}
-          height={3}
-          color="#00AAFF"
-        />
+      
         
         {/* Player car */}
         <Car ref={carRef} />
