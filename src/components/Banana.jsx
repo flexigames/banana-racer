@@ -40,7 +40,7 @@ const Banana = ({ position, rotation, onExpire }) => {
       // Set a timer to remove the banana after a certain time
       const timer = setTimeout(() => {
         if (onExpire) onExpire();
-      }, 10000); // Banana disappears after 10 seconds
+      }, 300000); // Banana disappears after 5 minutes
       
       return () => clearTimeout(timer);
     }
@@ -50,7 +50,7 @@ const Banana = ({ position, rotation, onExpire }) => {
     <group ref={banana}>
       <primitive 
         object={model} 
-        scale={[1, 1, 1]} 
+        scale={[0.6, 0.6, 0.6]} 
       />
     </group>
   );

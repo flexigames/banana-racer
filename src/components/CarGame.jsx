@@ -98,14 +98,14 @@ const CarGame = () => {
     const carRotation = carRef.current.rotation.y;
     
     // Calculate position behind the car
-    const distanceBehind = 2; // 2 units behind the car
+    const distanceBehind = 1; // 1 unit behind the car (reduced from 2)
     const offsetX = Math.sin(carRotation) * distanceBehind;
     const offsetZ = Math.cos(carRotation) * distanceBehind;
     
     // Position for the banana
     const bananaPosition = {
       x: carPosition.x - offsetX,
-      y: 0.2, // Slightly above the ground
+      y: 0.1, // Lower to the ground (was 0.2)
       z: carPosition.z - offsetZ
     };
     
