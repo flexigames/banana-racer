@@ -11,7 +11,7 @@ class MultiplayerManager {
     this.onPlayerUpdated = null;
   }
 
-  connect(serverUrl = 'https://banana-racer.onrender.com') {
+  connect(serverUrl = 'http://localhost:8080') {
     return new Promise((resolve, reject) => {
       try {
         console.log('Attempting to connect to multiplayer server...');
@@ -58,6 +58,10 @@ class MultiplayerManager {
           data.players.forEach(player => {
             console.log(`Adding existing player: ${player.id}`);
             this.players[player.id] = player;
+            // Ensure speed property exists
+            if (typeof player.speed === 'undefined') {
+              player.speed = 0;
+            }
             if (this.onPlayerJoined) {
               this.onPlayerJoined(player);
             }
@@ -67,6 +71,10 @@ class MultiplayerManager {
         this.socket.on('playerJoined', (data) => {
           const newPlayer = data.player;
           console.log(`Player joined: ${newPlayer.id} at position:`, newPlayer.position);
+          // Ensure speed property exists
+          if (typeof newPlayer.speed === 'undefined') {
+            newPlayer.speed = 0;
+          }
           this.players[newPlayer.id] = newPlayer;
           
           if (this.onPlayerJoined) {
@@ -92,6 +100,7 @@ class MultiplayerManager {
           if (updatedPlayerId !== this.playerId && this.players[updatedPlayerId]) {
             this.players[updatedPlayerId].position = data.position;
             this.players[updatedPlayerId].rotation = data.rotation;
+            this.players[updatedPlayerId].speed = data.speed || 0;
             
             if (this.onPlayerUpdated) {
               this.onPlayerUpdated(this.players[updatedPlayerId]);
@@ -115,12 +124,13 @@ class MultiplayerManager {
     }
   }
 
-  updatePosition(position, rotation) {
+  updatePosition(position, rotation, speed = 0) {
     if (!this.socket || !this.connected) return;
     
     this.socket.emit('update', {
       position,
-      rotation
+      rotation,
+      speed
     });
   }
 }

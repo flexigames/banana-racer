@@ -85,8 +85,9 @@ const Car = forwardRef((props, ref) => {
         };
         
         const rotation = parseFloat(car.current.rotation.y.toFixed(2));
+        const speed = parseFloat(movement.current.speed.toFixed(2));
         
-        multiplayerManager.updatePosition(position, rotation);
+        multiplayerManager.updatePosition(position, rotation, speed);
       }
     }
   });
@@ -107,7 +108,8 @@ const Car = forwardRef((props, ref) => {
           y: car.current.position.y,
           z: car.current.position.z
         },
-        car.current.rotation.y
+        car.current.rotation.y,
+        0 // Speed is zero after teleporting
       );
     }
   };

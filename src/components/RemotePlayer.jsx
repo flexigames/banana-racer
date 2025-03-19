@@ -3,10 +3,13 @@ import * as THREE from 'three';
 import { useModelWithMaterials } from '../lib/loaders';
 import { useFrame } from '@react-three/fiber';
 
-const RemotePlayer = ({ playerId, position, rotation }) => {
+const RemotePlayer = ({ playerId, position, rotation, speed = 0 }) => {
   const car = useRef();
   const targetPosition = useRef(new THREE.Vector3(position.x, position.y, position.z));
   const targetRotation = useRef(rotation);
+  const currentSpeed = useRef(speed);
+  const lastPosition = useRef(new THREE.Vector3(position.x, position.y, position.z));
+  const lastUpdateTime = useRef(Date.now());
   
   // Generate a color based on player ID
   const color = useMemo(() => {
@@ -54,16 +57,63 @@ const RemotePlayer = ({ playerId, position, rotation }) => {
   
   // Update target values when position/rotation props change
   useEffect(() => {
+    // Calculate direction and save last position before updating
+    const direction = new THREE.Vector3()
+      .subVectors(new THREE.Vector3(position.x, position.y, position.z), lastPosition.current)
+      .normalize();
+    
+    // Save last position and update time
+    lastPosition.current.set(targetPosition.current.x, targetPosition.current.y, targetPosition.current.z);
+    const now = Date.now();
+    const timeDelta = (now - lastUpdateTime.current) / 1000; // Convert to seconds
+    lastUpdateTime.current = now;
+    
+    // Update target position and rotation
     targetPosition.current.set(position.x, position.y, position.z);
     targetRotation.current = rotation;
-  }, [position, rotation]);
+    currentSpeed.current = speed;
+    
+  }, [position, rotation, speed]);
   
   // Smoothly interpolate to target position/rotation on each frame
   useFrame((_, delta) => {
     if (!car.current) return;
     
-    // Smoothly move to target position
-    car.current.position.lerp(targetPosition.current, Math.min(10 * delta, 1));
+    // Calculate interpolation factor based on speed and distance
+    const distance = car.current.position.distanceTo(targetPosition.current);
+    let lerpFactor = Math.min(10 * delta, 1);
+    
+    // If speed is high, adjust lerp factor
+    if (currentSpeed.current > 0) {
+      // Use speed to determine how quickly to move toward target (higher speed = faster interpolation)
+      lerpFactor = Math.min(Math.max(0.2, currentSpeed.current) * 2 * delta, 1);
+      
+      // Increase factor for larger distances to avoid falling too far behind
+      if (distance > 1) {
+        lerpFactor = Math.min(lerpFactor * 1.5, 1);
+      }
+    }
+    
+    // Apply predictive movement based on speed and direction
+    if (currentSpeed.current > 0.5 && distance > 0.1) {
+      // Create a slight prediction in the direction the car is moving
+      const predictedPosition = new THREE.Vector3()
+        .copy(targetPosition.current);
+      
+      // Get forward direction based on rotation
+      const forward = new THREE.Vector3(0, 0, -1)
+        .applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRotation.current);
+      
+      // Add prediction based on speed and direction
+      const prediction = forward.multiplyScalar(currentSpeed.current * 0.05);
+      predictedPosition.add(prediction);
+      
+      // Interpolate toward the predicted position
+      car.current.position.lerp(predictedPosition, lerpFactor);
+    } else {
+      // Standard interpolation for slow or stationary vehicles
+      car.current.position.lerp(targetPosition.current, lerpFactor);
+    }
     
     // Smoothly rotate to target rotation
     const currentRot = car.current.rotation.y;
@@ -78,10 +128,13 @@ const RemotePlayer = ({ playerId, position, rotation }) => {
       }
     }
     
+    // Adjust rotation speed based on vehicle speed
+    const rotLerpFactor = Math.min(Math.max(5, currentSpeed.current * 3) * delta, 1);
+    
     car.current.rotation.y = THREE.MathUtils.lerp(
       currentRot, 
       targetRot, 
-      Math.min(10 * delta, 1)
+      rotLerpFactor
     );
   });
   

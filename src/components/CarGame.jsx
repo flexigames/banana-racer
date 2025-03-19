@@ -78,6 +78,7 @@ const CarGame = () => {
             playerId={player.id}
             position={player.position}
             rotation={player.rotation}
+            speed={player.speed || 0}
           />
         ))}
       </Canvas>

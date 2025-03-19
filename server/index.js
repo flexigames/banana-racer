@@ -25,6 +25,7 @@ io.on('connection', (socket) => {
     socket: socket.id,
     position: { x: 0, y: 0.1, z: 0 },
     rotation: 0,
+    speed: 0,
     lastUpdate: Date.now()
   };
 
@@ -66,6 +67,7 @@ function initializePlayer(socket, playerId) {
     z: 0 
   };
   player.rotation = 0;
+  player.speed = 0;
   
   console.log(`Positioned player ${playerId} at:`, player.position);
   
@@ -75,7 +77,8 @@ function initializePlayer(socket, playerId) {
     .map(p => ({
       id: p.id,
       position: p.position,
-      rotation: p.rotation
+      rotation: p.rotation,
+      speed: p.speed
     }));
     
   socket.emit('worldJoined', { players: existingPlayers });
@@ -85,7 +88,8 @@ function initializePlayer(socket, playerId) {
     player: {
       id: playerId,
       position: player.position,
-      rotation: player.rotation
+      rotation: player.rotation,
+      speed: player.speed
     }
   });
   
@@ -99,13 +103,15 @@ function handlePlayerUpdate(playerId, data) {
   // Update player data
   player.position = data.position;
   player.rotation = data.rotation;
+  player.speed = data.speed || 0;
   player.lastUpdate = Date.now();
   
   // Broadcast to other players
   io.emit('playerUpdate', {
     id: playerId,
     position: player.position,
-    rotation: player.rotation
+    rotation: player.rotation,
+    speed: player.speed
   });
 }
 
