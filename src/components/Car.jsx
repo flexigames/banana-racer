@@ -103,17 +103,9 @@ const Car = forwardRef((props, ref) => {
       
       // Apply the spin
       car.current.rotation.y += spinDirection.current * delta * spinRate;
-      
-      // Apply a slight forward movement to avoid complete stopping
-      const forwardSpeed = movement.current.speed * 0.8;
-      const moveX = Math.sin(car.current.rotation.y) * forwardSpeed * delta;
-      const moveZ = Math.cos(car.current.rotation.y) * forwardSpeed * delta;
-      
-      car.current.position.x += moveX;
-      car.current.position.z += moveZ;
-      
+            
       // Gradually decrease speed
-      movement.current.speed *= 0.95;
+      movement.current.speed *= 0.9
     } else {
       // Reset spin progress when not spinning
       spinProgress.current = 0;

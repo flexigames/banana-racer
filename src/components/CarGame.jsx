@@ -12,40 +12,54 @@ const FollowCamera = ({ target }) => {
   const cameraRef = useRef();
   const position = useRef(new THREE.Vector3(0, 3.5, 5));
   const targetPosition = useRef(new THREE.Vector3(0, 0, 0));
+  const lastValidPosition = useRef(new THREE.Vector3(0, 3.5, 5));
   
   useFrame(() => {
     if (!cameraRef.current || !target.current) return;
     
-    // Update target position from the car
-    targetPosition.current.set(
+    // Check if car is spinning out - don't move camera if it is
+    const isSpinningOut = target.current.isSpinningOut?.();
+    
+    if (!isSpinningOut) {
+      // Only update camera position if the car is not spinning out
+      
+      // Update target position from the car
+      targetPosition.current.set(
+        target.current.position.x,
+        target.current.position.y,
+        target.current.position.z
+      );
+      
+      // Calculate camera position: behind and above the car
+      // Get car's forward direction (negative Z axis rotated by car's Y rotation)
+      const carRotation = target.current.rotation.y;
+      const distance = 4;
+      const height = 2;
+      
+      // Calculate position behind the car based on its rotation
+      const offsetX = Math.sin(carRotation) * distance;
+      const offsetZ = Math.cos(carRotation) * distance;
+      
+      // Position camera behind and above the car
+      position.current.set(
+        targetPosition.current.x - offsetX,
+        targetPosition.current.y + height,
+        targetPosition.current.z - offsetZ
+      );
+      
+      // Update camera position with smooth interpolation
+      cameraRef.current.position.lerp(position.current, 0.15);
+      
+      // Store the last valid camera position (before any spinout)
+      lastValidPosition.current.copy(cameraRef.current.position);
+    }
+    
+    // Always make the camera look at the car, even during spinout
+    const lookTarget = new THREE.Vector3(
       target.current.position.x,
-      target.current.position.y,
+      target.current.position.y + 0.3, // Look slightly above the car
       target.current.position.z
     );
-    
-    // Calculate camera position: behind and above the car
-    // Get car's forward direction (negative Z axis rotated by car's Y rotation)
-    const carRotation = target.current.rotation.y;
-    const distance = 4;
-    const height = 2;
-    
-    // Calculate position behind the car based on its rotation
-    const offsetX = Math.sin(carRotation) * distance;
-    const offsetZ = Math.cos(carRotation) * distance;
-    
-    // Position camera behind and above the car
-    position.current.set(
-      targetPosition.current.x - offsetX,
-      targetPosition.current.y + height,
-      targetPosition.current.z - offsetZ
-    );
-    
-    // Update camera position with smooth interpolation
-    cameraRef.current.position.lerp(position.current, 0.15);
-    
-    // Make camera look at a point slightly above the car
-    const lookTarget = targetPosition.current.clone();
-    lookTarget.y += 0.3;
     cameraRef.current.lookAt(lookTarget);
   });
 
