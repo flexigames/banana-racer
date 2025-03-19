@@ -1,28 +1,11 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
-
-// Simple seeded random number generator
-class SeededRandom {
-  constructor(seed = 42) {
-    this.seed = seed;
-  }
-  
-  // Returns a random number between 0 and 1
-  random() {
-    const x = Math.sin(this.seed++) * 10000;
-    return x - Math.floor(x);
-  }
-  
-  // Returns a random number between min and max
-  range(min, max) {
-    return min + this.random() * (max - min);
-  }
-}
+import seedrandom from 'seedrandom';
 
 // Component to add scattered elements to the ground for better movement reference
 const ScatteredElements = () => {
-  // Create seeded random number generator to ensure all clients see the same elements
-  const rng = useMemo(() => new SeededRandom(12345), []);
+  // Create seeded random number generator using seedrandom library
+  const rng = useMemo(() => seedrandom('banana-racer-12345'), []);
   
   // Generate random positions for rocks
   const rocks = useMemo(() => {
@@ -32,57 +15,64 @@ const ScatteredElements = () => {
       // Random position within a 100x100 area, but avoid the center area where players start
       let x, z;
       do {
-        x = (rng.random() - 0.5) * 100;
-        z = (rng.random() - 0.5) * 100;
+        x = (rng() - 0.5) * 100;
+        z = (rng() - 0.5) * 100;
       } while (Math.sqrt(x * x + z * z) < 10); // Keep away from center
       
-      const scale = rng.range(0.1, 0.4); // Random size between 0.1 and 0.4
-      const rotation = rng.random() * Math.PI * 2; // Random rotation
+      const scale = 0.1 + rng() * 0.3; // Random size between 0.1 and 0.4
+      const rotation = rng() * Math.PI * 2; // Random rotation
       
       elements.push({
         position: [x, 0.05, z],
         scale: [scale, scale, scale],
         rotation: [0, rotation, 0],
-        color: rng.random() > 0.5 ? '#6d6d6d' : '#8a8a8a', // Random gray shades
+        color: rng() > 0.5 ? '#6d6d6d' : '#8a8a8a', // Random gray shades
       });
     }
     return elements;
   }, [rng]);
   
-  // Generate patches of different grass colors
-  const grassPatches = useMemo(() => {
-    const patches = [];
-    // Create 50 randomly positioned grass patches
+  // Generate walls for obstacles
+  const walls = useMemo(() => {
+    const obstacles = [];
+    // Create 50 randomly positioned walls
     for (let i = 0; i < 50; i++) {
-      // Random position within a 100x100 area
-      const x = (rng.random() - 0.5) * 100;
-      const z = (rng.random() - 0.5) * 100;
+      // Random position within a 100x100 area, but avoid the center area where players start
+      let x, z;
+      do {
+        x = (rng() - 0.5) * 100;
+        z = (rng() - 0.5) * 100;
+      } while (Math.sqrt(x * x + z * z) < 15); // Keep away from center
       
-      const scale = rng.range(3, 8); // Random size between 3 and 8
-      const rotation = rng.random() * Math.PI * 2; // Random rotation
+      const width = 1 + rng() * 3; // Random width between 1 and 4
+      const height = 0.5 + rng() * 1.5; // Random height between 0.5 and 2
+      const depth = 1 + rng() * 3; // Random depth between 1 and 4
       
-      patches.push({
-        position: [x, 0.02, z],
-        scale: [scale, 1, scale],
+      // Only 0 or 90 degree rotations (in radians)
+      const rotation = Math.PI / 2 * Math.floor(rng() * 2); // Either 0 or PI/2 (90 degrees)
+      
+      obstacles.push({
+        position: [x, height / 2, z], // Position y at half height to sit on ground
+        scale: [width, height, depth],
         rotation: [0, rotation, 0],
-        color: rng.random() > 0.5 ? '#416319' : '#567d2c', // Different grass shades
+        color: rng() > 0.5 ? '#6b5034' : '#7d5c3c', // Brown shades for walls
       });
     }
-    return patches;
+    return obstacles;
   }, [rng]);
 
   return (
     <group>
-      {/* Render grass patches */}
-      {grassPatches.map((patch, index) => (
+      {/* Render walls */}
+      {walls.map((wall, index) => (
         <mesh
-          key={`grass-${index}`}
-          position={patch.position}
-          rotation={patch.rotation}
-          scale={patch.scale}
+          key={`wall-${index}`}
+          position={wall.position}
+          rotation={wall.rotation}
+          scale={wall.scale}
         >
-          <circleGeometry args={[1, 8]} />
-          <meshStandardMaterial color={patch.color} />
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={wall.color} roughness={0.9} />
         </mesh>
       ))}
       
