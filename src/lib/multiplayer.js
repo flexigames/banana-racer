@@ -13,7 +13,7 @@ class MultiplayerManager {
     this.maxReconnectAttempts = 5;
   }
 
-  connect(serverUrl = 'ws://localhost:8080') {
+  connect(serverUrl = 'wss://banana-racer.onrender.com') {
     return new Promise((resolve, reject) => {
       try {
         console.log('Attempting to connect to multiplayer server...');
