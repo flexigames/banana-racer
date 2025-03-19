@@ -15,6 +15,9 @@ const io = new Server(httpServer, {
 // Store connected players
 const players = {};
 
+// Store active bananas
+const bananas = [];
+
 // Define available vehicle models (from actual files in assets)
 const VEHICLE_MODELS = [
   'vehicle-racer',
@@ -40,6 +43,11 @@ function generateRandomColor() {
 function selectRandomVehicle() {
   const randomIndex = Math.floor(Math.random() * VEHICLE_MODELS.length);
   return VEHICLE_MODELS[randomIndex];
+}
+
+// Generate a random ID for bananas
+function generateBananaId() {
+  return `banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 console.log(`Starting Socket.IO server on port ${PORT}`);
@@ -73,6 +81,11 @@ io.on('connection', (socket) => {
   // Handle position updates
   socket.on('update', (data) => {
     handlePlayerUpdate(playerId, data);
+  });
+
+  // Handle banana drops
+  socket.on('dropBanana', (data) => {
+    handleBananaDrop(playerId, data);
   });
 
   // Handle disconnection
@@ -116,7 +129,10 @@ function initializePlayer(socket, playerId) {
       vehicle: p.vehicle
     }));
     
-  socket.emit('worldJoined', { players: existingPlayers });
+  socket.emit('worldJoined', { 
+    players: existingPlayers,
+    bananas: bananas // Send existing bananas to new player
+  });
   
   // Notify other players about the new player
   socket.broadcast.emit('playerJoined', {
@@ -152,6 +168,39 @@ function handlePlayerUpdate(playerId, data) {
     color: player.color,
     vehicle: player.vehicle
   });
+}
+
+function handleBananaDrop(playerId, data) {
+  const player = players[playerId];
+  if (!player) return;
+  
+  // Create banana with unique ID
+  const bananaId = generateBananaId();
+  const banana = {
+    id: bananaId,
+    position: data.position,
+    rotation: data.rotation,
+    droppedBy: playerId,
+    timestamp: Date.now()
+  };
+  
+  // Add to bananas array
+  bananas.push(banana);
+  
+  // Broadcast banana drop to all players
+  io.emit('bananaDropped', banana);
+  
+  console.log(`Player ${playerId} dropped a banana at position:`, data.position);
+  
+  // Set timeout to remove the banana after 10 seconds
+  setTimeout(() => {
+    const bananaIndex = bananas.findIndex(b => b.id === bananaId);
+    if (bananaIndex !== -1) {
+      bananas.splice(bananaIndex, 1);
+      io.emit('bananaExpired', { id: bananaId });
+      console.log(`Banana ${bananaId} expired`);
+    }
+  }, 10000);
 }
 
 // Clean up inactive players every 30 seconds

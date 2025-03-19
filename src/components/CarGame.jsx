@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import Car from './Car';
 import RemotePlayer from './RemotePlayer';
+import Banana from './Banana';
 import multiplayerManager from '../lib/multiplayer';
 import * as THREE from 'three';
 
@@ -62,7 +63,57 @@ const CarGame = () => {
   const carRef = useRef();
   const [remotePlayers, setRemotePlayers] = useState({});
   const [connected, setConnected] = useState(false);
-  const [cameraMode, setCameraMode] = useState('follow'); // 'follow' or 'overhead'
+  const [bananas, setBananas] = useState([]);
+  const [lastBananaTime, setLastBananaTime] = useState(0);
+  const bananaTimeout = 2000; // 2 seconds cooldown between bananas
+  
+  // Handle key press events
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Space bar to drop banana
+      if (event.code === 'Space') {
+        dropBanana();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
+  // Function to drop a banana behind the player
+  const dropBanana = () => {
+    if (!carRef.current) return;
+    
+    // Check if we can drop a banana (cooldown)
+    const now = Date.now();
+    if (now - lastBananaTime < bananaTimeout) return;
+    
+    // Update last banana time
+    setLastBananaTime(now);
+    
+    // Get car position and rotation
+    const carPosition = carRef.current.position.clone();
+    const carRotation = carRef.current.rotation.y;
+    
+    // Calculate position behind the car
+    const distanceBehind = 2; // 2 units behind the car
+    const offsetX = Math.sin(carRotation) * distanceBehind;
+    const offsetZ = Math.cos(carRotation) * distanceBehind;
+    
+    // Position for the banana
+    const bananaPosition = {
+      x: carPosition.x - offsetX,
+      y: 0.2, // Slightly above the ground
+      z: carPosition.z - offsetZ
+    };
+    
+    // Send banana drop event to server via multiplayer manager
+    multiplayerManager.dropBanana(bananaPosition, carRotation);
+    
+    console.log('Requested banana drop at', bananaPosition);
+  };
   
   // Connect to multiplayer server
   useEffect(() => {
@@ -92,6 +143,17 @@ const CarGame = () => {
             [player.id]: player
           }));
         };
+        
+        // Set up banana event handlers
+        multiplayerManager.onBananaDropped = (banana) => {
+          console.log("Banana dropped event received", banana);
+          setBananas(prev => [...prev, banana]);
+        };
+        
+        multiplayerManager.onBananaExpired = (bananaId) => {
+          console.log("Banana expired event received", bananaId);
+          setBananas(prev => prev.filter(b => b.id !== bananaId));
+        };
       })
       .catch(error => {
         console.error('Failed to connect to multiplayer server:', error);
@@ -102,20 +164,11 @@ const CarGame = () => {
     };
   }, []);
   
-  // Handle camera mode toggle
-  const toggleCameraMode = () => {
-    setCameraMode(prev => prev === 'follow' ? 'overhead' : 'follow');
-  };
-  
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas>
-        {/* Camera setup based on mode */}
-        {cameraMode === 'follow' ? (
-          <FollowCamera target={carRef} />
-        ) : (
-          <PerspectiveCamera makeDefault position={[0, 20, 0]} fov={50} />
-        )}
+        {/* Always use follow camera */}
+        <FollowCamera target={carRef} />
         
         {/* Basic lighting */}
         <ambientLight intensity={0.8} />
@@ -145,28 +198,30 @@ const CarGame = () => {
             vehicle={player.vehicle}
           />
         ))}
+        
+        {/* Bananas */}
+        {bananas.map(banana => (
+          <Banana
+            key={banana.id}
+            position={banana.position}
+            rotation={banana.rotation}
+            onExpire={() => {}} // No longer needed as server handles expiration
+          />
+        ))}
       </Canvas>
       
-      {/* Camera toggle button */}
+      {/* Banana instructions */}
       <div style={{
         position: 'absolute',
         top: 10,
         left: 10,
-        zIndex: 100
+        background: 'rgba(0,0,0,0.7)',
+        color: 'white',
+        padding: 10,
+        borderRadius: 5,
+        fontSize: '14px'
       }}>
-        <button 
-          onClick={toggleCameraMode}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: '#333',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Camera: {cameraMode === 'follow' ? 'Follow' : 'Overhead'}
-        </button>
+        Press <strong>SPACE</strong> to drop a banana
       </div>
       
       {/* Add debug info to the UI */}
@@ -187,6 +242,7 @@ const CarGame = () => {
         <div>Your Vehicle: {multiplayerManager.playerVehicle}</div>
         <div>Status: {connected ? 'Connected' : 'Disconnected'}</div>
         <div>Players: {Object.keys(remotePlayers).length + 1}</div>
+        <div>Active Bananas: {bananas.length}</div>
         <div>
           <h5>Remote Players:</h5>
           {Object.values(remotePlayers).map(player => (

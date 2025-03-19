@@ -8,9 +8,12 @@ class MultiplayerManager {
     this.playerColor = null;
     this.playerVehicle = 'vehicle-racer'; // Default vehicle model
     this.players = {};
+    this.bananas = [];
     this.onPlayerJoined = null;
     this.onPlayerLeft = null;
     this.onPlayerUpdated = null;
+    this.onBananaDropped = null;
+    this.onBananaExpired = null;
   }
 
   connect(serverUrl = 'http://localhost:8080') {
@@ -56,7 +59,7 @@ class MultiplayerManager {
         });
 
         this.socket.on('worldJoined', (data) => {
-          console.log(`Joined world with ${data.players.length} other players`);
+          console.log(`Joined world with ${data.players.length} other players and ${data.bananas ? data.bananas.length : 0} bananas`);
           
           // Initialize other players
           data.players.forEach(player => {
@@ -78,6 +81,16 @@ class MultiplayerManager {
               this.onPlayerJoined(player);
             }
           });
+
+          // Initialize existing bananas
+          if (data.bananas && data.bananas.length > 0) {
+            this.bananas = data.bananas;
+            data.bananas.forEach(banana => {
+              if (this.onBananaDropped) {
+                this.onBananaDropped(banana);
+              }
+            });
+          }
         });
 
         this.socket.on('playerJoined', (data) => {
@@ -138,6 +151,31 @@ class MultiplayerManager {
           }
         });
 
+        // Banana events
+        this.socket.on('bananaDropped', (banana) => {
+          console.log(`New banana dropped by player ${banana.droppedBy} at position:`, banana.position);
+          
+          // Add to local banana list
+          this.bananas.push(banana);
+          
+          // Notify callback
+          if (this.onBananaDropped) {
+            this.onBananaDropped(banana);
+          }
+        });
+        
+        this.socket.on('bananaExpired', (data) => {
+          console.log(`Banana ${data.id} expired`);
+          
+          // Remove from local banana list
+          this.bananas = this.bananas.filter(b => b.id !== data.id);
+          
+          // Notify callback
+          if (this.onBananaExpired) {
+            this.onBananaExpired(data.id);
+          }
+        });
+
       } catch (error) {
         console.error('Error creating Socket.IO connection:', error);
         reject(error);
@@ -153,6 +191,7 @@ class MultiplayerManager {
       this.playerColor = null;
       this.playerVehicle = 'vehicle-racer';
       this.players = {};
+      this.bananas = [];
     }
   }
 
@@ -163,6 +202,15 @@ class MultiplayerManager {
       position,
       rotation,
       speed
+    });
+  }
+
+  dropBanana(position, rotation) {
+    if (!this.socket || !this.connected) return;
+    
+    this.socket.emit('dropBanana', {
+      position,
+      rotation
     });
   }
 }
