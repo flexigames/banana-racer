@@ -41,11 +41,25 @@ const Car = forwardRef((props, ref) => {
   // Set up vehicle controls
   useVehicleControls(movement);
   
-  // Position car at start position
+  // Function to get a random spawn position
+  const getRandomSpawnPosition = () => {
+    // Generate a random position within a 40x40 area
+    // But not too close to the center to avoid walls
+    let x, z;
+    do {
+      x = (Math.random() - 0.5) * 40;
+      z = (Math.random() - 0.5) * 40;
+    } while (Math.sqrt(x * x + z * z) < 5); // Ensure not too close to origin
+    
+    return { x, y: 0.1, z };
+  };
+  
+  // Position car at random start position
   useEffect(() => {
     if (car.current) {
-      car.current.position.set(0, 0.1, 0);
-      car.current.rotation.y = 0;
+      const spawnPos = getRandomSpawnPosition();
+      car.current.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
+      car.current.rotation.y = Math.random() * Math.PI * 2; // Random initial rotation
     }
   }, []);
 
