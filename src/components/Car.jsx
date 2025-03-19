@@ -3,8 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { updateVehiclePhysics, updateObjectPosition } from '../lib/physics';
 import { useVehicleControls } from '../lib/input';
 import multiplayerManager from '../lib/multiplayer';
-import { useModelWithMaterials } from '../lib/loaders';
 import * as THREE from 'three';
+import VehicleModel from './VehicleModel';
 
 const Car = forwardRef((props, ref) => {
   const car = useRef();
@@ -13,56 +13,16 @@ const Car = forwardRef((props, ref) => {
   // Expose the car ref to parent components
   useImperativeHandle(ref, () => car.current);
   
-  // Load the vehicle model directly
-  const vehicleModel = useModelWithMaterials(
-    '/assets/vehicle-racer.obj',
-    '/assets/vehicle-racer.mtl'
-  );
-  
-  // Create a cloned model to avoid sharing materials with other components
-  const clonedModel = useMemo(() => {
-    if (!vehicleModel) return null;
+  // Create a THREE.Color from player color data
+  const playerColor = useMemo(() => {
+    if (!multiplayerManager.playerColor) return null;
     
-    const clone = vehicleModel.clone();
-    // Ensure all materials are cloned
-    clone.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map(m => m.clone());
-        } else {
-          child.material = child.material.clone();
-        }
-      }
-    });
-    
-    return clone;
-  }, [vehicleModel]);
-  
-  // Apply the player's color to the model whenever it changes
-  useEffect(() => {
-    if (!clonedModel || !multiplayerManager.playerColor) return;
-    
-    // Get the player's color from the server
-    const playerColor = multiplayerManager.playerColor;
-    const color = new THREE.Color().setHSL(
-      playerColor.h,
-      playerColor.s,
-      playerColor.l
+    return new THREE.Color().setHSL(
+      multiplayerManager.playerColor.h,
+      multiplayerManager.playerColor.s,
+      multiplayerManager.playerColor.l
     );
-    
-    // Apply the color to all materials in the model
-    clonedModel.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(mat => {
-            mat.color.set(color);
-          });
-        } else {
-          child.material.color.set(color);
-        }
-      }
-    });
-  }, [clonedModel, multiplayerManager.playerColor]);
+  }, [multiplayerManager.playerColor]);
   
   // Car movement state
   const movement = useRef({
@@ -146,14 +106,11 @@ const Car = forwardRef((props, ref) => {
     teleportToPlayer
   }));
 
-  if (!clonedModel) {
-    return null;
-  }
-
   return (
     <group ref={car} position={[0, 0.1, 0]}>
-      <primitive 
-        object={clonedModel} 
+      <VehicleModel 
+        vehicleType={multiplayerManager.playerVehicle}
+        color={playerColor}
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
       />

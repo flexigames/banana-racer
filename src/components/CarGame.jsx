@@ -80,6 +80,7 @@ const CarGame = () => {
             rotation={player.rotation}
             speed={player.speed || 0}
             color={player.color}
+            vehicle={player.vehicle}
           />
         ))}
       </Canvas>
@@ -99,6 +100,7 @@ const CarGame = () => {
       }}>
         <h4>Multiplayer Info</h4>
         <div>Your ID: {multiplayerManager.playerId}</div>
+        <div>Your Vehicle: {multiplayerManager.playerVehicle}</div>
         <div>Status: {connected ? 'Connected' : 'Disconnected'}</div>
         <div>Players: {Object.keys(remotePlayers).length + 1}</div>
         <div>
@@ -117,6 +119,7 @@ const CarGame = () => {
                 borderRadius: '50%',
               }} />
               ID: {player.id.substring(0, 6)} | 
+              Vehicle: {player.vehicle || 'unknown'} |
               Pos: ({player.position.x.toFixed(1)}, {player.position.y.toFixed(1)}, {player.position.z.toFixed(1)})
             </div>
           ))}

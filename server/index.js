@@ -15,14 +15,31 @@ const io = new Server(httpServer, {
 // Store connected players
 const players = {};
 
+// Define available vehicle models (from actual files in assets)
+const VEHICLE_MODELS = [
+  'vehicle-racer',
+  'vehicle-truck',
+  'vehicle-suv',
+  'vehicle-monster-truck',
+  'vehicle-vintage-racer',
+  'vehicle-racer-low',
+  'vehicle-speedster',
+];
+
 // Generate a random color in HSL format
 function generateRandomColor() {
-  // Use HSL for more vibrant and distinct colors
+  // Use HSL for better color distribution and distinction
   return {
     h: Math.random(),   // hue: 0-1 (maps to 0-360 degrees)
-    s: 0.8,             // saturation: fixed at 80%
-    l: 0.5              // lightness: fixed at 50%
+    s: 0.65,            // saturation: slightly reduced for subtlety
+    l: 0.55             // lightness: slightly increased for softer appearance
   };
+}
+
+// Select a random vehicle model
+function selectRandomVehicle() {
+  const randomIndex = Math.floor(Math.random() * VEHICLE_MODELS.length);
+  return VEHICLE_MODELS[randomIndex];
 }
 
 console.log(`Starting Socket.IO server on port ${PORT}`);
@@ -37,15 +54,17 @@ io.on('connection', (socket) => {
     rotation: 0,
     speed: 0,
     color: generateRandomColor(),
+    vehicle: selectRandomVehicle(),
     lastUpdate: Date.now()
   };
 
-  console.log(`Player ${playerId} connected (socket: ${socket.id})`);
+  console.log(`Player ${playerId} connected (socket: ${socket.id}), assigned vehicle: ${players[playerId].vehicle}`);
 
   // Send initial player ID
   socket.emit('init', { 
     id: playerId,
-    color: players[playerId].color
+    color: players[playerId].color,
+    vehicle: players[playerId].vehicle
   });
 
   // Automatically join the global world
@@ -93,7 +112,8 @@ function initializePlayer(socket, playerId) {
       position: p.position,
       rotation: p.rotation,
       speed: p.speed,
-      color: p.color
+      color: p.color,
+      vehicle: p.vehicle
     }));
     
   socket.emit('worldJoined', { players: existingPlayers });
@@ -105,7 +125,8 @@ function initializePlayer(socket, playerId) {
       position: player.position,
       rotation: player.rotation,
       speed: player.speed,
-      color: player.color
+      color: player.color,
+      vehicle: player.vehicle
     }
   });
   
@@ -128,7 +149,8 @@ function handlePlayerUpdate(playerId, data) {
     position: player.position,
     rotation: player.rotation,
     speed: player.speed,
-    color: player.color
+    color: player.color,
+    vehicle: player.vehicle
   });
 }
 

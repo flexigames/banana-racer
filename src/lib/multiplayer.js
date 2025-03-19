@@ -6,6 +6,7 @@ class MultiplayerManager {
     this.connected = false;
     this.playerId = null;
     this.playerColor = null;
+    this.playerVehicle = 'vehicle-racer'; // Default vehicle model
     this.players = {};
     this.onPlayerJoined = null;
     this.onPlayerLeft = null;
@@ -50,7 +51,8 @@ class MultiplayerManager {
         this.socket.on('init', (data) => {
           this.playerId = data.id;
           this.playerColor = data.color;
-          console.log(`Initialized with player ID: ${this.playerId}, color:`, this.playerColor);
+          this.playerVehicle = data.vehicle || 'vehicle-racer';
+          console.log(`Initialized with player ID: ${this.playerId}, color:`, this.playerColor, 'vehicle:', this.playerVehicle);
         });
 
         this.socket.on('worldJoined', (data) => {
@@ -68,6 +70,10 @@ class MultiplayerManager {
             if (!player.color) {
               player.color = { h: 0, s: 0.8, l: 0.5 }; // Default color
             }
+            // Ensure vehicle property exists
+            if (!player.vehicle) {
+              player.vehicle = 'vehicle-racer'; // Default vehicle
+            }
             if (this.onPlayerJoined) {
               this.onPlayerJoined(player);
             }
@@ -84,6 +90,10 @@ class MultiplayerManager {
           // Ensure color property exists
           if (!newPlayer.color) {
             newPlayer.color = { h: 0, s: 0.8, l: 0.5 }; // Default color
+          }
+          // Ensure vehicle property exists
+          if (!newPlayer.vehicle) {
+            newPlayer.vehicle = 'vehicle-racer'; // Default vehicle
           }
           this.players[newPlayer.id] = newPlayer;
           
@@ -117,6 +127,11 @@ class MultiplayerManager {
               this.players[updatedPlayerId].color = data.color;
             }
             
+            // Update vehicle if provided
+            if (data.vehicle) {
+              this.players[updatedPlayerId].vehicle = data.vehicle;
+            }
+            
             if (this.onPlayerUpdated) {
               this.onPlayerUpdated(this.players[updatedPlayerId]);
             }
@@ -136,6 +151,7 @@ class MultiplayerManager {
       this.connected = false;
       this.playerId = null;
       this.playerColor = null;
+      this.playerVehicle = 'vehicle-racer';
       this.players = {};
     }
   }

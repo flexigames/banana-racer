@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { useModelWithMaterials } from '../lib/loaders';
 import { useFrame } from '@react-three/fiber';
+import VehicleModel from './VehicleModel';
 
-const RemotePlayer = ({ playerId, position, rotation, speed = 0, color }) => {
+const RemotePlayer = ({ playerId, position, rotation, speed = 0, color, vehicle = 'vehicle-racer' }) => {
   const car = useRef();
   const targetPosition = useRef(new THREE.Vector3(position.x, position.y, position.z));
   const targetRotation = useRef(rotation);
@@ -33,37 +33,6 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0, color }) => {
       );
     }
   }, [playerId, color]);
-  
-  // Load the vehicle model directly
-  const vehicleModel = useModelWithMaterials(
-    '/assets/vehicle-racer.obj',
-    '/assets/vehicle-racer.mtl'
-  );
-  
-  // Create a cloned model with the player's color
-  const coloredModel = useMemo(() => {
-    if (!vehicleModel) return null;
-    
-    const clone = vehicleModel.clone();
-    
-    // Apply color to all materials
-    clone.traverse((child) => {
-      if (child.isMesh) {
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map(mat => {
-            const newMat = mat.clone();
-            newMat.color.set(playerColor);
-            return newMat;
-          });
-        } else if (child.material) {
-          child.material = child.material.clone();
-          child.material.color.set(playerColor);
-        }
-      }
-    });
-    
-    return clone;
-  }, [vehicleModel, playerColor]);
   
   // Update target values when position/rotation props change
   useEffect(() => {
@@ -148,14 +117,11 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0, color }) => {
     );
   });
   
-  if (!coloredModel) {
-    return null;
-  }
-  
   return (
     <group ref={car} position={[position.x, position.y, position.z]} rotation={[0, rotation, 0]}>
-      <primitive 
-        object={coloredModel} 
+      <VehicleModel 
+        vehicleType={vehicle}
+        color={playerColor}
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
       />
