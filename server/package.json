@@ -4,10 +4,11 @@
   "description": "Multiplayer server for racing game",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "start-server": "node server/index.js"
   },
   "dependencies": {
     "ws": "^8.13.0",
     "uuid": "^9.0.0"
   }
-} 
+}

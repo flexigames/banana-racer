@@ -1,8 +1,9 @@
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 
-// Create WebSocket server on port 8080
-const wss = new WebSocket.Server({ port: 8080 });
+// Create WebSocket server on port specified by environment variable or default to 8080
+const PORT = process.env.PORT || 8080;
+const wss = new WebSocket.Server({ port: PORT });
 
 // Store connected players
 const players = {};
