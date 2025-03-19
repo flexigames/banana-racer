@@ -1,14 +1,68 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
 import Car from './Car';
 import RemotePlayer from './RemotePlayer';
 import multiplayerManager from '../lib/multiplayer';
+import * as THREE from 'three';
+
+// Camera component that follows the player
+const FollowCamera = ({ target }) => {
+  const cameraRef = useRef();
+  const position = useRef(new THREE.Vector3(0, 3.5, 5));
+  const targetPosition = useRef(new THREE.Vector3(0, 0, 0));
+  
+  useFrame(() => {
+    if (!cameraRef.current || !target.current) return;
+    
+    // Update target position from the car
+    targetPosition.current.set(
+      target.current.position.x,
+      target.current.position.y,
+      target.current.position.z
+    );
+    
+    // Calculate camera position: behind and above the car
+    // Get car's forward direction (negative Z axis rotated by car's Y rotation)
+    const carRotation = target.current.rotation.y;
+    const distance = 4;
+    const height = 2;
+    
+    // Calculate position behind the car based on its rotation
+    const offsetX = Math.sin(carRotation) * distance;
+    const offsetZ = Math.cos(carRotation) * distance;
+    
+    // Position camera behind and above the car
+    position.current.set(
+      targetPosition.current.x - offsetX,
+      targetPosition.current.y + height,
+      targetPosition.current.z - offsetZ
+    );
+    
+    // Update camera position with smooth interpolation
+    cameraRef.current.position.lerp(position.current, 0.15);
+    
+    // Make camera look at a point slightly above the car
+    const lookTarget = targetPosition.current.clone();
+    lookTarget.y += 0.3;
+    cameraRef.current.lookAt(lookTarget);
+  });
+
+  return (
+    <PerspectiveCamera 
+      ref={cameraRef} 
+      makeDefault 
+      position={[0, 3.5, 5]}
+      fov={65}
+    />
+  );
+};
 
 const CarGame = () => {
   const carRef = useRef();
   const [remotePlayers, setRemotePlayers] = useState({});
   const [connected, setConnected] = useState(false);
+  const [cameraMode, setCameraMode] = useState('follow'); // 'follow' or 'overhead'
   
   // Connect to multiplayer server
   useEffect(() => {
@@ -48,12 +102,20 @@ const CarGame = () => {
     };
   }, []);
   
+  // Handle camera mode toggle
+  const toggleCameraMode = () => {
+    setCameraMode(prev => prev === 'follow' ? 'overhead' : 'follow');
+  };
+  
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas>
-        {/* Simple static top-down camera */}
-        <PerspectiveCamera makeDefault position={[0, 20, 0]} fov={50} />
-        <OrbitControls />
+        {/* Camera setup based on mode */}
+        {cameraMode === 'follow' ? (
+          <FollowCamera target={carRef} />
+        ) : (
+          <PerspectiveCamera makeDefault position={[0, 20, 0]} fov={50} />
+        )}
         
         {/* Basic lighting */}
         <ambientLight intensity={0.8} />
@@ -84,6 +146,28 @@ const CarGame = () => {
           />
         ))}
       </Canvas>
+      
+      {/* Camera toggle button */}
+      <div style={{
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        zIndex: 100
+      }}>
+        <button 
+          onClick={toggleCameraMode}
+          style={{
+            padding: '8px 12px',
+            backgroundColor: '#333',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Camera: {cameraMode === 'follow' ? 'Follow' : 'Overhead'}
+        </button>
+      </div>
       
       {/* Add debug info to the UI */}
       <div style={{
