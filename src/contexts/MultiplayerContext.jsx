@@ -30,7 +30,7 @@ export const MultiplayerProvider = ({ children }) => {
     const initConnection = async () => {
       try {
         // Set up event handlers
-        multiplayerMan  ager.onPlayerJoined = (player) => {
+        multiplayerManager.onPlayerJoined = (player) => {
           setPlayers((prev) => ({
             ...prev,
             [player.id]: player,
