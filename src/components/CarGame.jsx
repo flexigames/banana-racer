@@ -8,6 +8,7 @@ import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
+import RewardCube from "./RewardCube";
 import { BANANA_COLLISION_RADIUS, ITEM_BOX_COLLISION_RADIUS } from "../constants";
 
 // Camera component that follows the player
@@ -170,6 +171,11 @@ const CarGame = () => {
     collectItemBox,
   } = useMultiplayer();
 
+  // State for item box reward animation
+  const [showingReward, setShowingReward] = useState(false);
+  const [randomizingReward, setRandomizingReward] = useState(false);
+  const [rewardAmount, setRewardAmount] = useState(0);
+
   // Handle key press events
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -203,8 +209,28 @@ const CarGame = () => {
 
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
-    // Notify context about item box collection
-    collectItemBox(itemBoxId);
+    // Generate a final reward value (1, 2, or 3)
+    const finalReward = Math.floor(Math.random() * 3) + 1;
+    
+    // Notify context about item box collection with the finalReward
+    // The context will handle adding the reward after the animation
+    collectItemBox(itemBoxId, finalReward);
+    
+    // Start reward animation
+    setShowingReward(true);
+    setRandomizingReward(true);
+    // Set the reward amount for the cube to target
+    setRewardAmount(finalReward);
+    
+    // Stop randomizing after 2.5 seconds
+    setTimeout(() => {
+      setRandomizingReward(false);
+      
+      // Hide reward after another 5 seconds (showing the final reward face)
+      setTimeout(() => {
+        setShowingReward(false);
+      }, 5000);
+    }, 2500);
   };
 
   // Get remote players (all players except current player)
@@ -313,6 +339,28 @@ const CarGame = () => {
       >
         Press <strong>SPACE</strong> to drop a banana
       </div>
+
+      {/* 3D Reward Animation */}
+      {showingReward && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "20px",
+            width: "150px",
+            height: "150px",
+            borderRadius: "10px",
+            overflow: "hidden"
+          }}
+        >
+          <Canvas>
+            <ambientLight intensity={1.5} />
+            <directionalLight position={[5, 5, 5]} intensity={1} />
+            <PerspectiveCamera makeDefault position={[0, 0, 3]} fov={50} />
+            <RewardCube rewardAmount={rewardAmount} isSpinning={randomizingReward} />
+          </Canvas>
+        </div>
+      )}
 
       {/* Game UI */}
       <div className="game-ui">

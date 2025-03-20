@@ -428,16 +428,43 @@ export const MultiplayerProvider = ({ children }) => {
   };
 
   // Item box functions
-  const collectItemBox = (itemBoxId) => {
+  const collectItemBox = (itemBoxId, bananaReward) => {
     if (!connected || !socket.current) return;
     
-    console.log(`[CONTEXT] Attempting to collect item box: ${itemBoxId}`);
+    console.log(`[CONTEXT] Attempting to collect item box: ${itemBoxId} with reward: ${bananaReward}`);
     
-    // Notify server about item box collection
+    // First remove the item box locally and notify server
+    setItemBoxes(prev => prev.filter(box => box.id !== itemBoxId));
     socket.current.emit('collectItemBox', {
       playerId: playerId,
       itemBoxId: itemBoxId
     });
+    
+    // Use the provided reward amount or generate one if not provided
+    const finalReward = bananaReward || Math.floor(Math.random() * 3) + 1;
+    
+    // Add bananas to player count after 7.5 seconds (sync with UI animation)
+    // 2.5s for spinning + 5s for showing the final result
+    setTimeout(() => {
+      // Update local player's banana count
+      setPlayers(prev => {
+        if (!prev[playerId]) return prev;
+        
+        return {
+          ...prev,
+          [playerId]: {
+            ...prev[playerId],
+            bananas: (prev[playerId].bananas || 0) + finalReward
+          }
+        };
+      });
+      
+      // Notify server about banana reward
+      socket.current.emit('itemRewardCollected', {
+        playerId: playerId,
+        bananaReward: finalReward
+      });
+    }, 7500);
   };
 
   // Change server URL

@@ -49,6 +49,11 @@ const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5, showCollisio
       // Add animation
       const startTime = Date.now();
       const animate = () => {
+        // Check if the ref is still valid before proceeding
+        if (!itemBox.current) {
+          return; // Exit the animation if the object has been removed
+        }
+        
         const elapsed = Date.now() - startTime;
         // Gentle floating motion
         const floatHeight = Math.sin(elapsed / 600) * 0.15;
