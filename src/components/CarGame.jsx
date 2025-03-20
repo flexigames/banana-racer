@@ -289,8 +289,7 @@ const CarGame = () => {
       {/* Game UI */}
       <div className="game-ui">
         <div className="banana-counter">
-          Bananas: {players[playerId]?.bananas}<br/>
-          Player included: {playerId in players ? "yes" : "no"}
+          Bananas: {players[playerId]?.bananas}
         </div>
       </div>
     </div>

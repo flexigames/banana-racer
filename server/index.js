@@ -227,28 +227,36 @@ function handlePlayerUpdate(playerId, data) {
 
 function handleBananaDrop(playerId, data) {
   const player = players[playerId];
-  if (!player) return;
+  console.log(`[BANANA DROP] Player ${playerId} attempting to drop banana`);
   
+  if (!player) {
+    console.log(`[BANANA DROP] Player ${playerId} not found, cannot drop banana`);
+    return;
+  }
+
   // Check if player has bananas
   if (!players[playerId] || players[playerId].bananas <= 0) {
+    console.log(`[BANANA DROP] Player ${playerId} has no bananas left`);
     return; // Don't allow dropping if no bananas
   }
-  
+
   // Reduce player's banana count
   players[playerId].bananas--;
-  
+  console.log(`[BANANA DROP] Player ${playerId} banana count reduced to ${players[playerId].bananas}`);
+
   // Create banana with the existing logic
   const bananaId = generateBananaId();
   const banana = {
     id: bananaId,
     position: data.position,
-    rotation: data.rotation,
+    rotation: data.rotation || 0,
     droppedBy: playerId,
-    timestamp: Date.now()
+    droppedAt: Date.now()
   };
   
   bananas[bananaId] = banana;
-  
+  console.log(`[BANANA DROP] Created banana ${bananaId}, total bananas: ${Object.keys(bananas).length}`);
+
   // Broadcast banana drop to all players
   io.emit('bananaDropped', banana);
   
@@ -262,18 +270,25 @@ function handleBananaDrop(playerId, data) {
   setTimeout(() => {
     if (bananas[bananaId]) {
       delete bananas[bananaId];
-      io.emit('bananaExpired', bananaId);
+      io.emit('bananaExpired', { id: bananaId });
     }
   }, 10000);
 }
 
 function handleBananaHit(playerId, bananaId) {
   const player = players[playerId];
-  if (!player) return;
+  console.log(`[BANANA HIT] Processing hit from player ${playerId} on banana ${bananaId}`);
+  console.log(`[BANANA HIT] Players:`, Object.keys(players).length);
+  console.log(`[BANANA HIT] Bananas:`, Object.keys(bananas).length);
+  
+  if (!player) {
+    console.log(`[BANANA HIT] Player ${playerId} not found!`);
+    return;
+  }
   
   // Check if the banana exists in our object
   if (!bananas[bananaId]) {
-    console.log(`Banana ${bananaId} not found for hit by player ${playerId}`);
+    console.log(`[BANANA HIT] Banana ${bananaId} not found for hit by player ${playerId}`);
     return;
   }
   
@@ -287,7 +302,7 @@ function handleBananaHit(playerId, bananaId) {
     hitBy: playerId
   });
   
-  console.log(`Player ${playerId} hit banana ${bananaId}`);
+  console.log(`[BANANA HIT] Successfully processed: Player ${playerId} hit banana ${bananaId}`);
 }
 
 // Add a new function to handle item box collection
@@ -376,4 +391,4 @@ setInterval(() => {
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
   console.log(`[ITEM] Server initialized with ${itemBoxes.length} item boxes`);
-}); 
+});

@@ -416,12 +416,14 @@ export const MultiplayerProvider = ({ children }) => {
   const hitBanana = (bananaId) => {
     if (!connected || !socket.current) return;
     
+    console.log(`[DEBUG] Sending hitBanana event for banana ${bananaId}`);
+    
     // Remove the banana locally (server will also broadcast to all clients)
     setBananas((prev) => prev.filter((b) => b.id !== bananaId));
 
-    // Notify server about banana hit
+    // Notify server about banana hit - just send the ID directly
     socket.current.emit("hitBanana", {
-      bananaId,
+      bananaId
     });
   };
 
