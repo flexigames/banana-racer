@@ -31,7 +31,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [bananas, setBananas] = useState([]);
   const [itemBoxes, setItemBoxes] = useState([]);
   const [lastBananaTime, setLastBananaTime] = useState(0);
-  const bananaTimeout = 2000; // 2 seconds cooldown between bananas
+  const bananaTimeout = 20;
 
   // Server URL
   const [serverUrl, setServerUrl] = useState(() => {
