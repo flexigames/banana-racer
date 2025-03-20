@@ -2,7 +2,7 @@ import React, { useRef, useEffect, forwardRef, useImperativeHandle, useMemo, use
 import { useFrame } from '@react-three/fiber';
 import { updateVehiclePhysics, updateObjectPosition } from '../lib/physics';
 import { useVehicleControls } from '../lib/input';
-import multiplayerManager from '../lib/multiplayer';
+import { useMultiplayer } from '../contexts/MultiplayerContext';
 import * as THREE from 'three';
 import VehicleModel from './VehicleModel';
 
@@ -14,19 +14,29 @@ const Car = forwardRef((props, ref) => {
   const spinDirection = useRef(1); // 1 or -1 for spin direction
   const spinSpeed = useRef(0);
   
+  // Get multiplayer context
+  const { 
+    connected, 
+    playerId, 
+    playerColor, 
+    playerVehicle, 
+    players, 
+    updatePlayerPosition 
+  } = useMultiplayer();
+  
   // Expose the car ref to parent components
   useImperativeHandle(ref, () => car.current);
   
   // Create a THREE.Color from player color data
-  const playerColor = useMemo(() => {
-    if (!multiplayerManager.playerColor) return null;
+  const carColor = useMemo(() => {
+    if (!playerColor) return null;
     
     return new THREE.Color().setHSL(
-      multiplayerManager.playerColor.h,
-      multiplayerManager.playerColor.s,
-      multiplayerManager.playerColor.l
+      playerColor.h,
+      playerColor.s,
+      playerColor.l
     );
-  }, [multiplayerManager.playerColor]);
+  }, [playerColor]);
   
   // Car movement state
   const movement = useRef({
@@ -136,7 +146,7 @@ const Car = forwardRef((props, ref) => {
     if (state.clock.elapsedTime - lastUpdateTime.current > 0.1) {
       lastUpdateTime.current = state.clock.elapsedTime;
       
-      if (multiplayerManager.connected) {
+      if (connected) {
         // Format position with precision to reduce network traffic
         const position = {
           x: parseFloat(car.current.position.x.toFixed(2)),
@@ -147,14 +157,14 @@ const Car = forwardRef((props, ref) => {
         const rotation = parseFloat(car.current.rotation.y.toFixed(2));
         const speed = parseFloat(movement.current.speed.toFixed(2));
         
-        multiplayerManager.updatePosition(position, rotation, speed);
+        updatePlayerPosition(position, rotation, speed);
       }
     }
   });
 
   // Add a new function to teleport to another player
   const teleportToPlayer = (targetPlayerId) => {
-    const targetPlayer = multiplayerManager.players[targetPlayerId];
+    const targetPlayer = players[targetPlayerId];
     if (targetPlayer && car.current) {
       car.current.position.set(
         targetPlayer.position.x + 2, // Position slightly to the side
@@ -162,7 +172,7 @@ const Car = forwardRef((props, ref) => {
         targetPlayer.position.z
       );
       // Update the server with our new position
-      multiplayerManager.updatePosition(
+      updatePlayerPosition(
         {
           x: car.current.position.x,
           y: car.current.position.y,
@@ -185,8 +195,8 @@ const Car = forwardRef((props, ref) => {
   return (
     <group ref={car} position={[0, 0.1, 0]}>
       <VehicleModel 
-        vehicleType={multiplayerManager.playerVehicle}
-        color={playerColor}
+        vehicleType={playerVehicle}
+        color={carColor}
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
       />
