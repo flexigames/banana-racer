@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
 export default defineConfig({
-  base: "/banana-racer/",
+  base: "./",
   plugins: [react()],
   build: {
     outDir: "dist",
@@ -16,4 +16,4 @@ export default defineConfig({
   },
   // This tells Vite to copy all files from 'public' to 'dist' without processing
   publicDir: "public",
-}); 
+});

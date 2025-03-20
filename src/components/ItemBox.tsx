@@ -2,14 +2,27 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import { useModelWithMaterials, prepareModel } from '../lib/loaders';
 import * as THREE from 'three';
 import { ITEM_BOX_COLLISION_RADIUS } from '../constants';
+import { Group, Mesh, Material } from 'three';
 
-const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5, showCollisionRadius = false }) => {
-  const itemBox = useRef();
+interface ItemBoxProps {
+  position?: [number, number, number];
+  rotation?: number;
+  scale?: number;
+  showCollisionRadius?: boolean;
+}
+
+const ItemBox: React.FC<ItemBoxProps> = ({ 
+  position = [0, 0, 0], 
+  rotation = 0, 
+  scale = 0.5, 
+  showCollisionRadius = false 
+}) => {
+  const itemBox = useRef<Group>(null);
   
   // Load the item box model
   const itemBoxModel = useModelWithMaterials(
-    '/banana-racer/assets/item-box.obj',
-    '/banana-racer/assets/item-box.mtl'
+    './assets/item-box.obj',
+    './assets/item-box.mtl'
   );
   
   // Clone the model with properly cloned materials
@@ -19,12 +32,13 @@ const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5, showCollisio
     const clone = itemBoxModel.clone();
     
     // Ensure all materials are cloned
-    clone.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map(m => m.clone());
+    clone.traverse((child: THREE.Object3D) => {
+      if ((child as Mesh).isMesh && (child as Mesh).material) {
+        const mesh = child as Mesh;
+        if (Array.isArray(mesh.material)) {
+          mesh.material = mesh.material.map(m => m.clone());
         } else {
-          child.material = child.material.clone();
+          mesh.material = mesh.material.clone();
         }
       }
     });
@@ -53,9 +67,10 @@ const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5, showCollisio
         // Gentle floating motion
         const floatHeight = Math.sin(elapsed / 600) * 0.15;
         // Rotation animation
-        itemBox.current.rotation.y = rotation + elapsed / 1000;
-        
-        itemBox.current.position.y = position[1] + 0.5 + floatHeight;
+        if (itemBox.current) {
+          itemBox.current.rotation.y = rotation + elapsed / 1000;
+          itemBox.current.position.y = position[1] + 0.5 + floatHeight;
+        }
         
         requestAnimationFrame(animate);
       };
