@@ -210,10 +210,62 @@ const CarGame = () => {
     hitBanana(bananaId);
   };
 
+  // Item animation states
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinningItemIndex, setSpinningItemIndex] = useState(0);
+  const [spinSpeed, setSpinSpeed] = useState(50); // ms between item changes
+  const possibleItems = ['🍌', '🚀', '💣'];
+  
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
-    // Notify context about item box collection
-    collectItemBox(itemBoxId);
+    // Start item spinning animation
+    setIsSpinning(true);
+    setSpinSpeed(50); // Start fast
+    
+    // Schedule the animation to slow down and stop
+    const slowDownInterval = 600; // ms - slightly faster first slowdown
+    const totalAnimationTime = 3000; // ms - longer total animation
+    
+    // Gradually slow down the spin with more dramatic slowdown at the end
+    const slowDown = (factor = 1.5) => {
+      setSpinSpeed(prevSpeed => {
+        const newSpeed = prevSpeed * factor; // Increase interval (slow down)
+        return newSpeed > 800 ? 800 : newSpeed; // Cap at 800ms
+      });
+    };
+    
+    // Set up the slowdown intervals with increasing slowdown effect
+    const interval1 = setTimeout(() => slowDown(1.5), slowDownInterval);
+    const interval2 = setTimeout(() => slowDown(1.8), slowDownInterval * 2);
+    const interval3 = setTimeout(() => slowDown(2.0), slowDownInterval * 3);
+    const interval4 = setTimeout(() => slowDown(2.5), slowDownInterval * 4);
+    
+    // Stop the animation after the total time
+    const stopTimeout = setTimeout(() => {
+      setIsSpinning(false);
+      // Notify context about item box collection
+      collectItemBox(itemBoxId);
+    }, totalAnimationTime);
+    
+    // Set up the spinning animation
+    const spinInterval = setInterval(() => {
+      if (!isSpinning) {
+        clearInterval(spinInterval);
+        return;
+      }
+      
+      setSpinningItemIndex(prev => (prev + 1) % possibleItems.length);
+    }, spinSpeed);
+    
+    // Cleanup all timers and intervals
+    return () => {
+      clearTimeout(interval1);
+      clearTimeout(interval2);
+      clearTimeout(interval3);
+      clearTimeout(interval4);
+      clearTimeout(stopTimeout);
+      clearInterval(spinInterval);
+    };
   };
 
   // Get remote players (all players except current player)
@@ -259,6 +311,17 @@ const CarGame = () => {
     };
   }, [carRef.current]);
   
+  // Update spinning interval effect
+  useEffect(() => {
+    if (!isSpinning) return;
+    
+    const spinInterval = setInterval(() => {
+      setSpinningItemIndex(prev => (prev + 1) % possibleItems.length);
+    }, spinSpeed);
+    
+    return () => clearInterval(spinInterval);
+  }, [spinSpeed, isSpinning, possibleItems.length]);
+  
   // Trigger animation when item quantity changes
   useEffect(() => {
     if (currentItem?.quantity !== prevQuantity) {
@@ -271,43 +334,35 @@ const CarGame = () => {
 
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
+    if (isSpinning) {
+      return possibleItems[spinningItemIndex];
+    }
+    
     if (!item || item.quantity <= 0) return "";
     
     // Format based on item type
     switch (item.type) {
       case 'banana':
-        if (item.quantity <= 3) {
-          return '🍌'.repeat(item.quantity);
-        } else {
-          // For more than 3 bananas, show a number
-          return (
-            <>
-              🍌<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
-            </>
-          );
-        }
+        // Always use the number format to prevent overflow
+        return (
+          <>
+            🍌<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+          </>
+        );
       case 'boost':
-        if (item.quantity <= 3) {
-          return '🚀'.repeat(item.quantity);
-        } else {
-          // For more than 3 boosts, show a number
-          return (
-            <>
-              🚀<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
-            </>
-          );
-        }
+        // Always use the number format to prevent overflow
+        return (
+          <>
+            🚀<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+          </>
+        );
       case 'cannon':
-        if (item.quantity <= 3) {
-          return '💣'.repeat(item.quantity);
-        } else {
-          // For more than 3 bombs, show a number
-          return (
-            <>
-              💣<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
-            </>
-          );
-        }
+        // Always use the number format to prevent overflow
+        return (
+          <>
+            💣<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+          </>
+        );
       default:
         return `${item.type}: ${item.quantity}`;
     }
@@ -315,9 +370,18 @@ const CarGame = () => {
 
   // Helper to get animation style
   const getItemDisplayStyle = () => {
+    if (isSpinning) {
+      return { 
+        animation: 'spin 0.5s infinite linear', 
+        fontSize: '2.5rem',
+        transform: 'scale(1.2)'
+      };
+    }
+    
     if (isAnimating) {
       return { animation: 'pulse 0.3s ease-in-out' };
     }
+    
     return {};
   };
 
@@ -444,6 +508,45 @@ const CarGame = () => {
           {getItemDisplayText(currentItem)}
         </div>
       </div>
+
+      {/* Add the CSS animations */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: scale(1.2) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(360deg); }
+          }
+          
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+          }
+          
+          .game-ui {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+          }
+          
+          .item-display {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            min-height: 80px;
+          }
+        `}
+      </style>
     </div>
   );
 };
