@@ -17,8 +17,8 @@ const io = new Server(httpServer, {
 // Store connected players
 const players = {};
 
-// Store active bananas
-const bananas = [];
+// Store active bananas - change from array to object for easier lookup
+const bananas = {};
 
 // Define available vehicle models (from actual files in assets)
 const VEHICLE_MODELS = [
@@ -29,6 +29,33 @@ const VEHICLE_MODELS = [
   'vehicle-racer-low',
   'vehicle-speedster',
 ];
+
+// Generate item boxes across the map
+function generateItemBoxes(count = 20) {
+  console.log(`[ITEM] Generating ${count} item boxes`);
+  const boxes = [];
+  const mapSize = 5; // Size of the playable area
+  
+  for (let i = 1; i <= count; i++) {
+    const position = [
+      (Math.random() * mapSize - mapSize/2),
+      -0.1,
+      (Math.random() * mapSize - mapSize/2)
+    ];
+    
+    boxes.push({
+      id: i,
+      position: position
+    });
+    console.log(`[ITEM] Generated item box ${i} at position [${position.join(', ')}]`);
+  }
+  
+  console.log(`[ITEM] Total item boxes generated: ${boxes.length}`);
+  return boxes;
+}
+
+// Replace the static item boxes with generated ones
+const itemBoxes = generateItemBoxes(20);
 
 // Generate a random color in HSL format
 function generateRandomColor() {
@@ -64,7 +91,8 @@ io.on('connection', (socket) => {
     speed: 0,
     color: generateRandomColor(),
     vehicle: selectRandomVehicle(),
-    lastUpdate: Date.now()
+    lastUpdate: Date.now(),
+    bananas: 0
   };
 
   console.log(`Player ${playerId} connected (socket: ${socket.id}), assigned vehicle: ${players[playerId].vehicle}`);
@@ -92,6 +120,11 @@ io.on('connection', (socket) => {
   // Handle banana collisions
   socket.on('hitBanana', (data) => {
     handleBananaHit(playerId, data.bananaId);
+  });
+
+  // Handle item box collection
+  socket.on('collectItemBox', (data) => {
+    handleItemBoxCollection(playerId, data.itemBoxId);
   });
 
   // Handle disconnection
@@ -135,10 +168,23 @@ function initializePlayer(socket, playerId) {
       vehicle: p.vehicle
     }));
     
+  // Convert itemBoxes to the format expected by the client
+  const itemBoxesForClient = itemBoxes.map(box => ({
+    id: box.id,
+    position: box.position
+  }));
+  
+  // Log what we're sending
+  console.log(`[ITEM] Sending ${itemBoxesForClient.length} item boxes to player ${playerId}`);
+  console.log(`[ITEM] First item box: ${JSON.stringify(itemBoxesForClient[0])}`);
+  
   socket.emit('worldJoined', { 
     players: existingPlayers,
-    bananas: bananas // Send existing bananas to new player
+    bananas: Object.values(bananas), // Convert from object to array
+    itemBoxes: itemBoxesForClient
   });
+  
+  console.log(`[ITEM] Sent ${itemBoxes.length} item boxes to player ${playerId}`);
   
   // Notify other players about the new player
   socket.broadcast.emit('playerJoined', {
@@ -180,7 +226,15 @@ function handleBananaDrop(playerId, data) {
   const player = players[playerId];
   if (!player) return;
   
-  // Create banana with unique ID
+  // Check if player has bananas
+  if (!players[playerId] || players[playerId].bananas <= 0) {
+    return; // Don't allow dropping if no bananas
+  }
+  
+  // Reduce player's banana count
+  players[playerId].bananas--;
+  
+  // Create banana with the existing logic
   const bananaId = generateBananaId();
   const banana = {
     id: bananaId,
@@ -190,21 +244,22 @@ function handleBananaDrop(playerId, data) {
     timestamp: Date.now()
   };
   
-  // Add to bananas array
-  bananas.push(banana);
+  bananas[bananaId] = banana;
   
   // Broadcast banana drop to all players
   io.emit('bananaDropped', banana);
   
-  console.log(`Player ${playerId} dropped a banana at position:`, data.position);
+  // Confirm banana count update
+  io.emit('bananaCountUpdated', {
+    playerId,
+    count: players[playerId].bananas
+  });
   
-  // Set timeout to remove the banana after 10 seconds
+  // Set expiration timer
   setTimeout(() => {
-    const bananaIndex = bananas.findIndex(b => b.id === bananaId);
-    if (bananaIndex !== -1) {
-      bananas.splice(bananaIndex, 1);
-      io.emit('bananaExpired', { id: bananaId });
-      console.log(`Banana ${bananaId} expired`);
+    if (bananas[bananaId]) {
+      delete bananas[bananaId];
+      io.emit('bananaExpired', bananaId);
     }
   }, 10000);
 }
@@ -213,12 +268,15 @@ function handleBananaHit(playerId, bananaId) {
   const player = players[playerId];
   if (!player) return;
   
-  // Find the banana in the array
-  const bananaIndex = bananas.findIndex(b => b.id === bananaId);
-  if (bananaIndex === -1) return;
+  // Check if the banana exists in our object
+  if (!bananas[bananaId]) {
+    console.log(`Banana ${bananaId} not found for hit by player ${playerId}`);
+    return;
+  }
   
-  // Remove the banana from the array
-  const hitBanana = bananas.splice(bananaIndex, 1)[0];
+  // Remove the banana from the object
+  const hitBanana = bananas[bananaId];
+  delete bananas[bananaId];
   
   // Notify all players about the banana being hit
   io.emit('bananaHit', { 
@@ -227,6 +285,72 @@ function handleBananaHit(playerId, bananaId) {
   });
   
   console.log(`Player ${playerId} hit banana ${bananaId}`);
+}
+
+// Add a new function to handle item box collection
+function handleItemBoxCollection(playerId, itemBoxId) {
+  const player = players[playerId];
+  if (!player) {
+    console.log(`[ITEM] Collection failed: Player ${playerId} not found`);
+    return;
+  }
+  
+  // Find the item box
+  const itemBoxIndex = itemBoxes.findIndex(box => box.id === itemBoxId);
+  if (itemBoxIndex === -1) {
+    console.log(`[ITEM] Collection failed: Item box ${itemBoxId} not found`);
+    return;
+  }
+  
+  console.log(`[ITEM] Player ${playerId} collected item box ${itemBoxId}`);
+  
+  // Update player's banana count
+  player.bananas = (player.bananas || 0) + 1;
+  console.log(`[ITEM] Player ${playerId} banana count updated to ${player.bananas}`);
+  
+  // Remove the item box temporarily
+  const collectedBox = itemBoxes.splice(itemBoxIndex, 1)[0];
+  console.log(`[ITEM] Item box ${itemBoxId} removed from world`);
+  
+  // Broadcast item collection to all players
+  io.emit('itemCollected', {
+    playerId,
+    itemBoxId
+  });
+  console.log(`[ITEM] Broadcast 'itemCollected' event for box ${itemBoxId}`);
+  
+  // Confirm banana count update to all players
+  io.emit('bananaCountUpdated', {
+    playerId,
+    count: player.bananas
+  });
+  console.log(`[ITEM] Broadcast 'bananaCountUpdated' event for player ${playerId}`);
+  
+  // Respawn the item box after a delay
+  setTimeout(() => {
+    // Generate a new position with wider spread
+    const mapSize = 30;
+    const newPosition = [
+      (Math.random() * mapSize - mapSize/2),
+      0.2,
+      (Math.random() * mapSize - mapSize/2)
+    ];
+    
+    console.log(`[ITEM] Respawning item box ${collectedBox.id} at position [${newPosition.join(', ')}]`);
+    
+    // Add the item box back with a new position
+    itemBoxes.push({
+      id: collectedBox.id,
+      position: newPosition
+    });
+    
+    // Broadcast the new item box to all players
+    io.emit('itemBoxSpawned', {
+      id: collectedBox.id,
+      position: newPosition
+    });
+    console.log(`[ITEM] Broadcast 'itemBoxSpawned' event for box ${collectedBox.id}`);
+  }, 5000); // Respawn after 5 seconds
 }
 
 // Clean up inactive players every 30 seconds
@@ -248,4 +372,5 @@ setInterval(() => {
 // Start the server
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
+  console.log(`[ITEM] Server initialized with ${itemBoxes.length} item boxes`);
 }); 

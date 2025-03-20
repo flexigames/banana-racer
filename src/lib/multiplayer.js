@@ -19,6 +19,10 @@ class MultiplayerManager {
     this.onBananaExpired = null;
     this.onBananaHit = null;
     this.serverUrl = REMOTE_SERVER_URL; // Default to remote server
+    this.onItemCollected = null;
+    this.onBananaCountUpdated = null;
+    this.onItemBoxSpawned = null;
+    this.onWorldJoined = null;
   }
 
   // New method to set server URL
@@ -79,12 +83,20 @@ class MultiplayerManager {
         });
 
         this.socket.on("worldJoined", (data) => {
-          console.log(
-            `Joined world with ${data.players.length} other players and ${
-              data.bananas ? data.bananas.length : 0
-            } bananas`
-          );
-
+          console.log("[CLIENT] World joined event received");
+          console.log("[CLIENT] Socket connection state:", this.socket?.connected);
+          console.log("World joined data received:", data);
+          
+          // Check if itemBoxes exists and is an array
+          if (data.itemBoxes) {
+            console.log(`Received ${data.itemBoxes.length} item boxes`);
+            if (data.itemBoxes.length > 0) {
+              console.log("First item box:", data.itemBoxes[0]);
+            }
+          } else {
+            console.log("No item boxes in worldJoined data");
+          }
+          
           // Initialize other players
           data.players.forEach((player) => {
             console.log(`Adding existing player: ${player.id}`);
@@ -114,6 +126,11 @@ class MultiplayerManager {
                 this.onBananaDropped(banana);
               }
             });
+          }
+
+          if (this.onWorldJoined) {
+            console.log("[CLIENT] Calling onWorldJoined callback");
+            this.onWorldJoined(data);
           }
         });
 
@@ -220,6 +237,38 @@ class MultiplayerManager {
             this.onBananaHit(data.id, data.hitBy);
           }
         });
+
+        // Add item box collection event handlers
+        this.socket.on('itemCollected', (data) => {
+          if (this.onItemCollected) {
+            this.onItemCollected(data.playerId, data.itemBoxId);
+          }
+        });
+        
+        this.socket.on('bananaCountUpdated', (data) => {
+          if (this.onBananaCountUpdated) {
+            this.onBananaCountUpdated(data.playerId, data.count);
+          }
+        });
+
+        this.socket.on('itemBoxSpawned', (itemBox) => {
+          if (this.onItemBoxSpawned) {
+            this.onItemBoxSpawned(itemBox);
+          }
+        });
+
+        // Ensure the connection has proper error handling
+        this.socket.on("error", (error) => {
+          console.error("[CLIENT] Connection error:", error);
+        });
+        
+        this.socket.on("open", () => {
+          console.log("[CLIENT] Connection opened successfully");
+        });
+        
+        this.socket.on("close", () => {
+          console.log("[CLIENT] Connection closed");
+        });
       } catch (error) {
         console.error("Error creating Socket.IO connection:", error);
         reject(error);
@@ -264,6 +313,15 @@ class MultiplayerManager {
     this.socket.emit("hitBanana", {
       bananaId,
     });
+  }
+
+  collectItemBox(itemBoxId) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('collectItemBox', {
+        playerId: this.playerId,
+        itemBoxId: itemBoxId
+      });
+    }
   }
 }
 
