@@ -218,6 +218,9 @@ const CarGame = () => {
   
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
+    // Immediately notify context about item box collection to remove it from the scene
+    collectItemBox(itemBoxId);
+    
     // Start item spinning animation
     setIsSpinning(true);
     setSpinSpeed(50); // Start fast
@@ -243,8 +246,6 @@ const CarGame = () => {
     // Stop the animation after the total time
     const stopTimeout = setTimeout(() => {
       setIsSpinning(false);
-      // Notify context about item box collection
-      collectItemBox(itemBoxId);
     }, totalAnimationTime);
     
     // Set up the spinning animation
