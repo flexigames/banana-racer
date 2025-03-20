@@ -179,6 +179,11 @@ const CarGame = () => {
         if (carRef.current) {
           const carPosition = carRef.current.position.clone();
           const carRotation = carRef.current.rotation.y;
+          
+          // Trigger use animation regardless of whether the use succeeds
+          setIsAnimating(true);
+          setTimeout(() => setIsAnimating(false), 300);
+          
           useItem(carPosition, carRotation);
         }
       }
@@ -215,18 +220,49 @@ const CarGame = () => {
   // Get current player's item data
   const currentPlayer = players[playerId];
   const currentItem = currentPlayer?.item;
+  
+  // Track previous item for animation
+  const [prevQuantity, setPrevQuantity] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  
+  // Trigger animation when item quantity changes
+  useEffect(() => {
+    if (currentItem?.quantity !== prevQuantity) {
+      setIsAnimating(true);
+      const timer = setTimeout(() => setIsAnimating(false), 300);
+      setPrevQuantity(currentItem?.quantity || 0);
+      return () => clearTimeout(timer);
+    }
+  }, [currentItem?.quantity, prevQuantity]);
 
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
-    if (!item || item.quantity <= 0) return "No item";
+    if (!item || item.quantity <= 0) return "";
     
     // Format based on item type
     switch (item.type) {
       case 'banana':
-        return '🍌'.repeat(item.quantity);
+        if (item.quantity <= 3) {
+          return '🍌'.repeat(item.quantity);
+        } else {
+          // For more than 3 bananas, show a number
+          return (
+            <>
+              🍌<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+            </>
+          );
+        }
       default:
         return `${item.type}: ${item.quantity}`;
     }
+  };
+
+  // Helper to get animation style
+  const getItemDisplayStyle = () => {
+    if (isAnimating) {
+      return { animation: 'pulse 0.3s ease-in-out' };
+    }
+    return {};
   };
 
   return (
@@ -333,7 +369,7 @@ const CarGame = () => {
 
       {/* Game UI */}
       <div className="game-ui">
-        <div className="item-display">
+        <div className="item-display" style={getItemDisplayStyle()}>
           {getItemDisplayText(currentItem)}
         </div>
       </div>
