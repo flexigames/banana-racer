@@ -1,5 +1,8 @@
 import { io } from "socket.io-client";
 
+const LOCAL_SERVER_URL = "http://localhost:8080";
+const REMOTE_SERVER_URL = "https://banana-racer.onrender.com";
+
 class MultiplayerManager {
   constructor() {
     this.socket = null;
@@ -15,13 +18,24 @@ class MultiplayerManager {
     this.onBananaDropped = null;
     this.onBananaExpired = null;
     this.onBananaHit = null;
+    this.serverUrl = REMOTE_SERVER_URL; // Default to remote server
   }
 
-  connect(serverUrl = "https://banana-racer.onrender.com") {
+  // New method to set server URL
+  setServerUrl(useLocalServer = false) {
+    this.serverUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
+    console.log(`Server URL set to: ${this.serverUrl}`);
+    return this.serverUrl;
+  }
+
+  connect(serverUrl = null) {
     return new Promise((resolve, reject) => {
       try {
-        console.log("Attempting to connect to multiplayer server...");
-        this.socket = io(serverUrl, {
+        // Use provided serverUrl, or fall back to the instance serverUrl
+        const url = serverUrl || this.serverUrl;
+        console.log(`Attempting to connect to multiplayer server at ${url}...`);
+        
+        this.socket = io(url, {
           reconnection: true,
           reconnectionAttempts: 5,
           reconnectionDelay: 1000,
@@ -255,4 +269,18 @@ class MultiplayerManager {
 
 // Export a singleton instance
 const multiplayerManager = new MultiplayerManager();
+
+// Check if we're in development mode with a specific flag
+if (import.meta.env.DEV) {
+  // Check for environment variable first, then localStorage
+  const useLocalServer = import.meta.env.VITE_USE_LOCAL_SERVER === 'true' || 
+                         window.localStorage.getItem('useLocalServer') === 'true';
+  if (useLocalServer) {
+    multiplayerManager.setServerUrl(true);
+    console.log('Using local server (localhost:8080) for multiplayer');
+  } else {
+    console.log('Using remote server for multiplayer');
+  }
+}
+
 export default multiplayerManager;

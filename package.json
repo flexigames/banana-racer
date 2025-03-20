@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "VITE_USE_LOCAL_SERVER=true vite",
     "build": "vite build",
     "preview": "vite preview"
   },
