@@ -1,7 +1,9 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useModelWithMaterials, prepareModel } from '../lib/loaders';
+import * as THREE from 'three';
+import { ITEM_BOX_COLLISION_RADIUS } from '../constants';
 
-const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5 }) => {
+const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5, showCollisionRadius = false }) => {
   const itemBox = useRef();
   
   // Load the item box model
@@ -72,6 +74,28 @@ const ItemBox = ({ position = [0, 0, 0], rotation = 0, scale = 0.5 }) => {
         object={model} 
         scale={[scale, scale, scale]} 
       />
+      
+      {/* Visualization of collision radius */}
+      {showCollisionRadius && (
+        <mesh>
+          <sphereGeometry args={[ITEM_BOX_COLLISION_RADIUS, 16, 12]} />
+          <meshBasicMaterial 
+            color={0x00aaff} 
+            transparent={true} 
+            opacity={0.15} 
+            side={THREE.DoubleSide}
+          />
+          <mesh>
+            <sphereGeometry args={[ITEM_BOX_COLLISION_RADIUS, 16, 12]} />
+            <meshBasicMaterial 
+              color={0x0088ff}
+              wireframe={true}
+              transparent={true}
+              opacity={0.4}
+            />
+          </mesh>
+        </mesh>
+      )}
     </group>
   );
 };

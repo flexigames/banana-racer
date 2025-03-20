@@ -3,8 +3,9 @@ import { useLoader } from '@react-three/fiber';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import * as THREE from 'three';
+import { BANANA_COLLISION_RADIUS } from '../constants';
 
-const Banana = ({ position, rotation, onExpire }) => {
+const Banana = ({ position, rotation, onExpire, showCollisionRadius = false }) => {
   const banana = useRef();
   const creationTime = useRef(Date.now());
   
@@ -52,6 +53,28 @@ const Banana = ({ position, rotation, onExpire }) => {
         object={model} 
         scale={[0.6, 0.6, 0.6]} 
       />
+      
+      {/* Visualization of collision radius */}
+      {showCollisionRadius && (
+        <mesh>
+          <sphereGeometry args={[BANANA_COLLISION_RADIUS, 16, 12]} />
+          <meshBasicMaterial 
+            color={0xff5500} 
+            transparent={true} 
+            opacity={0.15} 
+            side={THREE.DoubleSide}
+          />
+          <mesh>
+            <sphereGeometry args={[BANANA_COLLISION_RADIUS, 16, 12]} />
+            <meshBasicMaterial 
+              color={0xff0000}
+              wireframe={true}
+              transparent={true}
+              opacity={0.4}
+            />
+          </mesh>
+        </mesh>
+      )}
     </group>
   );
 };

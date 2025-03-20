@@ -8,6 +8,7 @@ import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
+import { BANANA_COLLISION_RADIUS, ITEM_BOX_COLLISION_RADIUS } from "../constants";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -76,9 +77,7 @@ const FollowCamera = ({ target }) => {
 };
 
 // Component to handle collision detection and game logic
-const GameLogic = ({ carRef, bananas, onBananaHit }) => {
-  const COLLISION_THRESHOLD = 0.8; // Distance for collision detection
-
+const GameLogic = ({ carRef, bananas, itemBoxes, onBananaHit, onItemBoxCollect }) => {
   // Check for collisions each frame
   useFrame(() => {
     if (!carRef.current || carRef.current.isSpinningOut?.()) return;
@@ -100,13 +99,34 @@ const GameLogic = ({ carRef, bananas, onBananaHit }) => {
       const distance = carPosition.distanceTo(bananaPosition);
 
       // If close enough to banana, trigger collision
-      if (distance < COLLISION_THRESHOLD) {
+      if (distance < BANANA_COLLISION_RADIUS) {
         console.log(
           `Collision detected with banana ${
             banana.id
           } at distance ${distance.toFixed(2)}`
         );
         onBananaHit(banana.id);
+      }
+    });
+    
+    // Check collision with each item box
+    itemBoxes.forEach((box) => {
+      const boxPosition = new THREE.Vector3(
+        box.position[0],
+        box.position[1],
+        box.position[2]
+      );
+
+      const distance = carPosition.distanceTo(boxPosition);
+
+      // If close enough to item box, trigger collection
+      if (distance < ITEM_BOX_COLLISION_RADIUS) {
+        console.log(
+          `Collision detected with item box ${
+            box.id
+          } at distance ${distance.toFixed(2)}`
+        );
+        onItemBoxCollect(box.id);
       }
     });
   });
@@ -147,6 +167,7 @@ const CarGame = () => {
     itemBoxes,
     dropBanana,
     hitBanana,
+    collectItemBox,
   } = useMultiplayer();
 
   // Handle key press events
@@ -180,6 +201,11 @@ const CarGame = () => {
     hitBanana(bananaId);
   };
 
+  // Handle item box collection
+  const handleItemBoxCollect = (itemBoxId) => {
+    // Notify context about item box collection
+    collectItemBox(itemBoxId);
+  };
 
   // Get remote players (all players except current player)
   const remotePlayers = Object.values(players).filter(
@@ -196,7 +222,9 @@ const CarGame = () => {
         <GameLogic
           carRef={carRef}
           bananas={bananas}
+          itemBoxes={itemBoxes}
           onBananaHit={handleBananaHit}
+          onItemBoxCollect={handleItemBoxCollect}
         />
         
         {/* Player position updater */}

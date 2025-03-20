@@ -34,7 +34,7 @@ const VEHICLE_MODELS = [
 function generateItemBoxes(count = 20) {
   console.log(`[ITEM] Generating ${count} item boxes`);
   const boxes = [];
-  const mapSize = 5; // Size of the playable area
+  const mapSize = 30; // Size of the playable area
   
   for (let i = 1; i <= count; i++) {
     const position = [
@@ -343,32 +343,6 @@ function handleItemBoxCollection(playerId, itemBoxId) {
     count: player.bananas
   });
   console.log(`[ITEM] Broadcast 'bananaCountUpdated' event for player ${playerId}`);
-  
-  // Respawn the item box after a delay
-  setTimeout(() => {
-    // Generate a new position with wider spread
-    const mapSize = 30;
-    const newPosition = [
-      (Math.random() * mapSize - mapSize/2),
-      0.2,
-      (Math.random() * mapSize - mapSize/2)
-    ];
-    
-    console.log(`[ITEM] Respawning item box ${collectedBox.id} at position [${newPosition.join(', ')}]`);
-    
-    // Add the item box back with a new position
-    itemBoxes.push({
-      id: collectedBox.id,
-      position: newPosition
-    });
-    
-    // Broadcast the new item box to all players
-    io.emit('itemBoxSpawned', {
-      id: collectedBox.id,
-      position: newPosition
-    });
-    console.log(`[ITEM] Broadcast 'itemBoxSpawned' event for box ${collectedBox.id}`);
-  }, 5000); // Respawn after 5 seconds
 }
 
 // Clean up inactive players every 30 seconds

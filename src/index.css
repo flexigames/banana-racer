@@ -22,4 +22,6 @@ body {
   padding: 10px;
   border-radius: 5px;
   font-size: 18px;
-} 
+}
+
+/* Remove the collision toggle styles that are no longer needed */ 
