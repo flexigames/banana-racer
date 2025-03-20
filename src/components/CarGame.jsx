@@ -4,7 +4,7 @@ import { PerspectiveCamera, Grid } from "@react-three/drei";
 import Car from "./Car";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
-import multiplayerManager from "../lib/multiplayer";
+import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
@@ -114,26 +114,53 @@ const GameLogic = ({ carRef, bananas, onBananaHit }) => {
   return null; // This component doesn't render anything
 };
 
+// New component to handle position updates
+const PlayerUpdater = ({ carRef }) => {
+  const { connected, updatePlayerPosition } = useMultiplayer();
+  
+  useFrame(() => {
+    if (carRef.current && connected) {
+      // Get car data
+      const position = carRef.current.position;
+      const rotation = carRef.current.rotation.y;
+      const speed = carRef.current.speed || 0;
+
+      // Update position via context
+      updatePlayerPosition(
+        { x: position.x, y: position.y, z: position.z },
+        rotation,
+        speed
+      );
+    }
+  });
+  
+  return null;
+};
+
 const CarGame = () => {
   const carRef = useRef();
-  const [remotePlayers, setRemotePlayers] = useState({});
-  const [connected, setConnected] = useState(false);
-  const [bananas, setBananas] = useState([]);
-  const [lastBananaTime, setLastBananaTime] = useState(0);
-  const bananaTimeout = 2000; // 2 seconds cooldown between bananas
-  const [itemBoxes, setItemBoxes] = useState([]);
-  const [playerId, setPlayerId] = useState(null);
-  const [players, setPlayers] = useState({});
-
-  // Add a ref to track if this is the initial mount
-  const isInitialMount = useRef(true);
+  const {
+    connected,
+    playerId,
+    players,
+    bananas,
+    itemBoxes,
+    dropBanana,
+    hitBanana,
+    collectItemBox
+  } = useMultiplayer();
 
   // Handle key press events
   useEffect(() => {
     const handleKeyDown = (event) => {
       // Space bar to drop banana
       if (event.code === "Space") {
-        dropBanana();
+        // Only need to get current car position and rotation
+        if (carRef.current) {
+          const carPosition = carRef.current.position.clone();
+          const carRotation = carRef.current.rotation.y;
+          dropBanana(carPosition, carRotation);
+        }
       }
     };
 
@@ -141,58 +168,7 @@ const CarGame = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
-
-  // Modify the dropBanana function to check banana inventory
-  const dropBanana = () => {
-    if (!carRef.current) return;
-
-    // Check if we can drop a banana (cooldown and inventory)
-    const now = Date.now();
-    if (now - lastBananaTime < bananaTimeout) return;
-
-    // Check if player has bananas
-    if (
-      !players[multiplayerManager.playerId] ||
-      players[multiplayerManager.playerId].bananas <= 0
-    ) {
-      console.log("No bananas available to drop");
-      return;
-    }
-
-    // Update last banana time
-    setLastBananaTime(now);
-
-    // Get car position and rotation
-    const carPosition = carRef.current.position.clone();
-    const carRotation = carRef.current.rotation.y;
-
-    // Calculate position behind the car
-    const distanceBehind = 1; // 1 unit behind the car
-    const offsetX = Math.sin(carRotation) * distanceBehind;
-    const offsetZ = Math.cos(carRotation) * distanceBehind;
-
-    // Position for the banana
-    const bananaPosition = {
-      x: carPosition.x - offsetX,
-      y: 0.1, // Lower to the ground
-      z: carPosition.z - offsetZ,
-    };
-
-    // Send banana drop event to server via multiplayer manager
-    multiplayerManager.dropBanana(bananaPosition, carRotation);
-
-    // Reduce banana count locally (server will confirm)
-    setPlayers((prev) => ({
-      ...prev,
-      [multiplayerManager.playerId]: {
-        ...prev[multiplayerManager.playerId],
-        bananas: prev[multiplayerManager.playerId].bananas - 1,
-      },
-    }));
-
-    console.log("Requested banana drop at", bananaPosition);
-  };
+  }, [dropBanana]);
 
   // Handle banana collision
   const handleBananaHit = (bananaId) => {
@@ -201,165 +177,20 @@ const CarGame = () => {
       carRef.current.triggerSpinOut();
     }
 
-    // Remove the banana locally (server will also broadcast to all clients)
-    setBananas((prev) => prev.filter((b) => b.id !== bananaId));
-
-    // Notify server about banana hit
-    multiplayerManager.hitBanana(bananaId);
+    // Notify context about banana hit
+    hitBanana(bananaId);
   };
 
   // Handle item box collection
-  const handleItemCollect = (playerId) => {
-    console.log(
-      `[CLIENT] Attempting to collect item box with player ID: ${playerId}`
-    );
-
-    // Make sure we're passing the correct player ID
-    const playerIdToSend = multiplayerManager.playerId;
-
-    // Only notify server about item box collection
-    multiplayerManager.collectItemBox(playerIdToSend);
-
-    // The server will handle updating the state and broadcasting to all clients
+  const handleItemCollect = (itemBoxId) => {
+    console.log(`Attempting to collect item box: ${itemBoxId}`);
+    collectItemBox(itemBoxId);
   };
 
-  // Connect to multiplayer server
-  useEffect(() => {
-    console.log("[CLIENT] Component mounted, initializing connection...");
-
-    // Initialize connection logic
-    const initConnection = async () => {
-      try {
-        // Your existing connection code
-        console.log("[CLIENT] Connection initialization started");
-
-        setPlayerId(multiplayerManager.playerId);
-
-        // Initialize player state with the current player
-        setPlayers({
-          [multiplayerManager.playerId]: {
-            bananas: 0,
-          },
-        });
-
-        // Set up event handlers
-        multiplayerManager.onPlayerJoined = (player) => {
-          setRemotePlayers((prev) => ({
-            ...prev,
-            [player.id]: player,
-          }));
-        };
-
-        multiplayerManager.onPlayerLeft = (player) => {
-          setRemotePlayers((prev) => {
-            const newPlayers = { ...prev };
-            delete newPlayers[player.id];
-            return newPlayers;
-          });
-        };
-
-        multiplayerManager.onPlayerUpdated = (player) => {
-          setRemotePlayers((prev) => ({
-            ...prev,
-            [player.id]: player,
-          }));
-        };
-
-        // Set up banana event handlers
-        multiplayerManager.onBananaDropped = (banana) => {
-          console.log("Banana dropped event received", banana);
-          setBananas((prev) => [...prev, banana]);
-        };
-
-        multiplayerManager.onBananaExpired = (bananaId) => {
-          console.log("Banana expired event received", bananaId);
-          setBananas((prev) => prev.filter((b) => b.id !== bananaId));
-        };
-
-        multiplayerManager.onBananaHit = (bananaId, hitByPlayerId) => {
-          console.log(
-            `Banana hit event received: ${bananaId} hit by ${hitByPlayerId}`
-          );
-          setBananas((prev) => prev.filter((b) => b.id !== bananaId));
-
-          // If the current player didn't trigger this hit, play a sound or show visual indicator
-          if (hitByPlayerId !== multiplayerManager.playerId) {
-            console.log(`Player ${hitByPlayerId} hit a banana`);
-            // Optional: Play sound or show notification
-          }
-        };
-
-        // Add handler for item box spawning
-        multiplayerManager.onItemBoxSpawned = (itemBox) => {
-          setItemBoxes((prev) => [...prev, itemBox]);
-        };
-
-        // Add handler for item collection
-        multiplayerManager.onItemCollected = (playerId, itemBoxId) => {
-          console.log(`Player ${playerId} collected item box ${itemBoxId}`);
-
-          // Remove the collected item box
-          setItemBoxes((prev) => prev.filter((box) => box.id !== itemBoxId));
-
-          // If another player collected the item, update their state
-          if (playerId !== multiplayerManager.playerId) {
-            setPlayers((prev) => ({
-              ...prev,
-              [playerId]: {
-                ...(prev[playerId] || {}),
-                bananas: (prev[playerId]?.bananas || 0) + 1,
-              },
-            }));
-          } else {
-            // Update our own banana count
-            setPlayers((prev) => ({
-              ...prev,
-              [playerId]: {
-                ...(prev[playerId] || {}),
-                bananas: (prev[playerId]?.bananas || 0) + 1,
-              },
-            }));
-          }
-        };
-
-        multiplayerManager.onBananaCountUpdated = (playerId, count) => {
-          console.log(`Player ${playerId} banana count updated to ${count}`);
-          setPlayers((prev) => ({
-            ...prev,
-            [playerId]: {
-              ...(prev[playerId] || {}),
-              bananas: count,
-            },
-          }));
-        };
-
-        multiplayerManager.onWorldJoined = (data) => {
-          console.log("[CLIENT] World joined event received in CarGame");
-
-          // Set initial item boxes from server
-          if (data.itemBoxes && data.itemBoxes.length > 0) {
-            console.log("[CLIENT] Received item boxes:", data.itemBoxes.length);
-            setItemBoxes(data.itemBoxes);
-          } else {
-            console.log("[CLIENT] No item boxes received from server");
-          }
-        };
-
-        await multiplayerManager.connect();
-        setConnected(true);
-      } catch (error) {
-        console.error("[CLIENT] Connection initialization error:", error);
-      }
-    };
-
-    initConnection();
-
-    return () => {
-      // Cleanup logic
-      console.log("[CLIENT] Component unmounting, cleaning up connection");
-      multiplayerManager.disconnect();
-    };
-  }, []); // Empty dependency array for initial mount only
+  // Get remote players (all players except current player)
+  const remotePlayers = Object.values(players).filter(
+    (player) => player.id !== playerId
+  );
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
@@ -373,6 +204,9 @@ const CarGame = () => {
           bananas={bananas}
           onBananaHit={handleBananaHit}
         />
+        
+        {/* Player position updater */}
+        <PlayerUpdater carRef={carRef} />
 
         {/* Basic lighting */}
         <ambientLight intensity={0.8} />
@@ -405,7 +239,7 @@ const CarGame = () => {
         <Car ref={carRef} />
 
         {/* Remote players */}
-        {Object.values(remotePlayers).map((player) => (
+        {remotePlayers.map((player) => (
           <RemotePlayer
             key={player.id}
             playerId={player.id}
@@ -423,7 +257,6 @@ const CarGame = () => {
             key={banana.id}
             position={banana.position}
             rotation={banana.rotation}
-            onExpire={() => {}} // No longer needed as server handles expiration
           />
         ))}
 
@@ -433,7 +266,7 @@ const CarGame = () => {
             <ItemBox
               key={box.id}
               position={box.position}
-              onCollect={handleItemCollect}
+              onCollect={() => handleItemCollect(box.id)}
             />
           ))
         ) : (

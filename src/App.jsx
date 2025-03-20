@@ -1,10 +1,13 @@
 import React from 'react';
 import CarGame from './components/CarGame';
+import MultiplayerProvider from './contexts/MultiplayerContext';
 
 const App = () => {
   return (
     <div>
-      <CarGame />
+      <MultiplayerProvider>
+        <CarGame />
+      </MultiplayerProvider>
     </div>
   );
 };
