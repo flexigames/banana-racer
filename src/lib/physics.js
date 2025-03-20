@@ -2,13 +2,14 @@
  * Improved arcade-style vehicle physics
  * @param {Object} movement - Reference to movement state
  * @param {number} delta - Time delta from useFrame
+ * @param {number} boostFactor - Optional boost multiplier (default: 1.0)
  * @returns {Object} Updated movement state
  */
-export const updateVehiclePhysics = (movement, delta) => {
+export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
   // Vehicle characteristics - reduced speeds by half
-  const maxSpeed = 7.5;       // Was 15
+  const maxSpeed = 7.5 * boostFactor;       // Boost affects max speed
   const maxReverseSpeed = 2.5; // Was 5
-  const acceleration = 0.1;    // Was 0.2
+  const acceleration = 0.1 * boostFactor;   // Boost affects acceleration
   const braking = 0.2;         // Was 0.4
   
   // Increased deceleration for quicker stops

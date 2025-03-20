@@ -225,6 +225,36 @@ const CarGame = () => {
   const [prevQuantity, setPrevQuantity] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   
+  // Make car reference available globally for the boost effect
+  useEffect(() => {
+    if (carRef.current) {
+      console.log('[CAR REF] Setting window.playerCarRef with methods:', 
+        Object.keys(carRef.current).filter(key => typeof carRef.current[key] === 'function'));
+      
+      // Debugging check for applyBoost
+      if (carRef.current.applyBoost) {
+        console.log('[CAR REF] applyBoost function exists on carRef.current');
+      } else {
+        console.log('[CAR REF] WARNING: applyBoost function not found on carRef.current');
+      }
+      
+      // Set the global reference
+      window.playerCarRef = carRef.current;
+      
+      // Verify it was set correctly
+      console.log('[CAR REF] Global window.playerCarRef set, has applyBoost:', 
+        !!(window.playerCarRef && window.playerCarRef.applyBoost));
+    } else {
+      console.log('[CAR REF] carRef.current is not available');
+    }
+    
+    // Clean up on unmount
+    return () => {
+      window.playerCarRef = null;
+      console.log('[CAR REF] window.playerCarRef cleared');
+    };
+  }, [carRef.current]);
+  
   // Trigger animation when item quantity changes
   useEffect(() => {
     if (currentItem?.quantity !== prevQuantity) {
@@ -249,6 +279,17 @@ const CarGame = () => {
           return (
             <>
               🍌<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+            </>
+          );
+        }
+      case 'boost':
+        if (item.quantity <= 3) {
+          return '🚀'.repeat(item.quantity);
+        } else {
+          // For more than 3 boosts, show a number
+          return (
+            <>
+              🚀<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
             </>
           );
         }

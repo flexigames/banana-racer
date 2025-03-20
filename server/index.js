@@ -33,6 +33,7 @@ const VEHICLE_MODELS = [
 // Define available item types
 const ITEM_TYPES = {
   BANANA: 'banana',
+  BOOST: 'boost',
 };
 
 // Generate item boxes across the map
@@ -285,6 +286,21 @@ function handleItemUse(playerId, data) {
         io.emit('bananaExpired', { id: bananaId });
       }
     }, 10000);
+  } else if (player.item.type === ITEM_TYPES.BOOST) {
+    // Reduce item quantity
+    player.item.quantity--;
+    console.log(`[ITEM USE] Player ${playerId} boost count reduced to ${player.item.quantity}`);
+
+    // Apply boost (client will handle the actual speed boost)
+    io.emit('playerBoosted', {
+      playerId: playerId
+    });
+    
+    // Confirm item update
+    io.emit('itemUpdated', {
+      playerId,
+      item: player.item
+    });
   }
 }
 
@@ -335,15 +351,20 @@ function handleItemBoxCollection(playerId, itemBoxId) {
   
   console.log(`[ITEM] Player ${playerId} collected item box ${itemBoxId}`);
   
-  // Give player a random quantity (1-5) of bananas
-  const quantity = Math.floor(Math.random() * 5) + 1;
-  // Always replace the current item with bananas
+  // Randomly decide which item to give (banana or boost)
+  const itemTypeRoll = Math.random();
+  const itemType = itemTypeRoll < 0.5 ? ITEM_TYPES.BANANA : ITEM_TYPES.BOOST;
+  
+  // Give player a random quantity (1-3) of the selected item
+  const quantity = Math.floor(Math.random() * 3) + 1;
+  
+  // Update player's item
   player.item = { 
-    type: ITEM_TYPES.BANANA, 
+    type: itemType, 
     quantity: quantity 
   };
   
-  console.log(`[ITEM] Player ${playerId} received ${quantity} bananas`);
+  console.log(`[ITEM] Player ${playerId} received ${quantity} ${itemType}s`);
   
   // Remove the item box temporarily
   const collectedBox = itemBoxes.splice(itemBoxIndex, 1)[0];

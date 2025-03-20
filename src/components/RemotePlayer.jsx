@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import VehicleModel from './VehicleModel';
@@ -10,6 +10,7 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0, color, vehicle 
   const currentSpeed = useRef(speed);
   const lastPosition = useRef(new THREE.Vector3(position.x, position.y, position.z));
   const lastUpdateTime = useRef(Date.now());
+  const [boosting, setBoosting] = useState(false);
   
   // Convert the server color to a THREE.Color object
   const playerColor = useMemo(() => {
@@ -51,6 +52,15 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0, color, vehicle 
     targetPosition.current.set(position.x, position.y, position.z);
     targetRotation.current = rotation;
     currentSpeed.current = speed;
+    
+    // Set boosting state based on speed increase
+    if (speed > 10) {
+      setBoosting(true);
+      // Auto-disable boosting after 3 seconds (same as the player car)
+      setTimeout(() => {
+        setBoosting(false);
+      }, 3000);
+    }
     
   }, [position, rotation, speed]);
   
@@ -125,6 +135,29 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0, color, vehicle 
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
       />
+      
+      {/* Show boost visual effect when boosting */}
+      {boosting && (
+        <>
+          {/* Main boost cone - position behind the car */}
+          <mesh position={[0, 0.15, -1.2]} rotation={[Math.PI/2, 0, 0]}>
+            <coneGeometry args={[0.2, 0.8, 16]} />
+            <meshBasicMaterial color="#3399ff" transparent opacity={0.7} />
+          </mesh>
+          
+          {/* Inner boost flame */}
+          <mesh position={[0, 0.15, -1.0]} rotation={[Math.PI/2, 0, 0]}>
+            <coneGeometry args={[0.12, 0.5, 16]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
+          </mesh>
+          
+          {/* Outer boost trail particles */}
+          <mesh position={[0, 0.15, -1.4]} rotation={[Math.PI/2, 0, 0]}>
+            <coneGeometry args={[0.25, 1.0, 16]} />
+            <meshBasicMaterial color="#66ccff" transparent opacity={0.4} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 };

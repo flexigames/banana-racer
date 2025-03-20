@@ -221,6 +221,34 @@ export const MultiplayerProvider = ({ children }) => {
           setBananas(prev => prev.filter(b => b.id !== data.id));
         });
 
+        // Boost event
+        socket.current.on("playerBoosted", (data) => {
+          console.log(`[BOOST EVENT] Player ${data.playerId} activated boost`);
+          console.log(`[BOOST DEBUG] Local player ID: ${playerId}`);
+          console.log(`[BOOST DEBUG] playerCarRef exists: ${!!window.playerCarRef}`);
+          console.log(`[BOOST DEBUG] applyBoost function exists: ${!!(window.playerCarRef && window.playerCarRef.applyBoost)}`);
+          
+          // Update the player's boosting state in our players object
+          setPlayers(prev => {
+            if (!prev[data.playerId]) return prev;
+            
+            return {
+              ...prev,
+              [data.playerId]: {
+                ...prev[data.playerId],
+                // Force a high speed to trigger the boost visual in RemotePlayer
+                speed: Math.max(prev[data.playerId].speed, 15)
+              }
+            };
+          });
+          
+          // If this is the local player, trigger the boost effect
+          if (data.playerId === playerId && window.playerCarRef && window.playerCarRef.applyBoost) {
+            console.log(`[BOOST EVENT] Applying boost effect to local player's car`);
+            window.playerCarRef.applyBoost();
+          }
+        });
+
         // Item box events
         socket.current.on('itemCollected', (data) => {
           console.log(`Player ${data.playerId} collected item box ${data.itemBoxId}`);
@@ -360,23 +388,44 @@ export const MultiplayerProvider = ({ children }) => {
     // Update last item use time
     setLastItemUseTime(now);
 
-    // Calculate position behind the car
-    const distanceBehind = 1; // 1 unit behind the car
-    const offsetX = Math.sin(carRotation) * distanceBehind;
-    const offsetZ = Math.cos(carRotation) * distanceBehind;
+    // Different handling based on item type
+    if (playerData.item.type === 'boost') {
+      console.log("[ITEM USE] Using boost item");
+      
+      // Send item use event to server - no need for position for boost items
+      socket.current.emit("useItem", {
+        // We still need to send position data even for boost items to satisfy the server API
+        position: carPosition,
+        rotation: carRotation,
+        // But no need to calculate special positions for boost
+      });
+      
+      // Apply boost locally - the server will confirm and broadcast
+      if (window.playerCarRef && window.playerCarRef.applyBoost) {
+        console.log("[ITEM USE] Applying boost locally");
+        window.playerCarRef.applyBoost();
+      } else {
+        console.log("[ITEM USE] WARNING: Could not apply boost locally, playerCarRef missing or invalid");
+      }
+    } else {
+      // This is a banana - calculate position behind the car
+      const distanceBehind = 1; // 1 unit behind the car
+      const offsetX = Math.sin(carRotation) * distanceBehind;
+      const offsetZ = Math.cos(carRotation) * distanceBehind;
 
-    // Position for the banana
-    const bananaPosition = {
-      x: carPosition.x - offsetX,
-      y: 0.1, // Lower to the ground
-      z: carPosition.z - offsetZ,
-    };
+      // Position for the banana
+      const bananaPosition = {
+        x: carPosition.x - offsetX,
+        y: 0.1, // Lower to the ground
+        z: carPosition.z - offsetZ,
+      };
 
-    // Send item use event to server
-    socket.current.emit("useItem", {
-      position: bananaPosition,
-      rotation: carRotation,
-    });
+      // Send item use event to server
+      socket.current.emit("useItem", {
+        position: bananaPosition,
+        rotation: carRotation,
+      });
+    }
 
     // Reduce item quantity locally (server will confirm)
     setPlayers((prev) => {
@@ -395,7 +444,7 @@ export const MultiplayerProvider = ({ children }) => {
       };
     });
 
-    console.log("Requested item use at", bananaPosition);
+    console.log(`Requested item use (${playerData.item.type}) at position:`, carPosition);
     return true;
   };
 

@@ -11,9 +11,12 @@ const Car = forwardRef((props, ref) => {
   const car = useRef();
   const lastUpdateTime = useRef(0);
   const [spinningOut, setSpinningOut] = useState(false);
+  const [boosting, setBoosting] = useState(false);
   const spinTimer = useRef(null);
+  const boostTimer = useRef(null);
   const spinDirection = useRef(1); // 1 or -1 for spin direction
   const spinSpeed = useRef(0);
+  const boostFactor = useRef(1); // Multiplier for speed while boosting
   
   // Get multiplayer context
   const { 
@@ -112,6 +115,49 @@ const Car = forwardRef((props, ref) => {
     console.log("Hit a banana! Spinning out for 2 seconds");
   };
 
+  // Function to apply a speed boost
+  const applyBoost = () => {
+    if (boosting) return; // Already boosting
+    
+    // Set boosting state
+    setBoosting(true);
+    
+    // Apply a stronger boost factor - 3.0 is more noticeable
+    boostFactor.current = 3.0;
+    
+    // Add an immediate speed boost to make the effect more pronounced
+    movement.current.speed += 8;
+    
+    // Force the forward control to maximum for a short time to ensure acceleration
+    const originalForward = movement.current.forward;
+    movement.current.forward = 1.0;
+    
+    // Reset forward control after a short delay
+    setTimeout(() => {
+      // Don't reset to 0, respect the current user input
+      if (movement.current.forward === 1.0) {
+        movement.current.forward = originalForward;
+      }
+    }, 300);
+    
+    // Clear any existing timer
+    if (boostTimer.current) {
+      clearTimeout(boostTimer.current);
+    }
+    
+    // Set timeout to end boost effect after 3 seconds
+    boostTimer.current = setTimeout(() => {
+      setBoosting(false);
+      boostFactor.current = 1.0; // Reset boost
+      boostTimer.current = null;
+      
+      // Show a little deceleration effect when boost ends
+      movement.current.speed *= 0.8;
+    }, 3000);
+    
+    console.log("Boost activated! Speed increased for 3 seconds");
+  };
+
   // Track spinout progress
   const spinProgress = useRef(0);
   const MAX_SPIN_RATE = 10; // Maximum spin rate
@@ -139,8 +185,8 @@ const Car = forwardRef((props, ref) => {
       // Reset spin progress when not spinning
       spinProgress.current = 0;
       
-      // Normal driving physics
-      updateVehiclePhysics(movement.current, delta);
+      // Normal driving physics with boost adjustments
+      updateVehiclePhysics(movement.current, delta, boosting ? boostFactor.current : 1.0);
       updateObjectPosition(car.current, movement.current, delta);
     }
     
@@ -194,7 +240,9 @@ const Car = forwardRef((props, ref) => {
     ...car.current,
     teleportToPlayer,
     triggerSpinOut,
-    isSpinningOut: () => spinningOut
+    applyBoost,
+    isSpinningOut: () => spinningOut,
+    isBoosting: () => boosting
   }));
 
   return (
@@ -205,6 +253,28 @@ const Car = forwardRef((props, ref) => {
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
       />
+      {/* Show boost visual effect when boosting */}
+      {boosting && (
+        <>
+          {/* Main boost cone - position behind the car */}
+          <mesh position={[0, 0.15, -1.2]} rotation={[Math.PI/2, 0, 0]}>
+            <coneGeometry args={[0.2, 0.8, 16]} />
+            <meshBasicMaterial color="#3399ff" transparent opacity={0.7} />
+          </mesh>
+          
+          {/* Inner boost flame */}
+          <mesh position={[0, 0.15, -1.0]} rotation={[Math.PI/2, 0, 0]}>
+            <coneGeometry args={[0.12, 0.5, 16]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
+          </mesh>
+          
+          {/* Outer boost trail particles */}
+          <mesh position={[0, 0.15, -1.4]} rotation={[Math.PI/2, 0, 0]}>
+            <coneGeometry args={[0.25, 1.0, 16]} />
+            <meshBasicMaterial color="#66ccff" transparent opacity={0.4} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 });
