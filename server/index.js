@@ -30,6 +30,11 @@ const VEHICLE_MODELS = [
   'vehicle-speedster',
 ];
 
+// Define available item types
+const ITEM_TYPES = {
+  BANANA: 'banana',
+};
+
 // Generate item boxes across the map
 function generateItemBoxes(count = 20) {
   console.log(`[ITEM] Generating ${count} item boxes`);
@@ -92,7 +97,7 @@ io.on('connection', (socket) => {
     color: generateRandomColor(),
     vehicle: selectRandomVehicle(),
     lastUpdate: Date.now(),
-    bananas: 3
+    item: { type: ITEM_TYPES.BANANA, quantity: 0 } // Replace bananas with item object
   };
 
   console.log(`Player ${playerId} connected (socket: ${socket.id}), assigned vehicle: ${players[playerId].vehicle}`);
@@ -102,7 +107,7 @@ io.on('connection', (socket) => {
     id: playerId,
     color: players[playerId].color,
     vehicle: players[playerId].vehicle,
-    bananas: players[playerId].bananas
+    item: players[playerId].item // Send item instead of bananas
   });
 
   // Automatically join the global world
@@ -113,9 +118,9 @@ io.on('connection', (socket) => {
     handlePlayerUpdate(playerId, data);
   });
 
-  // Handle banana drops
-  socket.on('dropBanana', (data) => {
-    handleBananaDrop(playerId, data);
+  // Handle item use (banana drop)
+  socket.on('useItem', (data) => {
+    handleItemUse(playerId, data);
   });
 
   // Handle banana collisions
@@ -167,7 +172,7 @@ function initializePlayer(socket, playerId) {
       speed: p.speed,
       color: p.color,
       vehicle: p.vehicle,
-      bananas: p.bananas
+      item: p.item // Send item instead of bananas
     }));
     
   // Convert itemBoxes to the format expected by the client
@@ -197,7 +202,7 @@ function initializePlayer(socket, playerId) {
       speed: player.speed,
       color: player.color,
       vehicle: player.vehicle,
-      bananas: player.bananas
+      item: player.item
     }
   });
   
@@ -226,53 +231,61 @@ function handlePlayerUpdate(playerId, data) {
 }
 
 function handleBananaDrop(playerId, data) {
+  // Replacing this function with handleItemUse
+}
+
+// New function to handle using items
+function handleItemUse(playerId, data) {
   const player = players[playerId];
-  console.log(`[BANANA DROP] Player ${playerId} attempting to drop banana`);
+  console.log(`[ITEM USE] Player ${playerId} attempting to use item`);
   
   if (!player) {
-    console.log(`[BANANA DROP] Player ${playerId} not found, cannot drop banana`);
+    console.log(`[ITEM USE] Player ${playerId} not found`);
     return;
   }
 
-  // Check if player has bananas
-  if (!players[playerId] || players[playerId].bananas <= 0) {
-    console.log(`[BANANA DROP] Player ${playerId} has no bananas left`);
-    return; // Don't allow dropping if no bananas
+  // Check if player has an item with quantity > 0
+  if (!player.item || player.item.quantity <= 0) {
+    console.log(`[ITEM USE] Player ${playerId} has no items to use`);
+    return;
   }
 
-  // Reduce player's banana count
-  players[playerId].bananas--;
-  console.log(`[BANANA DROP] Player ${playerId} banana count reduced to ${players[playerId].bananas}`);
+  // Item use logic based on type
+  if (player.item.type === ITEM_TYPES.BANANA) {
+    // Reduce item quantity
+    player.item.quantity--;
+    console.log(`[ITEM USE] Player ${playerId} banana count reduced to ${player.item.quantity}`);
 
-  // Create banana with the existing logic
-  const bananaId = generateBananaId();
-  const banana = {
-    id: bananaId,
-    position: data.position,
-    rotation: data.rotation || 0,
-    droppedBy: playerId,
-    droppedAt: Date.now()
-  };
-  
-  bananas[bananaId] = banana;
-  console.log(`[BANANA DROP] Created banana ${bananaId}, total bananas: ${Object.keys(bananas).length}`);
+    // Create banana with the existing logic
+    const bananaId = generateBananaId();
+    const banana = {
+      id: bananaId,
+      position: data.position,
+      rotation: data.rotation || 0,
+      droppedBy: playerId,
+      droppedAt: Date.now()
+    };
+    
+    bananas[bananaId] = banana;
+    console.log(`[ITEM USE] Created banana ${bananaId}, total bananas: ${Object.keys(bananas).length}`);
 
-  // Broadcast banana drop to all players
-  io.emit('bananaDropped', banana);
-  
-  // Confirm banana count update
-  io.emit('bananaCountUpdated', {
-    playerId,
-    count: players[playerId].bananas
-  });
-  
-  // Set expiration timer
-  setTimeout(() => {
-    if (bananas[bananaId]) {
-      delete bananas[bananaId];
-      io.emit('bananaExpired', { id: bananaId });
-    }
-  }, 10000);
+    // Broadcast banana drop to all players
+    io.emit('bananaDropped', banana);
+    
+    // Confirm item update
+    io.emit('itemUpdated', {
+      playerId,
+      item: player.item
+    });
+    
+    // Set expiration timer
+    setTimeout(() => {
+      if (bananas[bananaId]) {
+        delete bananas[bananaId];
+        io.emit('bananaExpired', { id: bananaId });
+      }
+    }, 10000);
+  }
 }
 
 function handleBananaHit(playerId, bananaId) {
@@ -322,9 +335,15 @@ function handleItemBoxCollection(playerId, itemBoxId) {
   
   console.log(`[ITEM] Player ${playerId} collected item box ${itemBoxId}`);
   
-  // Update player's banana count
-  player.bananas = (player.bananas || 0) + 1;
-  console.log(`[ITEM] Player ${playerId} banana count updated to ${player.bananas}`);
+  // Give player a random quantity (1-5) of bananas
+  const quantity = Math.floor(Math.random() * 5) + 1;
+  // Always replace the current item with bananas
+  player.item = { 
+    type: ITEM_TYPES.BANANA, 
+    quantity: quantity 
+  };
+  
+  console.log(`[ITEM] Player ${playerId} received ${quantity} bananas`);
   
   // Remove the item box temporarily
   const collectedBox = itemBoxes.splice(itemBoxIndex, 1)[0];
@@ -337,12 +356,12 @@ function handleItemBoxCollection(playerId, itemBoxId) {
   });
   console.log(`[ITEM] Broadcast 'itemCollected' event for box ${itemBoxId}`);
   
-  // Confirm banana count update to all players
-  io.emit('bananaCountUpdated', {
+  // Confirm item update to all players
+  io.emit('itemUpdated', {
     playerId,
-    count: player.bananas
+    item: player.item
   });
-  console.log(`[ITEM] Broadcast 'bananaCountUpdated' event for player ${playerId}`);
+  console.log(`[ITEM] Broadcast 'itemUpdated' event for player ${playerId}`);
   
   // Schedule respawn after 15 seconds
   setTimeout(() => {
