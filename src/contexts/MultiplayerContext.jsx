@@ -30,6 +30,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
   const [itemBoxes, setItemBoxes] = useState([]);
+  const [cannonballs, setCannonballs] = useState([]);
   const [lastItemUseTime, setLastItemUseTime] = useState(0);
   const itemUseTimeout = 20;
 
@@ -144,6 +145,12 @@ export const MultiplayerProvider = ({ children }) => {
           // Initialize existing bananas
           if (data.bananas && data.bananas.length > 0) {
             setBananas(data.bananas);
+          }
+          
+          // Initialize existing cannonballs
+          if (data.cannonballs && data.cannonballs.length > 0) {
+            console.log("[CONTEXT] Received cannonballs:", data.cannonballs.length);
+            setCannonballs(data.cannonballs);
           }
           
           // Initialize existing item boxes
@@ -296,6 +303,28 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.on('itemBoxSpawned', ({itemBox}) => {
           console.log(`New item box spawned at position:`, itemBox.position);
           setItemBoxes(prev => [...prev, itemBox]);
+        });
+
+        // Cannon events
+        socket.current.on("cannonFired", (data) => {
+          console.log(`New bomb fired by player ${data.firedBy} at position:`, data.position);
+          setCannonballs(prev => [...prev, data]);
+        });
+
+        socket.current.on("cannonExpired", (data) => {
+          console.log(`Bomb ${data.id} expired`);
+          setCannonballs(prev => prev.filter(c => c.id !== data.id));
+        });
+
+        socket.current.on("cannonHit", (data) => {
+          console.log(`Bomb ${data.id} hit player ${data.hitPlayer}`);
+          setCannonballs(prev => prev.filter(c => c.id !== data.id));
+          
+          // If this is the local player getting hit, trigger spinout
+          if (data.hitPlayer === playerId && window.playerCarRef && window.playerCarRef.triggerSpinOut) {
+            console.log(`[BOMB HIT] Triggering spinout for local player`);
+            window.playerCarRef.triggerSpinOut();
+          }
         });
 
         // Error handling
@@ -475,6 +504,21 @@ export const MultiplayerProvider = ({ children }) => {
     });
   };
 
+  // Cannon functions
+  const hitCannon = (cannonId) => {
+    if (!connected || !socket.current) return;
+    
+    console.log(`[DEBUG] Sending hitCannon event for bomb ${cannonId}`);
+    
+    // Remove the bomb locally (server will also broadcast to all clients)
+    setCannonballs((prev) => prev.filter((c) => c.id !== cannonId));
+
+    // Notify server about bomb hit
+    socket.current.emit("hitCannon", {
+      cannonId
+    });
+  };
+
   // Change server URL
   const changeServerUrl = (useLocalServer = false) => {
     const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
@@ -492,6 +536,7 @@ export const MultiplayerProvider = ({ children }) => {
       setPlayers({});
       setBananas([]);
       setItemBoxes([]);
+      setCannonballs([]);
       
       // localStorage for persistence
       if (useLocalServer) {
@@ -512,10 +557,12 @@ export const MultiplayerProvider = ({ children }) => {
     playerId,
     players,
     bananas,
+    cannonballs,
     itemBoxes,
     updatePlayerPosition,
     useItem,
     hitBanana,
+    hitCannon,
     collectItemBox,
     changeServerUrl
   };

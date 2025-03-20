@@ -4,11 +4,12 @@ import { PerspectiveCamera, Grid } from "@react-three/drei";
 import Car from "./Car";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
+import Bomb from "./Cannonball";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
-import { BANANA_COLLISION_RADIUS, ITEM_BOX_COLLISION_RADIUS } from "../constants";
+import { BANANA_COLLISION_RADIUS, ITEM_BOX_COLLISION_RADIUS, CANNONBALL_COLLISION_RADIUS } from "../constants";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -109,6 +110,8 @@ const GameLogic = ({ carRef, bananas, itemBoxes, onBananaHit, onItemBoxCollect }
       }
     });
     
+    // Removed direct bomb collision detection - bombs only affect players when they explode
+    
     // Check collision with each item box
     itemBoxes.forEach((box) => {
       const boxPosition = new THREE.Vector3(
@@ -164,6 +167,7 @@ const CarGame = () => {
     playerId,
     players,
     bananas,
+    cannonballs,
     itemBoxes,
     useItem,
     hitBanana,
@@ -293,6 +297,17 @@ const CarGame = () => {
             </>
           );
         }
+      case 'cannon':
+        if (item.quantity <= 3) {
+          return '💣'.repeat(item.quantity);
+        } else {
+          // For more than 3 bombs, show a number
+          return (
+            <>
+              💣<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+            </>
+          );
+        }
       default:
         return `${item.type}: ${item.quantity}`;
     }
@@ -377,6 +392,17 @@ const CarGame = () => {
             key={banana.id}
             position={banana.position}
             rotation={banana.rotation}
+          />
+        ))}
+
+        {/* Bombs */}
+        {cannonballs.map((bomb) => (
+          <Bomb
+            key={bomb.id}
+            id={bomb.id}
+            position={bomb.position}
+            velocity={bomb.velocity}
+            firedAt={bomb.firedAt}
           />
         ))}
 

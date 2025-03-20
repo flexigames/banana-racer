@@ -20,6 +20,9 @@ const players = {};
 // Store active bananas - change from array to object for easier lookup
 const bananas = {};
 
+// Store active cannonballs
+const cannonballs = {};
+
 // Define available vehicle models (from actual files in assets)
 const VEHICLE_MODELS = [
   'vehicle-racer',
@@ -34,6 +37,7 @@ const VEHICLE_MODELS = [
 const ITEM_TYPES = {
   BANANA: 'banana',
   BOOST: 'boost',
+  CANNON: 'cannon',
 };
 
 // Generate item boxes across the map
@@ -84,6 +88,11 @@ function generateBananaId() {
   return `banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Generate a random ID for cannonballs
+function generateCannonballId() {
+  return `cannon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 console.log(`Starting Socket.IO server on port ${PORT}`);
 
 io.on('connection', (socket) => {
@@ -127,6 +136,11 @@ io.on('connection', (socket) => {
   // Handle banana collisions
   socket.on('hitBanana', (data) => {
     handleBananaHit(playerId, data.bananaId);
+  });
+
+  // Handle cannon collisions
+  socket.on('hitCannon', (data) => {
+    handleCannonHit(playerId, data.cannonId);
   });
 
   // Handle item box collection
@@ -189,6 +203,7 @@ function initializePlayer(socket, playerId) {
   socket.emit('worldJoined', { 
     players: existingPlayers,
     bananas: Object.values(bananas), // Convert from object to array
+    cannonballs: Object.values(cannonballs), // Send active cannonballs
     itemBoxes: itemBoxesForClient
   });
   
@@ -301,6 +316,52 @@ function handleItemUse(playerId, data) {
       playerId,
       item: player.item
     });
+  } else if (player.item.type === ITEM_TYPES.CANNON) {
+    // Reduce item quantity
+    player.item.quantity--;
+    console.log(`[ITEM USE] Player ${playerId} cannon count reduced to ${player.item.quantity}`);
+    
+    // Create a cannon ball (using a unique ID similar to bananas)
+    const cannonId = generateCannonballId();
+    
+    // Set default velocity if not provided (forward direction)
+    const defaultVelocity = {
+      x: Math.sin(data.rotation || 0) * 30,
+      y: 0,
+      z: Math.cos(data.rotation || 0) * 30
+    };
+    
+    // Cannon projectile data
+    const cannonData = {
+      id: cannonId,
+      position: data.position,
+      rotation: data.rotation || 0,
+      velocity: data.velocity || defaultVelocity,
+      firedBy: playerId,
+      firedAt: Date.now()
+    };
+    
+    // Store the cannonball
+    cannonballs[cannonId] = cannonData;
+    console.log(`[ITEM USE] Created cannonball ${cannonId} with velocity ${JSON.stringify(cannonData.velocity)}`);
+    
+    // Broadcast cannon fire to all players
+    io.emit('cannonFired', cannonData);
+    
+    // Confirm item update
+    io.emit('itemUpdated', {
+      playerId,
+      item: player.item
+    });
+    
+    // Set expiration timer for the cannonball (10 seconds)
+    setTimeout(() => {
+      if (cannonballs[cannonId]) {
+        delete cannonballs[cannonId];
+        io.emit('cannonExpired', { id: cannonId });
+        console.log(`[ITEM USE] Cannonball ${cannonId} expired`);
+      }
+    }, 10000);
   }
 }
 
@@ -334,6 +395,36 @@ function handleBananaHit(playerId, bananaId) {
   console.log(`[BANANA HIT] Successfully processed: Player ${playerId} hit banana ${bananaId}`);
 }
 
+// Add a new function to handle cannon hits
+function handleCannonHit(playerId, cannonId) {
+  const player = players[playerId];
+  console.log(`[CANNON HIT] Processing hit from cannon ${cannonId} on player ${playerId}`);
+  
+  if (!player) {
+    console.log(`[CANNON HIT] Player ${playerId} not found!`);
+    return;
+  }
+  
+  // Check if the cannonball exists
+  if (!cannonballs[cannonId]) {
+    console.log(`[CANNON HIT] Cannonball ${cannonId} not found for hit on player ${playerId}`);
+    return;
+  }
+  
+  // Remove the cannonball
+  const hitCannonball = cannonballs[cannonId];
+  delete cannonballs[cannonId];
+  
+  // Notify all players about the cannon hit
+  io.emit('cannonHit', { 
+    id: cannonId,
+    hitPlayer: playerId,
+    firedBy: hitCannonball.firedBy
+  });
+  
+  console.log(`[CANNON HIT] Successfully processed: Cannon ${cannonId} fired by ${hitCannonball.firedBy} hit player ${playerId}`);
+}
+
 // Add a new function to handle item box collection
 function handleItemBoxCollection(playerId, itemBoxId) {
   const player = players[playerId];
@@ -351,9 +442,18 @@ function handleItemBoxCollection(playerId, itemBoxId) {
   
   console.log(`[ITEM] Player ${playerId} collected item box ${itemBoxId}`);
   
-  // Randomly decide which item to give (banana or boost)
+  // Randomly decide which item to give (banana, boost, or cannon)
   const itemTypeRoll = Math.random();
-  const itemType = itemTypeRoll < 0.5 ? ITEM_TYPES.BANANA : ITEM_TYPES.BOOST;
+  let itemType;
+  
+  // 1/3 chance for each item type
+  if (itemTypeRoll < 0.33) {
+    itemType = ITEM_TYPES.BANANA;
+  } else if (itemTypeRoll < 0.66) {
+    itemType = ITEM_TYPES.BOOST;
+  } else {
+    itemType = ITEM_TYPES.CANNON;
+  }
   
   // Give player a random quantity (1-3) of the selected item
   const quantity = Math.floor(Math.random() * 3) + 1;
