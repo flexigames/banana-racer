@@ -30,8 +30,8 @@ export const MultiplayerProvider = ({ children }) => {
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
   const [itemBoxes, setItemBoxes] = useState([]);
-  const [lastBananaTime, setLastBananaTime] = useState(0);
-  const bananaTimeout = 20;
+  const [lastItemUseTime, setLastItemUseTime] = useState(0);
+  const itemUseTimeout = 20;
 
   // Server URL
   const [serverUrl, setServerUrl] = useState(() => {
@@ -48,28 +48,6 @@ export const MultiplayerProvider = ({ children }) => {
   // Initialize socket connection
   useEffect(() => {
     console.log("[CONTEXT] Initializing connection to", serverUrl);
-
-    // Create a helper function to ensure the local player is in the players state
-    const ensureLocalPlayerState = () => {
-      if (playerId) {
-        setPlayers(prev => {
-          if (!prev[playerId]) {
-            // If local player isn't in the list, add them
-            return {
-              ...prev,
-              [playerId]: {
-                id: playerId,
-                color: playerColor,
-                vehicle: playerVehicle,
-                bananas: 3,
-                speed: 0
-              }
-            };
-          }
-          return prev;
-        });
-      }
-    };
 
     const connect = async () => {
       try {
@@ -108,14 +86,14 @@ export const MultiplayerProvider = ({ children }) => {
           setPlayerColor(data.color);
           setPlayerVehicle(data.vehicle || "vehicle-racer");
           
-          // Update players state with initial banana count
+          // Update players state with initial item instead of banana count
           setPlayers(prev => ({
             ...prev,
             [data.id]: {
               id: data.id,
               color: data.color,
               vehicle: data.vehicle || "vehicle-racer",
-              bananas: data.bananas || 0,
+              item: data.item || { type: 'banana', quantity: 0 },
               speed: 0
             }
           }));
@@ -125,8 +103,8 @@ export const MultiplayerProvider = ({ children }) => {
             data.color,
             "vehicle:",
             data.vehicle || "vehicle-racer",
-            "bananas:",
-            data.bananas
+            "item:",
+            data.item
           );
         });
 
@@ -146,7 +124,7 @@ export const MultiplayerProvider = ({ children }) => {
               speed: typeof player.speed === "undefined" ? 0 : player.speed,
               color: player.color || { h: 0, s: 0.8, l: 0.5 },
               vehicle: player.vehicle || "vehicle-racer",
-              bananas: player.bananas || 0
+              item: player.item || { type: 'banana', quantity: 0 }
             };
           });
           
@@ -156,7 +134,7 @@ export const MultiplayerProvider = ({ children }) => {
               id: playerId,
               color: playerColor,
               vehicle: playerVehicle,
-              bananas: 3, // Use default value from server
+              item: { type: 'banana', quantity: 0 }, // Use default item
               speed: 0
             };
           }
@@ -185,7 +163,7 @@ export const MultiplayerProvider = ({ children }) => {
             speed: typeof newPlayer.speed === "undefined" ? 0 : newPlayer.speed,
             color: newPlayer.color || { h: 0, s: 0.8, l: 0.5 },
             vehicle: newPlayer.vehicle || "vehicle-racer",
-            bananas: newPlayer.bananas || 0
+            item: newPlayer.item || { type: 'banana', quantity: 0 }
           };
           
           setPlayers(prev => ({
@@ -250,21 +228,21 @@ export const MultiplayerProvider = ({ children }) => {
           // Remove the collected item box
           setItemBoxes(prev => prev.filter(box => box.id !== data.itemBoxId));
           
-          // Update player's banana count
+          // Update player's item count
           setPlayers(prev => ({
             ...prev,
             [data.playerId]: {
               ...(prev[data.playerId] || {}),
-              bananas: (prev[data.playerId]?.bananas || 0) + 1
+              item: data.item
             }
           }));
         });
         
-        socket.current.on('bananaCountUpdated', (data) => {
-          console.log(`Player ${data.playerId} banana count updated to ${data.count}`);
+        socket.current.on('itemUpdated', (data) => {
+          console.log(`Player ${data.playerId} item updated:`, data.item);
           
           setPlayers(prev => {
-            // Get the existing player data
+            // Make sure player exists
             const existingPlayer = prev[data.playerId] || {
               id: data.playerId,
               color: data.playerId === playerId ? playerColor : { h: 0, s: 0.8, l: 0.5 },
@@ -276,14 +254,14 @@ export const MultiplayerProvider = ({ children }) => {
               ...prev,
               [data.playerId]: {
                 ...existingPlayer,
-                bananas: data.count
+                item: data.item
               }
             };
           });
           
           // If this is the local player, log additional info for debugging
           if (data.playerId === playerId) {
-            console.log(`[LOCAL PLAYER] Banana count updated to ${data.count}`);
+            console.log(`[LOCAL PLAYER] Item updated to:`, data.item);
           }
         });
 
@@ -334,7 +312,7 @@ export const MultiplayerProvider = ({ children }) => {
               id: playerId,
               color: playerColor,
               vehicle: playerVehicle,
-              bananas: 3,
+              item: { type: 'banana', quantity: 0 },
               speed: 0
             }
           };
@@ -355,15 +333,15 @@ export const MultiplayerProvider = ({ children }) => {
     }
   };
 
-  // Banana functions
-  const dropBanana = (carPosition, carRotation) => {
+  // Item functions
+  const useItem = (carPosition, carRotation) => {
     if (!connected || !socket.current) return false;
     
-    // Check if we can drop a banana (cooldown and inventory)
+    // Check if we can use an item (cooldown)
     const now = Date.now();
-    if (now - lastBananaTime < bananaTimeout) return false;
+    if (now - lastItemUseTime < itemUseTimeout) return false;
 
-    // Check if player has bananas
+    // Check if player has items
     if (!playerId) return false;
     
     // Make sure the player exists in the state
@@ -373,14 +351,14 @@ export const MultiplayerProvider = ({ children }) => {
       return false;
     }
     
-    // Check banana count
-    if (playerData.bananas <= 0) {
-      console.log("No bananas available to drop");
+    // Check item quantity
+    if (!playerData.item || playerData.item.quantity <= 0) {
+      console.log("No items available to use");
       return false;
     }
 
-    // Update last banana time
-    setLastBananaTime(now);
+    // Update last item use time
+    setLastItemUseTime(now);
 
     // Calculate position behind the car
     const distanceBehind = 1; // 1 unit behind the car
@@ -394,22 +372,30 @@ export const MultiplayerProvider = ({ children }) => {
       z: carPosition.z - offsetZ,
     };
 
-    // Send banana drop event to server
-    socket.current.emit("dropBanana", {
+    // Send item use event to server
+    socket.current.emit("useItem", {
       position: bananaPosition,
       rotation: carRotation,
     });
 
-    // Reduce banana count locally (server will confirm)
-    setPlayers((prev) => ({
-      ...prev,
-      [playerId]: {
-        ...prev[playerId],
-        bananas: prev[playerId].bananas - 1,
-      },
-    }));
+    // Reduce item quantity locally (server will confirm)
+    setPlayers((prev) => {
+      const playerData = prev[playerId];
+      if (!playerData || !playerData.item) return prev;
 
-    console.log("Requested banana drop at", bananaPosition);
+      return {
+        ...prev,
+        [playerId]: {
+          ...playerData,
+          item: {
+            ...playerData.item,
+            quantity: playerData.item.quantity - 1
+          }
+        }
+      };
+    });
+
+    console.log("Requested item use at", bananaPosition);
     return true;
   };
 
@@ -471,24 +457,22 @@ export const MultiplayerProvider = ({ children }) => {
     return newUrl;
   };
 
+  // Provide context value
+  const contextValue = {
+    connected,
+    playerId,
+    players,
+    bananas,
+    itemBoxes,
+    updatePlayerPosition,
+    useItem,
+    hitBanana,
+    collectItemBox,
+    changeServerUrl
+  };
+
   return (
-    <MultiplayerContext.Provider
-      value={{
-        connected,
-        playerId,
-        playerColor,
-        playerVehicle,
-        players,
-        bananas,
-        itemBoxes,
-        serverUrl,
-        changeServerUrl,
-        updatePlayerPosition,
-        dropBanana,
-        hitBanana,
-        collectItemBox,
-      }}
-    >
+    <MultiplayerContext.Provider value={contextValue}>
       {children}
     </MultiplayerContext.Provider>
   );

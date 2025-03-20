@@ -165,7 +165,7 @@ const CarGame = () => {
     players,
     bananas,
     itemBoxes,
-    dropBanana,
+    useItem,
     hitBanana,
     collectItemBox,
   } = useMultiplayer();
@@ -173,13 +173,13 @@ const CarGame = () => {
   // Handle key press events
   useEffect(() => {
     const handleKeyDown = (event) => {
-      // Space bar to drop banana
+      // Space bar to use item
       if (event.code === "Space") {
         // Only need to get current car position and rotation
         if (carRef.current) {
           const carPosition = carRef.current.position.clone();
           const carRotation = carRef.current.rotation.y;
-          dropBanana(carPosition, carRotation);
+          useItem(carPosition, carRotation);
         }
       }
     };
@@ -188,7 +188,7 @@ const CarGame = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [dropBanana]);
+  }, [useItem]);
 
   // Handle banana collision
   const handleBananaHit = (bananaId) => {
@@ -211,6 +211,23 @@ const CarGame = () => {
   const remotePlayers = Object.values(players).filter(
     (player) => player.id !== playerId
   );
+
+  // Get current player's item data
+  const currentPlayer = players[playerId];
+  const currentItem = currentPlayer?.item;
+
+  // Helper function to format item display text
+  const getItemDisplayText = (item) => {
+    if (!item || item.quantity <= 0) return "No item";
+    
+    // Format based on item type
+    switch (item.type) {
+      case 'banana':
+        return '🍌'.repeat(item.quantity);
+      default:
+        return `${item.type}: ${item.quantity}`;
+    }
+  };
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
@@ -298,7 +315,7 @@ const CarGame = () => {
         )}
       </Canvas>
 
-      {/* Banana instructions */}
+      {/* Item instructions */}
       <div
         style={{
           position: "absolute",
@@ -311,13 +328,13 @@ const CarGame = () => {
           fontSize: "14px",
         }}
       >
-        Press <strong>SPACE</strong> to drop a banana
+        Press <strong>SPACE</strong> to use item
       </div>
 
       {/* Game UI */}
       <div className="game-ui">
-        <div className="banana-counter">
-          Bananas: {players[playerId]?.bananas}
+        <div className="item-display">
+          {getItemDisplayText(currentItem)}
         </div>
       </div>
     </div>
