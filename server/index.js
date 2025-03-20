@@ -34,7 +34,7 @@ const VEHICLE_MODELS = [
 function generateItemBoxes(count = 20) {
   console.log(`[ITEM] Generating ${count} item boxes`);
   const boxes = [];
-  const mapSize = 30; // Size of the playable area
+  const mapSize = 100; // Size of the playable area
   
   for (let i = 1; i <= count; i++) {
     const position = [
