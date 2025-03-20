@@ -311,7 +311,11 @@ const CarGame = () => {
         <ScatteredElements />
 
         {/* Player car */}
-        <Car ref={carRef} />
+        <Car 
+          ref={carRef} 
+          color={players[playerId]?.color}
+          vehicle={players[playerId]?.vehicle}
+        />
 
         {/* Remote players */}
         {remotePlayers.map((player) => (

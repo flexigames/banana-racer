@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import VehicleModel from './VehicleModel';
 
 const Car = forwardRef((props, ref) => {
+  const { color: colorProp, vehicle: vehicleProp } = props;
   const car = useRef();
   const lastUpdateTime = useRef(0);
   const [spinningOut, setSpinningOut] = useState(false);
@@ -27,16 +28,20 @@ const Car = forwardRef((props, ref) => {
   // Expose the car ref to parent components
   useImperativeHandle(ref, () => car.current);
   
+  // Use props first, then fall back to context
+  const effectiveColor = colorProp || playerColor;
+  const effectiveVehicle = vehicleProp || playerVehicle;
+  
   // Create a THREE.Color from player color data
   const carColor = useMemo(() => {
-    if (!playerColor) return null;
+    if (!effectiveColor) return null;
     
     return new THREE.Color().setHSL(
-      playerColor.h,
-      playerColor.s,
-      playerColor.l
+      effectiveColor.h,
+      effectiveColor.s,
+      effectiveColor.l
     );
-  }, [playerColor]);
+  }, [effectiveColor]);
   
   // Car movement state
   const movement = useRef({
@@ -195,7 +200,7 @@ const Car = forwardRef((props, ref) => {
   return (
     <group ref={car} position={[0, 0.1, 0]}>
       <VehicleModel 
-        vehicleType={playerVehicle}
+        vehicleType={effectiveVehicle}
         color={carColor}
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
