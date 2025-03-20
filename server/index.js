@@ -343,6 +343,19 @@ function handleItemBoxCollection(playerId, itemBoxId) {
     count: player.bananas
   });
   console.log(`[ITEM] Broadcast 'bananaCountUpdated' event for player ${playerId}`);
+  
+  // Schedule respawn after 15 seconds
+  setTimeout(() => {
+    // Add the item box back to the array
+    itemBoxes.push(collectedBox);
+    console.log(`[ITEM] Item box ${itemBoxId} respawned at position [${collectedBox.position.join(', ')}]`);
+    
+    // Broadcast item box respawn to all players
+    io.emit('itemBoxSpawned', {
+      itemBox: collectedBox
+    });
+    console.log(`[ITEM] Broadcast 'itemBoxSpawned' event for box ${itemBoxId}`);
+  }, 15000);
 }
 
 // Clean up inactive players every 30 seconds

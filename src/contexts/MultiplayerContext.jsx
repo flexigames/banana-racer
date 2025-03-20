@@ -287,7 +287,7 @@ export const MultiplayerProvider = ({ children }) => {
           }
         });
 
-        socket.current.on('itemBoxSpawned', (itemBox) => {
+        socket.current.on('itemBoxSpawned', ({itemBox}) => {
           console.log(`New item box spawned at position:`, itemBox.position);
           setItemBoxes(prev => [...prev, itemBox]);
         });
