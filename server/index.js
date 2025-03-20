@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
     color: generateRandomColor(),
     vehicle: selectRandomVehicle(),
     lastUpdate: Date.now(),
-    bananas: 0
+    bananas: 3
   };
 
   console.log(`Player ${playerId} connected (socket: ${socket.id}), assigned vehicle: ${players[playerId].vehicle}`);
@@ -101,7 +101,8 @@ io.on('connection', (socket) => {
   socket.emit('init', { 
     id: playerId,
     color: players[playerId].color,
-    vehicle: players[playerId].vehicle
+    vehicle: players[playerId].vehicle,
+    bananas: players[playerId].bananas
   });
 
   // Automatically join the global world
@@ -165,7 +166,8 @@ function initializePlayer(socket, playerId) {
       rotation: p.rotation,
       speed: p.speed,
       color: p.color,
-      vehicle: p.vehicle
+      vehicle: p.vehicle,
+      bananas: p.bananas
     }));
     
   // Convert itemBoxes to the format expected by the client
@@ -194,7 +196,8 @@ function initializePlayer(socket, playerId) {
       rotation: player.rotation,
       speed: player.speed,
       color: player.color,
-      vehicle: player.vehicle
+      vehicle: player.vehicle,
+      bananas: player.bananas
     }
   });
   

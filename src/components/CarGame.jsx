@@ -147,7 +147,6 @@ const CarGame = () => {
     itemBoxes,
     dropBanana,
     hitBanana,
-    collectItemBox
   } = useMultiplayer();
 
   // Handle key press events
@@ -181,11 +180,6 @@ const CarGame = () => {
     hitBanana(bananaId);
   };
 
-  // Handle item box collection
-  const handleItemCollect = (itemBoxId) => {
-    console.log(`Attempting to collect item box: ${itemBoxId}`);
-    collectItemBox(itemBoxId);
-  };
 
   // Get remote players (all players except current player)
   const remotePlayers = Object.values(players).filter(
@@ -266,7 +260,6 @@ const CarGame = () => {
             <ItemBox
               key={box.id}
               position={box.position}
-              onCollect={() => handleItemCollect(box.id)}
             />
           ))
         ) : (
@@ -296,7 +289,8 @@ const CarGame = () => {
       {/* Game UI */}
       <div className="game-ui">
         <div className="banana-counter">
-          Bananas: {players[playerId]?.bananas || 0}
+          Bananas: {players[playerId]?.bananas}<br/>
+          Player included: {playerId in players ? "yes" : "no"}
         </div>
       </div>
     </div>
