@@ -4,7 +4,7 @@ import { PerspectiveCamera, Grid } from "@react-three/drei";
 import Car from "./Car";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
-import Bomb from "./Cannonball";
+import Bomb from "./Bomb";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
