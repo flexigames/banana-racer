@@ -9,7 +9,11 @@ import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
-import { BANANA_COLLISION_RADIUS, ITEM_BOX_COLLISION_RADIUS, CANNONBALL_COLLISION_RADIUS } from "../constants";
+import {
+  BANANA_COLLISION_RADIUS,
+  ITEM_BOX_COLLISION_RADIUS,
+  CANNONBALL_COLLISION_RADIUS,
+} from "../constants";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -78,7 +82,13 @@ const FollowCamera = ({ target }) => {
 };
 
 // Component to handle collision detection and game logic
-const GameLogic = ({ carRef, bananas, itemBoxes, onBananaHit, onItemBoxCollect }) => {
+const GameLogic = ({
+  carRef,
+  bananas,
+  itemBoxes,
+  onBananaHit,
+  onItemBoxCollect,
+}) => {
   // Check for collisions each frame
   useFrame(() => {
     if (!carRef.current || carRef.current.isSpinningOut?.()) return;
@@ -109,9 +119,9 @@ const GameLogic = ({ carRef, bananas, itemBoxes, onBananaHit, onItemBoxCollect }
         onBananaHit(banana.id);
       }
     });
-    
+
     // Removed direct bomb collision detection - bombs only affect players when they explode
-    
+
     // Check collision with each item box
     itemBoxes.forEach((box) => {
       const boxPosition = new THREE.Vector3(
@@ -140,7 +150,7 @@ const GameLogic = ({ carRef, bananas, itemBoxes, onBananaHit, onItemBoxCollect }
 // New component to handle position updates
 const PlayerUpdater = ({ carRef }) => {
   const { connected, updatePlayerPosition } = useMultiplayer();
-  
+
   useFrame(() => {
     if (carRef.current && connected) {
       // Get car data
@@ -156,7 +166,7 @@ const PlayerUpdater = ({ carRef }) => {
       );
     }
   });
-  
+
   return null;
 };
 
@@ -183,11 +193,11 @@ const CarGame = () => {
         if (carRef.current) {
           const carPosition = carRef.current.position.clone();
           const carRotation = carRef.current.rotation.y;
-          
+
           // Trigger use animation regardless of whether the use succeeds
           setIsAnimating(true);
           setTimeout(() => setIsAnimating(false), 300);
-          
+
           useItem(carPosition, carRotation);
         }
       }
@@ -214,50 +224,50 @@ const CarGame = () => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(50); // ms between item changes
-  const possibleItems = ['🍌', '🚀', '💣'];
-  
+  const possibleItems = ["🍌", "🚀", "💣"];
+
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
     // Immediately notify context about item box collection to remove it from the scene
     collectItemBox(itemBoxId);
-    
+
     // Start item spinning animation
     setIsSpinning(true);
     setSpinSpeed(50); // Start fast
-    
+
     // Schedule the animation to slow down and stop
     const slowDownInterval = 600; // ms - slightly faster first slowdown
     const totalAnimationTime = 3000; // ms - longer total animation
-    
+
     // Gradually slow down the spin with more dramatic slowdown at the end
     const slowDown = (factor = 1.5) => {
-      setSpinSpeed(prevSpeed => {
+      setSpinSpeed((prevSpeed) => {
         const newSpeed = prevSpeed * factor; // Increase interval (slow down)
         return newSpeed > 800 ? 800 : newSpeed; // Cap at 800ms
       });
     };
-    
+
     // Set up the slowdown intervals with increasing slowdown effect
     const interval1 = setTimeout(() => slowDown(1.5), slowDownInterval);
     const interval2 = setTimeout(() => slowDown(1.8), slowDownInterval * 2);
     const interval3 = setTimeout(() => slowDown(2.0), slowDownInterval * 3);
     const interval4 = setTimeout(() => slowDown(2.5), slowDownInterval * 4);
-    
+
     // Stop the animation after the total time
     const stopTimeout = setTimeout(() => {
       setIsSpinning(false);
     }, totalAnimationTime);
-    
+
     // Set up the spinning animation
     const spinInterval = setInterval(() => {
       if (!isSpinning) {
         clearInterval(spinInterval);
         return;
       }
-      
-      setSpinningItemIndex(prev => (prev + 1) % possibleItems.length);
+
+      setSpinningItemIndex((prev) => (prev + 1) % possibleItems.length);
     }, spinSpeed);
-    
+
     // Cleanup all timers and intervals
     return () => {
       clearTimeout(interval1);
@@ -277,52 +287,34 @@ const CarGame = () => {
   // Get current player's item data
   const currentPlayer = players[playerId];
   const currentItem = currentPlayer?.item;
-  
+
   // Track previous item for animation
   const [prevQuantity, setPrevQuantity] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  
+
   // Make car reference available globally for the boost effect
   useEffect(() => {
     if (carRef.current) {
-      console.log('[CAR REF] Setting window.playerCarRef with methods:', 
-        Object.keys(carRef.current).filter(key => typeof carRef.current[key] === 'function'));
-      
-      // Debugging check for applyBoost
-      if (carRef.current.applyBoost) {
-        console.log('[CAR REF] applyBoost function exists on carRef.current');
-      } else {
-        console.log('[CAR REF] WARNING: applyBoost function not found on carRef.current');
-      }
-      
-      // Set the global reference
       window.playerCarRef = carRef.current;
-      
-      // Verify it was set correctly
-      console.log('[CAR REF] Global window.playerCarRef set, has applyBoost:', 
-        !!(window.playerCarRef && window.playerCarRef.applyBoost));
-    } else {
-      console.log('[CAR REF] carRef.current is not available');
     }
-    
+
     // Clean up on unmount
     return () => {
       window.playerCarRef = null;
-      console.log('[CAR REF] window.playerCarRef cleared');
     };
   }, [carRef.current]);
-  
+
   // Update spinning interval effect
   useEffect(() => {
     if (!isSpinning) return;
-    
+
     const spinInterval = setInterval(() => {
-      setSpinningItemIndex(prev => (prev + 1) % possibleItems.length);
+      setSpinningItemIndex((prev) => (prev + 1) % possibleItems.length);
     }, spinSpeed);
-    
+
     return () => clearInterval(spinInterval);
   }, [spinSpeed, isSpinning, possibleItems.length]);
-  
+
   // Trigger animation when item quantity changes
   useEffect(() => {
     if (currentItem?.quantity !== prevQuantity) {
@@ -338,30 +330,30 @@ const CarGame = () => {
     if (isSpinning) {
       return possibleItems[spinningItemIndex];
     }
-    
+
     if (!item || item.quantity <= 0) return "";
-    
+
     // Format based on item type
     switch (item.type) {
-      case 'banana':
+      case "banana":
         // Always use the number format to prevent overflow
         return (
           <>
-            🍌<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+            🍌<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
-      case 'boost':
+      case "boost":
         // Always use the number format to prevent overflow
         return (
           <>
-            🚀<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+            🚀<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
-      case 'cannon':
+      case "cannon":
         // Always use the number format to prevent overflow
         return (
           <>
-            💣<span style={{ fontSize: '20px' }}>×{item.quantity}</span>
+            💣<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
       default:
@@ -372,17 +364,17 @@ const CarGame = () => {
   // Helper to get animation style
   const getItemDisplayStyle = () => {
     if (isSpinning) {
-      return { 
-        animation: 'spin 0.5s infinite linear', 
-        fontSize: '2.5rem',
-        transform: 'scale(1.2)'
+      return {
+        animation: "spin 0.5s infinite linear",
+        fontSize: "2.5rem",
+        transform: "scale(1.2)",
       };
     }
-    
+
     if (isAnimating) {
-      return { animation: 'pulse 0.3s ease-in-out' };
+      return { animation: "pulse 0.3s ease-in-out" };
     }
-    
+
     return {};
   };
 
@@ -400,7 +392,7 @@ const CarGame = () => {
           onBananaHit={handleBananaHit}
           onItemBoxCollect={handleItemBoxCollect}
         />
-        
+
         {/* Player position updater */}
         <PlayerUpdater carRef={carRef} />
 
@@ -432,8 +424,8 @@ const CarGame = () => {
         <ScatteredElements />
 
         {/* Player car */}
-        <Car 
-          ref={carRef} 
+        <Car
+          ref={carRef}
           color={players[playerId]?.color}
           vehicle={players[playerId]?.vehicle}
         />
@@ -474,10 +466,7 @@ const CarGame = () => {
         {/* Add item boxes */}
         {itemBoxes.length > 0 ? (
           itemBoxes.map((box) => (
-            <ItemBox
-              key={box.id}
-              position={box.position}
-            />
+            <ItemBox key={box.id} position={box.position} />
           ))
         ) : (
           <mesh position={[0, 5, 0]}>
