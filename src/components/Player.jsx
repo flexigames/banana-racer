@@ -6,7 +6,7 @@ import { useMultiplayer } from '../contexts/MultiplayerContext';
 import * as THREE from 'three';
 import VehicleModel from './VehicleModel';
 
-const Car = forwardRef((props, ref) => {
+const Player = forwardRef((props, ref) => {
   const { color: colorProp, vehicle: vehicleProp } = props;
   const car = useRef();
   const lastUpdateTime = useRef(0);
@@ -252,31 +252,10 @@ const Car = forwardRef((props, ref) => {
         color={carColor}
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
+        boosting={boosting}
       />
-      {/* Show boost visual effect when boosting */}
-      {boosting && (
-        <>
-          {/* Main boost cone - position behind the car */}
-          <mesh position={[0, 0.15, -1.2]} rotation={[Math.PI/2, 0, 0]}>
-            <coneGeometry args={[0.2, 0.8, 16]} />
-            <meshBasicMaterial color="#3399ff" transparent opacity={0.7} />
-          </mesh>
-          
-          {/* Inner boost flame */}
-          <mesh position={[0, 0.15, -1.0]} rotation={[Math.PI/2, 0, 0]}>
-            <coneGeometry args={[0.12, 0.5, 16]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
-          </mesh>
-          
-          {/* Outer boost trail particles */}
-          <mesh position={[0, 0.15, -1.4]} rotation={[Math.PI/2, 0, 0]}>
-            <coneGeometry args={[0.25, 1.0, 16]} />
-            <meshBasicMaterial color="#66ccff" transparent opacity={0.4} />
-          </mesh>
-        </>
-      )}
     </group>
   );
 });
 
-export default Car; 
+export default Player; 

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerspectiveCamera, Grid } from "@react-three/drei";
-import Car from "./Car";
+import Player from "./Player";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
 import Bomb from "./Bomb";
@@ -514,7 +514,7 @@ const CarGame = () => {
         <ScatteredElements />
 
         {/* Player car */}
-        <Car
+        <Player
           ref={carRef}
           color={players[playerId]?.color}
           vehicle={players[playerId]?.vehicle}
