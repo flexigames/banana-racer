@@ -4,7 +4,7 @@ import { updateVehiclePhysics, updateObjectPosition } from '../lib/physics';
 import { useVehicleControls } from '../lib/input';
 import { useMultiplayer } from '../contexts/MultiplayerContext';
 import * as THREE from 'three';
-import VehicleModel from './VehicleModel';
+import Car from './Car';
 
 const Player = forwardRef((props, ref) => {
   const { color: colorProp, vehicle: vehicleProp } = props;
@@ -247,7 +247,7 @@ const Player = forwardRef((props, ref) => {
 
   return (
     <group ref={car} position={[0, 0.1, 0]}>
-      <VehicleModel 
+      <Car 
         vehicleType={effectiveVehicle}
         color={carColor}
         scale={[0.5, 0.5, 0.5]} 

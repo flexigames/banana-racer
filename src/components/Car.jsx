@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useModelWithMaterials } from '../lib/loaders';
-import * as THREE from 'three';
 
-const VehicleModel = ({ 
+const Car = ({ 
   vehicleType = 'vehicle-racer', 
   color = null, 
   scale = [0.5, 0.5, 0.5], 
@@ -107,4 +106,4 @@ const VehicleModel = ({
   );
 };
 
-export default VehicleModel; 
+export default Car; 

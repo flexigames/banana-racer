@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import VehicleModel from './VehicleModel';
+import Car from './Car';
 
 const RemotePlayer = ({ playerId, position, rotation, speed = 0, color, vehicle = 'vehicle-racer' }) => {
   const car = useRef();
@@ -129,7 +129,7 @@ const RemotePlayer = ({ playerId, position, rotation, speed = 0, color, vehicle 
   
   return (
     <group ref={car} position={[position.x, position.y, position.z]} rotation={[0, rotation, 0]}>
-      <VehicleModel 
+      <Car 
         vehicleType={vehicle}
         color={playerColor}
         scale={[0.5, 0.5, 0.5]} 
