@@ -51,9 +51,7 @@ export const MultiplayerProvider = ({ children }) => {
 
   // Server URL
   const [serverUrl, setServerUrl] = useState(() => {
-    // Check if we're in development mode
     if (import.meta.env.DEV) {
-      // Check for environment variable first, then localStorage
       const useLocalServer = import.meta.env.VITE_USE_LOCAL_SERVER === 'true' || 
                             window.localStorage.getItem('useLocalServer') === 'true';
       return useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
@@ -67,7 +65,6 @@ export const MultiplayerProvider = ({ children }) => {
 
     const connect = async () => {
       try {
-        // Create socket connection
         socket.current = io(serverUrl, {
           reconnection: true,
           reconnectionAttempts: 5,
@@ -76,7 +73,7 @@ export const MultiplayerProvider = ({ children }) => {
           timeout: 20000,
         });
 
-        // Set up core socket event handlers
+        // Core socket events
         socket.current.on("connect", () => {
           console.log("Connected to multiplayer server");
           setConnected(true);
@@ -91,277 +88,31 @@ export const MultiplayerProvider = ({ children }) => {
           setConnected(false);
 
           if (reason === "io server disconnect") {
-            // The disconnection was initiated by the server, need to reconnect manually
             socket.current.connect();
           }
         });
 
-        // Game-specific events
+        // Game state event
+        socket.current.on("gameState", (state) => {
+          setPlayers(state.players);
+          setBananas(Object.values(state.bananas));
+          setCannonballs(Object.values(state.cannonballs));
+          setFakeCubes(Object.values(state.fakeCubes));
+          setItemBoxes(state.itemBoxes);
+        });
+
+        // Initial player setup
         socket.current.on("init", (data) => {
           setPlayerId(data.id);
           setPlayerColor(data.color);
           setPlayerVehicle(data.vehicle || "vehicle-racer");
-          
-          // Update players state with initial item instead of banana count
-          setPlayers(prev => ({
-            ...prev,
-            [data.id]: {
-              id: data.id,
-              color: data.color,
-              vehicle: data.vehicle || "vehicle-racer",
-              item: data.item || { type: 'banana', quantity: 0 },
-              speed: 0
-            }
-          }));
-          
-          console.log(
-            `Initialized with player ID: ${data.id}, color:`,
-            data.color,
-            "vehicle:",
-            data.vehicle || "vehicle-racer",
-            "item:",
-            data.item
-          );
         });
 
-        socket.current.on("worldJoined", (data) => {
-          console.log("[CONTEXT] World joined event received");
-          console.log("[CONTEXT] Socket connection state:", socket.current?.connected);
-          
-          // Initialize with player data
-          setPlayerId(prev => prev || data.id);
-          
-          // Initialize existing players
-          const initialPlayers = {};
-          data.players.forEach(player => {
-            // Ensure required properties exist
-            initialPlayers[player.id] = {
-              ...player,
-              speed: typeof player.speed === "undefined" ? 0 : player.speed,
-              color: player.color || { h: 0, s: 0.8, l: 0.5 },
-              vehicle: player.vehicle || "vehicle-racer",
-              item: player.item || { type: 'banana', quantity: 0 }
-            };
-          });
-          
-          // Add our own player if not already included
-          if (playerId && !initialPlayers[playerId]) {
-            initialPlayers[playerId] = {
-              id: playerId,
-              color: playerColor,
-              vehicle: playerVehicle,
-              item: { type: 'banana', quantity: 0 }, // Use default item
-              speed: 0
-            };
-          }
-
-          setPlayers(initialPlayers);
-
-          // Initialize existing bananas
-          if (data.bananas && data.bananas.length > 0) {
-            setBananas(data.bananas);
-          }
-          
-          // Initialize existing cannonballs
-          if (data.cannonballs && data.cannonballs.length > 0) {
-            console.log("[CONTEXT] Received cannonballs:", data.cannonballs.length);
-            setCannonballs(data.cannonballs);
-          }
-          
-          // Initialize existing item boxes
-          if (data.itemBoxes && data.itemBoxes.length > 0) {
-            console.log("[CONTEXT] Received item boxes:", data.itemBoxes.length);
-            setItemBoxes(data.itemBoxes);
-          }
-
-          // Initialize existing fake cubes
-          if (data.fakeCubes && data.fakeCubes.length > 0) {
-            console.log("[CONTEXT] Received fake cubes:", data.fakeCubes.length);
-            setFakeCubes(data.fakeCubes);
-          }
-        });
-
-        socket.current.on("playerJoined", (data) => {
-          const newPlayer = data.player;
-          console.log(`Player joined: ${newPlayer.id} at position:`, newPlayer.position);
-          
-          // Ensure required properties exist
-          const player = {
-            ...newPlayer,
-            speed: typeof newPlayer.speed === "undefined" ? 0 : newPlayer.speed,
-            color: newPlayer.color || { h: 0, s: 0.8, l: 0.5 },
-            vehicle: newPlayer.vehicle || "vehicle-racer",
-            item: newPlayer.item || { type: 'banana', quantity: 0 }
-          };
-          
-          setPlayers(prev => ({
-            ...prev,
-            [player.id]: player
-          }));
-        });
-
-        socket.current.on("playerLeft", (data) => {
-          const leftPlayerId = data.id;
-          console.log(`Player left: ${leftPlayerId}`);
-          
-          setPlayers(prev => {
-            const newPlayers = { ...prev };
-            delete newPlayers[leftPlayerId];
-            return newPlayers;
-          });
-        });
-
-        socket.current.on("playerUpdate", (data) => {
-          const updatedPlayerId = data.id;
-
-          if (updatedPlayerId !== playerId) {
-            setPlayers(prev => {
-              if (!prev[updatedPlayerId]) return prev;
-              
-              return {
-                ...prev,
-                [updatedPlayerId]: {
-                  ...prev[updatedPlayerId],
-                  position: data.position,
-                  rotation: data.rotation,
-                  speed: data.speed || 0,
-                  color: data.color || prev[updatedPlayerId].color,
-                  vehicle: data.vehicle || prev[updatedPlayerId].vehicle
-                }
-              };
-            });
-          }
-        });
-
-        // Banana events
-        socket.current.on("bananaDropped", (banana) => {
-          console.log(`New banana dropped by player ${banana.droppedBy} at position:`, banana.position);
-          setBananas(prev => [...prev, banana]);
-        });
-
-        socket.current.on("bananaExpired", (data) => {
-          console.log(`Banana ${data.id} expired`);
-          setBananas(prev => prev.filter(b => b.id !== data.id));
-        });
-
-        socket.current.on("bananaHit", (data) => {
-          console.log(`Banana ${data.id} was hit by player ${data.hitBy}`);
-          setBananas(prev => prev.filter(b => b.id !== data.id));
-        });
-
-        // Boost event
-        socket.current.on("playerBoosted", (data) => {
-          console.log(`[BOOST EVENT] Player ${data.playerId} activated boost`);
-          console.log(`[BOOST DEBUG] Local player ID: ${playerId}`);
-          console.log(`[BOOST DEBUG] playerCarRef exists: ${!!window.playerCarRef}`);
-          console.log(`[BOOST DEBUG] applyBoost function exists: ${!!(window.playerCarRef && window.playerCarRef.applyBoost)}`);
-          
-          // Update the player's boosting state in our players object
-          setPlayers(prev => {
-            if (!prev[data.playerId]) return prev;
-            
-            return {
-              ...prev,
-              [data.playerId]: {
-                ...prev[data.playerId],
-                // Force a high speed to trigger the boost visual in RemotePlayer
-                speed: Math.max(prev[data.playerId].speed, 15)
-              }
-            };
-          });
-          
-          // If this is the local player, trigger the boost effect
-          if (data.playerId === playerId && window.playerCarRef && window.playerCarRef.applyBoost) {
-            console.log(`[BOOST EVENT] Applying boost effect to local player's car`);
-            window.playerCarRef.applyBoost();
-          }
-        });
-
-        // Item box events
-        socket.current.on('itemCollected', (data) => {
-          console.log(`Player ${data.playerId} collected item box ${data.itemBoxId}`);
-          
-          // Remove the collected item box
-          setItemBoxes(prev => prev.filter(box => box.id !== data.itemBoxId));
-          
-          // Update player's item count
-          setPlayers(prev => ({
-            ...prev,
-            [data.playerId]: {
-              ...(prev[data.playerId] || {}),
-              item: data.item
-            }
-          }));
-        });
-        
-        socket.current.on('itemUpdated', (data) => {
-          console.log(`Player ${data.playerId} item updated:`, data.item);
-          
-          setPlayers(prev => {
-            // Make sure player exists
-            const existingPlayer = prev[data.playerId] || {
-              id: data.playerId,
-              color: data.playerId === playerId ? playerColor : { h: 0, s: 0.8, l: 0.5 },
-              vehicle: data.playerId === playerId ? playerVehicle : "vehicle-racer",
-              speed: 0
-            };
-            
-            return {
-              ...prev,
-              [data.playerId]: {
-                ...existingPlayer,
-                item: data.item
-              }
-            };
-          });
-          
-          // If this is the local player, log additional info for debugging
-          if (data.playerId === playerId) {
-            console.log(`[LOCAL PLAYER] Item updated to:`, data.item);
-          }
-        });
-
-        socket.current.on('itemBoxSpawned', ({itemBox}) => {
-          console.log(`New item box spawned at position:`, itemBox.position);
-          setItemBoxes(prev => [...prev, itemBox]);
-        });
-
-        // Cannon events
-        socket.current.on("cannonFired", (data) => {
-          console.log(`New bomb fired by player ${data.firedBy} at position:`, data.position);
-          setCannonballs(prev => [...prev, data]);
-        });
-
-        socket.current.on("cannonExpired", (data) => {
-          console.log(`Bomb ${data.id} expired`);
-          setCannonballs(prev => prev.filter(c => c.id !== data.id));
-        });
-
+        // Cannon hit event (needs local handling)
         socket.current.on("cannonHit", (data) => {
-          console.log(`Bomb ${data.id} hit player ${data.hitPlayer}`);
-          setCannonballs(prev => prev.filter(c => c.id !== data.id));
-          
-          // If this is the local player getting hit, trigger spinout
-          if (data.hitPlayer === playerId && window.playerCarRef && window.playerCarRef.triggerSpinOut) {
-            console.log(`[BOMB HIT] Triggering spinout for local player`);
+          if (data.hitPlayer === playerId && window.playerCarRef?.triggerSpinOut) {
             window.playerCarRef.triggerSpinOut();
           }
-        });
-
-        // Fake cube events
-        socket.current.on("fakeCubeDropped", (fakeCube) => {
-          console.log(`New fake cube dropped by player ${fakeCube.droppedBy} at position:`, fakeCube.position);
-          setFakeCubes(prev => [...prev, fakeCube]);
-        });
-
-        socket.current.on("fakeCubeExpired", (data) => {
-          console.log(`Fake cube ${data.id} expired`);
-          setFakeCubes(prev => prev.filter(fc => fc.id !== data.id));
-        });
-
-        socket.current.on("fakeCubeHit", (data) => {
-          console.log(`Fake cube ${data.id} was hit by player ${data.hitBy}`);
-          setFakeCubes(prev => prev.filter(fc => fc.id !== data.id));
         });
 
         // Error handling
@@ -377,8 +128,6 @@ export const MultiplayerProvider = ({ children }) => {
     connect();
 
     return () => {
-      // Cleanup logic
-      console.log("[CONTEXT] Provider unmounting, cleaning up connection");
       if (socket.current) {
         socket.current.disconnect();
       }
@@ -393,28 +142,6 @@ export const MultiplayerProvider = ({ children }) => {
       console.log("[CONTEXT] Disconnected from server");
     }
   }, [connected]);
-
-  // Ensure the local player is always in the players state
-  useEffect(() => {
-    if (playerId) {
-      setPlayers(prev => {
-        if (!prev[playerId]) {
-          // If local player isn't in the list, add them
-          return {
-            ...prev,
-            [playerId]: {
-              id: playerId,
-              color: playerColor,
-              vehicle: playerVehicle,
-              item: { type: 'banana', quantity: 0 },
-              speed: 0
-            }
-          };
-        }
-        return prev;
-      });
-    }
-  }, [playerId, playerColor, playerVehicle]);
 
   // Player functions
   const updatePlayerPosition = (position, rotation, speed = 0) => {
@@ -431,185 +158,70 @@ export const MultiplayerProvider = ({ children }) => {
   const useItem = (carPosition, carRotation) => {
     if (!connected || !socket.current) return false;
     
-    // Check if we can use an item (cooldown)
     const now = Date.now();
     if (now - lastItemUseTime < itemUseTimeout) return false;
 
-    // Check if player has items
     if (!playerId) return false;
     
-    // Make sure the player exists in the state
     const playerData = players[playerId];
-    if (!playerData) {
-      console.log("Player data not found in state");
-      return false;
-    }
-    
-    // Check item quantity
-    if (!playerData.item || playerData.item.quantity <= 0) {
-      console.log("No items available to use");
-      return false;
-    }
+    if (!playerData?.item?.quantity) return false;
 
-    // Update last item use time
     setLastItemUseTime(now);
 
-    // Different handling based on item type
-    if (playerData.item.type === 'boost') {
-      console.log("[ITEM USE] Using boost item");
-      
-      // Send item use event to server - no need for position for boost items
-      socket.current.emit("useItem", {
-        // We still need to send position data even for boost items to satisfy the server API
-        position: carPosition,
-        rotation: carRotation,
-        // But no need to calculate special positions for boost
-      });
-      
-      // Apply boost locally - the server will confirm and broadcast
-      if (window.playerCarRef && window.playerCarRef.applyBoost) {
-        console.log("[ITEM USE] Applying boost locally");
-        window.playerCarRef.applyBoost();
-      } else {
-        console.log("[ITEM USE] WARNING: Could not apply boost locally, playerCarRef missing or invalid");
-      }
-    } else if (playerData.item.type === 'fake_cube') {
-      // Position the fake cube slightly behind the car
-      const distanceBehind = 1; // 1 unit behind the car
-      const offsetX = Math.sin(carRotation) * distanceBehind;
-      const offsetZ = Math.cos(carRotation) * distanceBehind;
+    // Calculate position based on item type
+    const distanceBehind = 1;
+    const offsetX = Math.sin(carRotation) * distanceBehind;
+    const offsetZ = Math.cos(carRotation) * distanceBehind;
 
-      // Position for the fake cube
-      const fakeCubePosition = {
-        x: carPosition.x - offsetX,
-        y: 0.1, // Lower to the ground
-        z: carPosition.z - offsetZ,
-      };
+    const itemPosition = {
+      x: carPosition.x - offsetX,
+      y: 0.1,
+      z: carPosition.z - offsetZ,
+    };
 
-      // Send item use event to server
-      socket.current.emit("useItem", {
-        position: fakeCubePosition,
-        rotation: carRotation,
-      });
-    } else {
-      // This is a banana - calculate position behind the car
-      const distanceBehind = 1; // 1 unit behind the car
-      const offsetX = Math.sin(carRotation) * distanceBehind;
-      const offsetZ = Math.cos(carRotation) * distanceBehind;
-
-      // Position for the banana
-      const bananaPosition = {
-        x: carPosition.x - offsetX,
-        y: 0.1, // Lower to the ground
-        z: carPosition.z - offsetZ,
-      };
-
-      // Send item use event to server
-      socket.current.emit("useItem", {
-        position: bananaPosition,
-        rotation: carRotation,
-      });
-    }
-
-    // Reduce item quantity locally (server will confirm)
-    setPlayers((prev) => {
-      const playerData = prev[playerId];
-      if (!playerData || !playerData.item) return prev;
-
-      return {
-        ...prev,
-        [playerId]: {
-          ...playerData,
-          item: {
-            ...playerData.item,
-            quantity: playerData.item.quantity - 1
-          }
-        }
-      };
+    socket.current.emit("useItem", {
+      position: itemPosition,
+      rotation: carRotation,
     });
 
-    console.log(`Requested item use (${playerData.item.type}) at position:`, carPosition);
     return true;
   };
 
   const hitBanana = (bananaId) => {
     if (!connected || !socket.current) return;
-    
-    console.log(`[DEBUG] Sending hitBanana event for banana ${bananaId}`);
-    
-    // Remove the banana locally (server will also broadcast to all clients)
-    setBananas((prev) => prev.filter((b) => b.id !== bananaId));
-
-    // Notify server about banana hit - just send the ID directly
-    socket.current.emit("hitBanana", {
-      bananaId
-    });
+    socket.current.emit("hitBanana", { bananaId });
   };
 
-  // Item box functions
   const collectItemBox = (itemBoxId) => {
     if (!connected || !socket.current) return;
-    
-    console.log(`[CONTEXT] Attempting to collect item box: ${itemBoxId}`);
-    
-    // Notify server about item box collection
     socket.current.emit('collectItemBox', {
       playerId: playerId,
       itemBoxId: itemBoxId
     });
   };
 
-  // Cannon functions
   const hitCannon = (cannonId) => {
     if (!connected || !socket.current) return;
-    
-    console.log(`[DEBUG] Sending hitCannon event for bomb ${cannonId}`);
-    
-    // Remove the bomb locally (server will also broadcast to all clients)
-    setCannonballs((prev) => prev.filter((c) => c.id !== cannonId));
-
-    // Notify server about bomb hit
-    socket.current.emit("hitCannon", {
-      cannonId
-    });
+    socket.current.emit("hitCannon", { cannonId });
   };
 
-  // Fake cube functions
   const hitFakeCube = (fakeCubeId) => {
     if (!connected || !socket.current) return;
-    
-    console.log(`[DEBUG] Sending hitFakeCube event for fake cube ${fakeCubeId}`);
-    
-    // Remove the fake cube locally (server will also broadcast to all clients)
-    setFakeCubes((prev) => prev.filter((fc) => fc.id !== fakeCubeId));
-
-    // Notify server about fake cube hit
-    socket.current.emit("hitFakeCube", {
-      fakeCubeId
-    });
+    socket.current.emit("hitFakeCube", { fakeCubeId });
   };
 
   // Change server URL
   const changeServerUrl = (useLocalServer = false) => {
     const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
     
-    // Only change if different
     if (newUrl !== serverUrl) {
-      // Disconnect current socket
       if (socket.current) {
         socket.current.disconnect();
       }
       
-      // Update state
       setServerUrl(newUrl);
       setConnected(false);
-      setPlayers({});
-      setBananas([]);
-      setItemBoxes([]);
-      setCannonballs([]);
-      setFakeCubes([]);
       
-      // localStorage for persistence
       if (useLocalServer) {
         window.localStorage.setItem('useLocalServer', 'true');
       } else {

@@ -11,12 +11,9 @@ const Player = forwardRef((props, ref) => {
   const car = useRef();
   const lastUpdateTime = useRef(0);
   const [spinningOut, setSpinningOut] = useState(false);
-  const [boosting, setBoosting] = useState(false);
   const spinTimer = useRef(null);
-  const boostTimer = useRef(null);
   const spinDirection = useRef(1); // 1 or -1 for spin direction
   const spinSpeed = useRef(0);
-  const boostFactor = useRef(1); // Multiplier for speed while boosting
   
   // Get multiplayer context
   const { 
@@ -34,6 +31,9 @@ const Player = forwardRef((props, ref) => {
   // Use props first, then fall back to context
   const effectiveColor = colorProp || playerColor;
   const effectiveVehicle = vehicleProp || playerVehicle;
+  
+  // Get boost state from player data
+  const isBoosted = players[playerId]?.isBoosted || false;
   
   // Create a THREE.Color from player color data
   const carColor = useMemo(() => {
@@ -115,49 +115,6 @@ const Player = forwardRef((props, ref) => {
     console.log("Hit a banana! Spinning out for 2 seconds");
   };
 
-  // Function to apply a speed boost
-  const applyBoost = () => {
-    if (boosting) return; // Already boosting
-    
-    // Set boosting state
-    setBoosting(true);
-    
-    // Apply a stronger boost factor - 3.0 is more noticeable
-    boostFactor.current = 3.0;
-    
-    // Add an immediate speed boost to make the effect more pronounced
-    movement.current.speed += 8;
-    
-    // Force the forward control to maximum for a short time to ensure acceleration
-    const originalForward = movement.current.forward;
-    movement.current.forward = 1.0;
-    
-    // Reset forward control after a short delay
-    setTimeout(() => {
-      // Don't reset to 0, respect the current user input
-      if (movement.current.forward === 1.0) {
-        movement.current.forward = originalForward;
-      }
-    }, 300);
-    
-    // Clear any existing timer
-    if (boostTimer.current) {
-      clearTimeout(boostTimer.current);
-    }
-    
-    // Set timeout to end boost effect after 3 seconds
-    boostTimer.current = setTimeout(() => {
-      setBoosting(false);
-      boostFactor.current = 1.0; // Reset boost
-      boostTimer.current = null;
-      
-      // Show a little deceleration effect when boost ends
-      movement.current.speed *= 0.8;
-    }, 3000);
-    
-    console.log("Boost activated! Speed increased for 3 seconds");
-  };
-
   // Track spinout progress
   const spinProgress = useRef(0);
   const MAX_SPIN_RATE = 10; // Maximum spin rate
@@ -186,7 +143,7 @@ const Player = forwardRef((props, ref) => {
       spinProgress.current = 0;
       
       // Normal driving physics with boost adjustments
-      updateVehiclePhysics(movement.current, delta, boosting ? boostFactor.current : 1.0);
+      updateVehiclePhysics(movement.current, delta, isBoosted ? 3.0 : 1.0);
       updateObjectPosition(car.current, movement.current, delta);
     }
     
@@ -240,9 +197,7 @@ const Player = forwardRef((props, ref) => {
     ...car.current,
     teleportToPlayer,
     triggerSpinOut,
-    applyBoost,
-    isSpinningOut: () => spinningOut,
-    isBoosting: () => boosting
+    isSpinningOut: () => spinningOut
   }));
 
   return (
@@ -252,7 +207,7 @@ const Player = forwardRef((props, ref) => {
         color={carColor}
         scale={[0.5, 0.5, 0.5]} 
         rotation={[0, Math.PI, 0]} 
-        boosting={boosting}
+        boosting={isBoosted}
       />
     </group>
   );
