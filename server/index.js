@@ -23,6 +23,9 @@ const bananas = {};
 // Store active cannonballs
 const cannonballs = {};
 
+// Store active fake cubes
+const fakeCubes = {};
+
 // Define available vehicle models (from actual files in assets)
 const VEHICLE_MODELS = [
   'vehicle-racer',
@@ -38,6 +41,7 @@ const ITEM_TYPES = {
   BANANA: 'banana',
   BOOST: 'boost',
   CANNON: 'cannon',
+  FAKE_CUBE: 'fake_cube', // Add fake cube type
 };
 
 // Generate item boxes across the map
@@ -93,6 +97,11 @@ function generateCannonballId() {
   return `cannon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Add a function to generate fake cube IDs
+function generateFakeCubeId() {
+  return `fake_cube_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 console.log(`Starting Socket.IO server on port ${PORT}`);
 
 io.on('connection', (socket) => {
@@ -146,6 +155,11 @@ io.on('connection', (socket) => {
   // Handle item box collection
   socket.on('collectItemBox', (data) => {
     handleItemBoxCollection(playerId, data.itemBoxId);
+  });
+
+  // Handle fake cube collisions
+  socket.on('hitFakeCube', (data) => {
+    handleFakeCubeHit(playerId, data.fakeCubeId);
   });
 
   // Handle disconnection
@@ -204,7 +218,8 @@ function initializePlayer(socket, playerId) {
     players: existingPlayers,
     bananas: Object.values(bananas), // Convert from object to array
     cannonballs: Object.values(cannonballs), // Send active cannonballs
-    itemBoxes: itemBoxesForClient
+    itemBoxes: itemBoxesForClient,
+    fakeCubes: Object.values(fakeCubes) // Add fake cubes
   });
   
   console.log(`[ITEM] Sent ${itemBoxes.length} item boxes to player ${playerId}`);
@@ -300,7 +315,7 @@ function handleItemUse(playerId, data) {
         delete bananas[bananaId];
         io.emit('bananaExpired', { id: bananaId });
       }
-    }, 10000);
+    }, 120000);
   } else if (player.item.type === ITEM_TYPES.BOOST) {
     // Reduce item quantity
     player.item.quantity--;
@@ -362,6 +377,40 @@ function handleItemUse(playerId, data) {
         console.log(`[ITEM USE] Cannonball ${cannonId} expired`);
       }
     }, 10000);
+  } else if (player.item.type === ITEM_TYPES.FAKE_CUBE) {
+    // Reduce item quantity
+    player.item.quantity--;
+    console.log(`[ITEM USE] Player ${playerId} fake cube count reduced to ${player.item.quantity}`);
+
+    // Create fake cube with unique ID
+    const fakeCubeId = generateFakeCubeId();
+    const fakeCube = {
+      id: fakeCubeId,
+      position: data.position,
+      rotation: data.rotation || 0,
+      droppedBy: playerId,
+      droppedAt: Date.now()
+    };
+    
+    fakeCubes[fakeCubeId] = fakeCube;
+    console.log(`[ITEM USE] Created fake cube ${fakeCubeId}, total fake cubes: ${Object.keys(fakeCubes).length}`);
+
+    // Broadcast fake cube drop to all players
+    io.emit('fakeCubeDropped', fakeCube);
+    
+    // Confirm item update
+    io.emit('itemUpdated', {
+      playerId,
+      item: player.item
+    });
+    
+    // Set expiration timer (120 seconds)
+    setTimeout(() => {
+      if (fakeCubes[fakeCubeId]) {
+        delete fakeCubes[fakeCubeId];
+        io.emit('fakeCubeExpired', { id: fakeCubeId });
+      }
+    }, 120000);
   }
 }
 
@@ -425,6 +474,23 @@ function handleCannonHit(playerId, cannonId) {
   console.log(`[CANNON HIT] Successfully processed: Cannon ${cannonId} fired by ${hitCannonball.firedBy} hit player ${playerId}`);
 }
 
+// Add a function to handle fake cube hits
+function handleFakeCubeHit(playerId, fakeCubeId) {
+  if (!fakeCubes[fakeCubeId]) {
+    console.log(`[FAKE CUBE] Hit failed: Fake cube ${fakeCubeId} not found`);
+    return;
+  }
+  
+  // Remove the fake cube
+  delete fakeCubes[fakeCubeId];
+  
+  // Broadcast hit to all players
+  io.emit('fakeCubeHit', {
+    id: fakeCubeId,
+    hitBy: playerId
+  });
+}
+
 // Add a new function to handle item box collection
 function handleItemBoxCollection(playerId, itemBoxId) {
   const player = players[playerId];
@@ -442,17 +508,19 @@ function handleItemBoxCollection(playerId, itemBoxId) {
   
   console.log(`[ITEM] Player ${playerId} collected item box ${itemBoxId}`);
   
-  // Randomly decide which item to give (banana, boost, or cannon)
+  // Randomly decide which item to give (banana, boost, cannon, or fake cube)
   const itemTypeRoll = Math.random();
   let itemType;
   
-  // 1/3 chance for each item type
-  if (itemTypeRoll < 0.33) {
+  // 1/4 chance for each item type
+  if (itemTypeRoll < 0.25) {
     itemType = ITEM_TYPES.BANANA;
-  } else if (itemTypeRoll < 0.66) {
+  } else if (itemTypeRoll < 0.5) {
     itemType = ITEM_TYPES.BOOST;
-  } else {
+  } else if (itemTypeRoll < 0.75) {
     itemType = ITEM_TYPES.CANNON;
+  } else {
+    itemType = ITEM_TYPES.FAKE_CUBE;
   }
   
   // Give player a random quantity (1-3) of the selected item

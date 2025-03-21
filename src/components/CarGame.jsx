@@ -5,6 +5,7 @@ import Car from "./Car";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
 import Bomb from "./Bomb";
+import FakeCube from "./FakeCube";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
@@ -12,7 +13,7 @@ import ItemBox from "./ItemBox";
 import {
   BANANA_COLLISION_RADIUS,
   ITEM_BOX_COLLISION_RADIUS,
-  CANNONBALL_COLLISION_RADIUS,
+  FAKE_CUBE_COLLISION_RADIUS,
 } from "../constants";
 
 // Camera component that follows the player
@@ -86,8 +87,10 @@ const GameLogic = ({
   carRef,
   bananas,
   itemBoxes,
+  fakeCubes,
   onBananaHit,
   onItemBoxCollect,
+  onFakeCubeHit,
 }) => {
   // Check for collisions each frame
   useFrame(() => {
@@ -120,7 +123,29 @@ const GameLogic = ({
       }
     });
 
-    // Removed direct bomb collision detection - bombs only affect players when they explode
+    // Check collision with each fake cube
+    fakeCubes.forEach((fakeCube) => {
+      const fakeCubePosition = new THREE.Vector3(
+        fakeCube.position.x,
+        fakeCube.position.y,
+        fakeCube.position.z
+      );
+
+      const distance = carPosition.distanceTo(fakeCubePosition);
+      
+      // Debug log for distance
+      console.log(`[FAKE CUBE] Distance to fake cube ${fakeCube.id}: ${distance.toFixed(2)}, collision radius: ${FAKE_CUBE_COLLISION_RADIUS}`);
+
+      // If close enough to fake cube, trigger collision
+      if (distance < FAKE_CUBE_COLLISION_RADIUS) {
+        console.log(
+          `[FAKE CUBE] Collision detected with fake cube ${
+            fakeCube.id
+          } at distance ${distance.toFixed(2)}`
+        );
+        onFakeCubeHit(fakeCube.id);
+      }
+    });
 
     // Check collision with each item box
     itemBoxes.forEach((box) => {
@@ -179,8 +204,11 @@ const CarGame = () => {
     bananas,
     cannonballs,
     itemBoxes,
+    fakeCubes,
     useItem,
     hitBanana,
+    hitCannon,
+    hitFakeCube,
     collectItemBox,
   } = useMultiplayer();
 
@@ -220,11 +248,27 @@ const CarGame = () => {
     hitBanana(bananaId);
   };
 
+  // Handle fake cube collision
+  const handleFakeCubeHit = (fakeCubeId) => {
+    console.log(`[FAKE CUBE] Triggering spinout for fake cube hit ${fakeCubeId}`);
+    
+    // Trigger car spinout
+    if (carRef.current && carRef.current.triggerSpinOut) {
+      console.log(`[FAKE CUBE] Car reference exists, calling triggerSpinOut`);
+      carRef.current.triggerSpinOut();
+    } else {
+      console.log(`[FAKE CUBE] Warning: Car reference or triggerSpinOut not available`);
+    }
+
+    // Notify context about fake cube hit
+    hitFakeCube(fakeCubeId);
+  };
+
   // Item animation states
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(50); // ms between item changes
-  const possibleItems = ["🍌", "🚀", "💣"];
+  const possibleItems = ["🍌", "🚀", "💣", "🎲"];
 
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
@@ -356,6 +400,13 @@ const CarGame = () => {
             💣<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
+      case "fake_cube":
+        // Add fake cube display
+        return (
+          <>
+            🎲<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
       default:
         return `${item.type}: ${item.quantity}`;
     }
@@ -389,8 +440,10 @@ const CarGame = () => {
           carRef={carRef}
           bananas={bananas}
           itemBoxes={itemBoxes}
+          fakeCubes={fakeCubes}
           onBananaHit={handleBananaHit}
           onItemBoxCollect={handleItemBoxCollect}
+          onFakeCubeHit={handleFakeCubeHit}
         />
 
         {/* Player position updater */}
@@ -460,6 +513,15 @@ const CarGame = () => {
             position={bomb.position}
             velocity={bomb.velocity}
             firedAt={bomb.firedAt}
+          />
+        ))}
+
+        {/* Fake Cubes */}
+        {fakeCubes.map((fakeCube) => (
+          <FakeCube
+            key={fakeCube.id}
+            position={[fakeCube.position.x, fakeCube.position.y, fakeCube.position.z]}
+            rotation={fakeCube.rotation}
           />
         ))}
 

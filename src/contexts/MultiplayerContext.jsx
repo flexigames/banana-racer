@@ -6,7 +6,21 @@ const LOCAL_SERVER_URL = "http://localhost:8080";
 const REMOTE_SERVER_URL = "https://banana-racer.onrender.com";
 
 // Create the context
-const MultiplayerContext = createContext(null);
+const MultiplayerContext = createContext({
+  connected: false,
+  playerId: null,
+  players: {},
+  bananas: [],
+  cannonballs: [],
+  itemBoxes: [],
+  fakeCubes: [],
+  updatePlayerPosition: () => {},
+  useItem: () => {},
+  hitBanana: () => {},
+  hitCannon: () => {},
+  hitFakeCube: () => {},
+  collectItemBox: () => {},
+});
 
 // Custom hook to use the context
 export const useMultiplayer = () => {
@@ -33,6 +47,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [cannonballs, setCannonballs] = useState([]);
   const [lastItemUseTime, setLastItemUseTime] = useState(0);
   const itemUseTimeout = 20;
+  const [fakeCubes, setFakeCubes] = useState([]);
 
   // Server URL
   const [serverUrl, setServerUrl] = useState(() => {
@@ -157,6 +172,12 @@ export const MultiplayerProvider = ({ children }) => {
           if (data.itemBoxes && data.itemBoxes.length > 0) {
             console.log("[CONTEXT] Received item boxes:", data.itemBoxes.length);
             setItemBoxes(data.itemBoxes);
+          }
+
+          // Initialize existing fake cubes
+          if (data.fakeCubes && data.fakeCubes.length > 0) {
+            console.log("[CONTEXT] Received fake cubes:", data.fakeCubes.length);
+            setFakeCubes(data.fakeCubes);
           }
         });
 
@@ -327,6 +348,22 @@ export const MultiplayerProvider = ({ children }) => {
           }
         });
 
+        // Fake cube events
+        socket.current.on("fakeCubeDropped", (fakeCube) => {
+          console.log(`New fake cube dropped by player ${fakeCube.droppedBy} at position:`, fakeCube.position);
+          setFakeCubes(prev => [...prev, fakeCube]);
+        });
+
+        socket.current.on("fakeCubeExpired", (data) => {
+          console.log(`Fake cube ${data.id} expired`);
+          setFakeCubes(prev => prev.filter(fc => fc.id !== data.id));
+        });
+
+        socket.current.on("fakeCubeHit", (data) => {
+          console.log(`Fake cube ${data.id} was hit by player ${data.hitBy}`);
+          setFakeCubes(prev => prev.filter(fc => fc.id !== data.id));
+        });
+
         // Error handling
         socket.current.on("error", (error) => {
           console.error("[CONTEXT] Connection error:", error);
@@ -436,6 +473,24 @@ export const MultiplayerProvider = ({ children }) => {
       } else {
         console.log("[ITEM USE] WARNING: Could not apply boost locally, playerCarRef missing or invalid");
       }
+    } else if (playerData.item.type === 'fake_cube') {
+      // Position the fake cube slightly behind the car
+      const distanceBehind = 1; // 1 unit behind the car
+      const offsetX = Math.sin(carRotation) * distanceBehind;
+      const offsetZ = Math.cos(carRotation) * distanceBehind;
+
+      // Position for the fake cube
+      const fakeCubePosition = {
+        x: carPosition.x - offsetX,
+        y: 0.1, // Lower to the ground
+        z: carPosition.z - offsetZ,
+      };
+
+      // Send item use event to server
+      socket.current.emit("useItem", {
+        position: fakeCubePosition,
+        rotation: carRotation,
+      });
     } else {
       // This is a banana - calculate position behind the car
       const distanceBehind = 1; // 1 unit behind the car
@@ -519,6 +574,21 @@ export const MultiplayerProvider = ({ children }) => {
     });
   };
 
+  // Fake cube functions
+  const hitFakeCube = (fakeCubeId) => {
+    if (!connected || !socket.current) return;
+    
+    console.log(`[DEBUG] Sending hitFakeCube event for fake cube ${fakeCubeId}`);
+    
+    // Remove the fake cube locally (server will also broadcast to all clients)
+    setFakeCubes((prev) => prev.filter((fc) => fc.id !== fakeCubeId));
+
+    // Notify server about fake cube hit
+    socket.current.emit("hitFakeCube", {
+      fakeCubeId
+    });
+  };
+
   // Change server URL
   const changeServerUrl = (useLocalServer = false) => {
     const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
@@ -537,6 +607,7 @@ export const MultiplayerProvider = ({ children }) => {
       setBananas([]);
       setItemBoxes([]);
       setCannonballs([]);
+      setFakeCubes([]);
       
       // localStorage for persistence
       if (useLocalServer) {
@@ -559,10 +630,12 @@ export const MultiplayerProvider = ({ children }) => {
     bananas,
     cannonballs,
     itemBoxes,
+    fakeCubes,
     updatePlayerPosition,
     useItem,
     hitBanana,
     hitCannon,
+    hitFakeCube,
     collectItemBox,
     changeServerUrl
   };
