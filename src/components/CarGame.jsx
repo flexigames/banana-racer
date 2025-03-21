@@ -14,6 +14,7 @@ import {
   BANANA_COLLISION_RADIUS,
   ITEM_BOX_COLLISION_RADIUS,
   FAKE_CUBE_COLLISION_RADIUS,
+  PLAYER_COLLISION_RADIUS,
 } from "../constants";
 
 // Camera component that follows the player
@@ -88,9 +89,11 @@ const GameLogic = ({
   bananas,
   itemBoxes,
   fakeCubes,
+  remotePlayers,
   onBananaHit,
   onItemBoxCollect,
   onFakeCubeHit,
+  onPlayerCollision,
 }) => {
   // Check for collisions each frame
   useFrame(() => {
@@ -101,6 +104,27 @@ const GameLogic = ({
       carRef.current.position.y,
       carRef.current.position.z
     );
+
+    // Check collision with other players
+    remotePlayers.forEach((player) => {
+      if (!player.position) return;
+
+      const playerPosition = new THREE.Vector3(
+        player.position.x,
+        player.position.y,
+        player.position.z
+      );
+
+      const distance = carPosition.distanceTo(playerPosition);
+
+      // If close enough to another player and they are boosting, trigger collision
+      if (distance < PLAYER_COLLISION_RADIUS && player.speed >= 15) { // speed >= 15 indicates boost
+        console.log(
+          `[PLAYER COLLISION] Detected collision with boosted player ${player.id} at distance ${distance.toFixed(2)}`
+        );
+        onPlayerCollision(player.id);
+      }
+    });
 
     // Check collision with each banana
     bananas.forEach((banana) => {
@@ -429,6 +453,17 @@ const CarGame = () => {
     return {};
   };
 
+  // Handle player collision
+  const handlePlayerCollision = (collidingPlayerId) => {
+    console.log(`[PLAYER COLLISION] Handling collision with player ${collidingPlayerId}`);
+    
+    // Only spin out if we're not boosting
+    if (carRef.current && carRef.current.triggerSpinOut && (!carRef.current.speed || carRef.current.speed < 15)) {
+      console.log(`[PLAYER COLLISION] Triggering spinout from player collision`);
+      carRef.current.triggerSpinOut();
+    }
+  };
+
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       <Canvas>
@@ -441,9 +476,11 @@ const CarGame = () => {
           bananas={bananas}
           itemBoxes={itemBoxes}
           fakeCubes={fakeCubes}
+          remotePlayers={remotePlayers}
           onBananaHit={handleBananaHit}
           onItemBoxCollect={handleItemBoxCollect}
           onFakeCubeHit={handleFakeCubeHit}
+          onPlayerCollision={handlePlayerCollision}
         />
 
         {/* Player position updater */}

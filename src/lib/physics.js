@@ -11,6 +11,7 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
   const maxReverseSpeed = 2.5; // Was 5
   const acceleration = 0.1 * boostFactor;   // Boost affects acceleration
   const braking = 0.2;         // Was 0.4
+  const minBoostSpeed = 10;    // Minimum speed when boosting
   
   // Increased deceleration for quicker stops
   const deceleration = 0.1;    // Adjusted from 0.15
@@ -25,25 +26,34 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
     movement.speed += movement.forward * acceleration;
   } else if (movement.forward < 0) {
     if (movement.speed > 0.5) { // Reduced threshold from 1
-      // Braking
-      movement.speed -= braking;
-    } else {
+      // Only allow braking if not boosting
+      if (boostFactor === 1.0) {
+        movement.speed -= braking;
+      }
+    } else if (boostFactor === 1.0) { // Only allow reverse if not boosting
       // Accelerating in reverse
       movement.speed += movement.forward * acceleration * 0.7;
     }
   } else {
-    // No input - stronger natural deceleration
-    if (movement.speed > 0) {
-      // Apply stronger deceleration when not accelerating
-      movement.speed -= deceleration;
-    } else if (movement.speed < 0) {
-      movement.speed += deceleration;
+    // No input - only decelerate if not boosting
+    if (boostFactor === 1.0) {
+      if (movement.speed > 0) {
+        // Apply stronger deceleration when not accelerating
+        movement.speed -= deceleration;
+      } else if (movement.speed < 0) {
+        movement.speed += deceleration;
+      }
+      
+      // Ensure we come to a complete stop
+      if (Math.abs(movement.speed) < deceleration) {
+        movement.speed = 0;
+      }
     }
-    
-    // Ensure we come to a complete stop
-    if (Math.abs(movement.speed) < deceleration) {
-      movement.speed = 0;
-    }
+  }
+  
+  // Enforce minimum speed when boosting
+  if (boostFactor > 1.0) {
+    movement.speed = Math.max(movement.speed, minBoostSpeed);
   }
   
   // Clamp speed
