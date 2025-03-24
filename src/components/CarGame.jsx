@@ -309,6 +309,7 @@ const CarGame = () => {
             speed={player.speed || 0}
             color={player.color}
             vehicle={player.vehicle}
+            lives={player.lives}
           />
         ))}
 
