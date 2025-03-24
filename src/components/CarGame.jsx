@@ -157,8 +157,6 @@ const GameLogic = ({
 
       const distance = carPosition.distanceTo(fakeCubePosition);
       
-      // Debug log for distance
-      console.log(`[FAKE CUBE] Distance to fake cube ${fakeCube.id}: ${distance.toFixed(2)}, collision radius: ${FAKE_CUBE_COLLISION_RADIUS}`);
 
       // If close enough to fake cube, trigger collision
       if (distance < FAKE_CUBE_COLLISION_RADIUS) {

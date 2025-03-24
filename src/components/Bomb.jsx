@@ -21,7 +21,7 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
 
   // Get player info and multiplayer functions
   const { playerId, players } = useMultiplayer();
-  
+
   // Add explosion state
   const [isExploding, setIsExploding] = useState(false);
   const [explosionScale, setExplosionScale] = useState(1);
@@ -67,62 +67,72 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
 
   // Track explosion progress
   const [explosionProgress, setExplosionProgress] = useState(0);
-  
+
   // Function to check if a player is within the explosion radius
   const checkExplosionCollisions = () => {
     if (!ref.current) return;
-    
+
     // Get bomb's current world position
     const bombPosition = new THREE.Vector3();
     ref.current.getWorldPosition(bombPosition);
-    
-    console.log(`[EXPLOSION] Checking collisions at position (${bombPosition.x.toFixed(2)}, ${bombPosition.y.toFixed(2)}, ${bombPosition.z.toFixed(2)})`);
-    console.log(`[EXPLOSION] Using explosion radius: ${BOMB_EXPLOSION_RADIUS} units`);
-    
+
+    console.log(
+      `[EXPLOSION] Checking collisions at position (${bombPosition.x.toFixed(
+        2
+      )}, ${bombPosition.y.toFixed(2)}, ${bombPosition.z.toFixed(2)})`
+    );
+    console.log(
+      `[EXPLOSION] Using explosion radius: ${BOMB_EXPLOSION_RADIUS} units`
+    );
+
     let playersInRadius = 0;
-    
+
     // Check all players
-    Object.values(players).forEach(player => {
+    Object.values(players).forEach((player) => {
       // Skip if no position data
       if (!player.position) return;
-      
+
       // Create Vector3 from player position
       const playerPosition = new THREE.Vector3(
         player.position.x,
         player.position.y,
         player.position.z
       );
-      
-      // Calculate distance between player and explosion center
+
       const distance = bombPosition.distanceTo(playerPosition);
-      
-      // For debugging - log distance to each player
-      console.log(`[EXPLOSION] Player ${player.id} is at distance: ${distance.toFixed(2)} units`);
-      
-      // Check if player is within explosion radius
+
       if (distance < BOMB_EXPLOSION_RADIUS) {
         playersInRadius++;
-        console.log(`[EXPLOSION] Player ${player.id} caught in explosion (distance: ${distance.toFixed(2)})`);
-        
-        // If this is the local player, trigger spinout
-        if (player.id === playerId && window.playerCarRef && window.playerCarRef.triggerSpinOut) {
+        console.log(
+          `[EXPLOSION] Player ${
+            player.id
+          } caught in explosion (distance: ${distance.toFixed(2)})`
+        );
+
+        if (
+          player.id === playerId &&
+          window.playerCarRef &&
+          window.playerCarRef.triggerSpinOut
+        ) {
           console.log(`[EXPLOSION] Triggering spinout for local player`);
           window.playerCarRef.triggerSpinOut();
         }
       }
     });
-    
-    console.log(`[EXPLOSION] Total players in explosion radius: ${playersInRadius}`);
+
+    console.log(
+      `[EXPLOSION] Total players in explosion radius: ${playersInRadius}`
+    );
   };
 
   // Timer for explosion
   useEffect(() => {
     const explosionTimer = setTimeout(() => {
       setIsExploding(true);
-      
+
       // Check for players caught in the explosion - do this ONCE when explosion happens
       checkExplosionCollisions();
-      
+
       // Remove the fixed timer for ending the explosion - we'll handle this based on scale/progress
     }, 800);
 
@@ -138,12 +148,12 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
       // Track progress from 0 to 1
       setExplosionProgress((prev) => {
         const newProgress = Math.min(prev + 0.025, 1);
-        
+
         // If we've reached the end of the animation, make the bomb invisible
         if (newProgress >= 1 && ref.current) {
           ref.current.visible = false;
         }
-        
+
         return newProgress;
       });
 
@@ -151,8 +161,9 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
       setExplosionScale((prev) => {
         // The target scale follows a sine curve that peaks at the middle of the animation
         // and returns to 0 at the end
-        const target = maxExplosionScale * Math.sin(explosionProgress * Math.PI);
-        
+        const target =
+          maxExplosionScale * Math.sin(explosionProgress * Math.PI);
+
         // Smooth interpolation towards the target
         return THREE.MathUtils.lerp(prev, target, 0.2);
       });
@@ -164,10 +175,19 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
 
       // Calculate the current explosion radius in world units for debugging
       const currentExplosionRadius = explosionScale * 0.3; // 0.3 is the base geometry radius
-      
+
       // For debugging - log the current explosion radius a few times
-      if (explosionProgress < 0.1 || (explosionProgress > 0.48 && explosionProgress < 0.52)) {
-        console.log(`[EXPLOSION] Current explosion radius: ${currentExplosionRadius.toFixed(2)}/${BOMB_EXPLOSION_RADIUS} units (scale: ${explosionScale.toFixed(2)})`);
+      if (
+        explosionProgress < 0.1 ||
+        (explosionProgress > 0.48 && explosionProgress < 0.52)
+      ) {
+        console.log(
+          `[EXPLOSION] Current explosion radius: ${currentExplosionRadius.toFixed(
+            2
+          )}/${BOMB_EXPLOSION_RADIUS} units (scale: ${explosionScale.toFixed(
+            2
+          )})`
+        );
       }
 
       // Get the explosion mesh
@@ -177,13 +197,16 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
         // More opaque at peak, fades out as scale decreases
         const opacity = Math.max(0, scaleFactor);
         explosionMesh.material.opacity = opacity;
-        
+
         // Color transition from yellow to red as we approach peak
         const hue = Math.max(0, 0.16 - peakProgress * 0.16); // 0.16 (yellow) to 0 (red)
         explosionMesh.material.color.setHSL(hue, 1, 0.5);
-        
+
         // Increase emissive intensity at the start, decrease as we reach peak
-        explosionMesh.material.emissiveIntensity = Math.max(1, 4 * (1 - peakProgress) + 1);
+        explosionMesh.material.emissiveIntensity = Math.max(
+          1,
+          4 * (1 - peakProgress) + 1
+        );
       }
 
       // Update particles
@@ -194,16 +217,18 @@ const Bomb = ({ id, position, velocity, firedAt }) => {
           // Update position
           particle.position.add(particle.velocity);
           particleMesh.position.copy(particle.position);
-          
+
           // Scale particles with main explosion but slightly randomized
           // Make scale proportional to the main explosion scale
           const particleScale = explosionScale * (0.1 + Math.random() * 0.05);
           particleMesh.scale.set(particleScale, particleScale, particleScale);
-          
+
           // Fade out particles based on both time and scale
           if (particleMesh.material) {
             // More opacity early in explosion, fade out as progress increases
-            particle.opacity = Math.max(0, 1 - explosionProgress * 1.2) * (0.5 + scaleFactor * 0.5);
+            particle.opacity =
+              Math.max(0, 1 - explosionProgress * 1.2) *
+              (0.5 + scaleFactor * 0.5);
             particleMesh.material.opacity = particle.opacity;
           }
         }
