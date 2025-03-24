@@ -2,6 +2,8 @@ import React, { useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
+const balloonOpacity = 0.8;
+
 function Balloons({ color, lives }) {
   const balloonSpacing = 0.4;
   const balloonScale = 0.2;
@@ -43,23 +45,29 @@ function Balloons({ color, lives }) {
                 roughness={0.2}
                 emissive={color}
                 emissiveIntensity={0.2}
+                transparent
+                opacity={balloonOpacity}
               />
             </mesh>
 
             {/* Balloon knot */}
             <mesh
-              position={[0, -1 * balloonScale, 0]}
+              position={[0, -1.3 * balloonScale, 0]}
               scale={[
-                balloonScale * 0.6,
-                balloonScale * 0.7,
-                balloonScale * 0.6,
+                balloonScale * 0.3,
+                balloonScale * 0.2,
+                balloonScale * 0.3,
               ]}
             >
-              <cylinderGeometry args={[0.5, 0.2, 1, 8]} />
+              <cylinderGeometry
+                args={[0.2, 0.5, 1, 8, 1, true, 0, Math.PI * 2]}
+              />
               <meshStandardMaterial
                 color={color}
                 metalness={0.3}
                 roughness={0.6}
+                transparent
+                opacity={balloonOpacity}
               />
             </mesh>
           </group>
