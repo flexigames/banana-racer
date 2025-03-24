@@ -255,10 +255,22 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
     return;
   }
 
+  const collectedBox = gameState.itemBoxes.find((box) => box.id === itemBoxId);
+  const boxPosition = collectedBox ? { ...collectedBox.position } : null;
+
   gameState.itemBoxes = gameState.itemBoxes.filter(
     (box) => box.id !== itemBoxId
   );
   player.isItemSpinning = true;
+
+  if (boxPosition) {
+    setTimeout(() => {
+      gameState.itemBoxes.push({
+        id: Date.now(),
+        position: boxPosition,
+      });
+    }, 15000);
+  }
 
   setTimeout(() => {
     if (gameState.players[playerId]) {
