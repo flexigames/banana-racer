@@ -75,21 +75,6 @@ export const MultiplayerProvider = ({ children }) => {
           setConnected(false);
         });
 
-        socket.current.on("playerJoined", (data) => {
-          setPlayers((prev) => ({
-            ...prev,
-            [data.player.id]: data.player,
-          }));
-        });
-
-        socket.current.on("playerLeft", (data) => {
-          setPlayers((prev) => {
-            const newPlayers = { ...prev };
-            delete newPlayers[data.id];
-            return newPlayers;
-          });
-        });
-
         socket.current.on("worldJoined", (data) => {
           setPlayers(data.players);
           setBananas(data.bananas);

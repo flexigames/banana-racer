@@ -98,8 +98,6 @@ function initializePlayer(socket, playerId) {
     fakeCubes: Object.values(gameState.fakeCubes),
     itemBoxes: gameState.itemBoxes,
   });
-
-  socket.broadcast.emit("playerJoined", { player });
 }
 
 function updatePlayerPosition(playerId, data) {
@@ -156,8 +154,6 @@ function useItem(playerId, data) {
       dropItem(playerId, data, ITEM_TYPES.FAKE_CUBE);
       break;
   }
-
-  io.emit("itemUpdated", { playerId, item: player.item });
 }
 
 function removeItem(collection, itemId) {
@@ -190,11 +186,6 @@ function handleItemBoxCollection(playerId, itemBoxId) {
         quantity: 1,
       };
       gameState.players[playerId].isItemSpinning = false;
-
-      io.emit("itemUpdated", {
-        playerId,
-        item: gameState.players[playerId].item,
-      });
     }
   }, 3000);
 }
@@ -309,7 +300,6 @@ io.on("connection", (socket) => {
   );
 
   socket.on("disconnect", () => {
-    socket.broadcast.emit("playerLeft", { id: playerId });
     delete gameState.players[playerId];
   });
 });
@@ -324,7 +314,7 @@ setInterval(() => {
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
 });
-
 setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
+
