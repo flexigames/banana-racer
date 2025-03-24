@@ -83,14 +83,12 @@ export const MultiplayerProvider = ({ children }) => {
           setItemBoxes(state.itemBoxes);
         });
 
-        // Initial player setup
         socket.current.on("init", (data) => {
           setPlayerId(data.id);
           setPlayerColor(data.color);
           setPlayerVehicle(data.vehicle || "vehicle-racer");
         });
 
-        // Error handling
         socket.current.on("error", (error) => {
           console.error("[CONTEXT] Connection error:", error);
         });

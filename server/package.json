@@ -2,12 +2,21 @@
   "name": "racing-game-server",
   "version": "1.0.0",
   "description": "Multiplayer server for racing game",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "tsx watch index.ts"
   },
   "dependencies": {
     "socket.io": "^4.7.2",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/uuid": "^9.0.8",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
   }
 }

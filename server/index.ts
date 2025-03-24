@@ -1,6 +1,6 @@
-const { createServer } = require("http");
-const { Server } = require("socket.io");
-const { v4: uuidv4 } = require("uuid");
+import { createServer } from "http";
+import { Server, Socket } from "socket.io";
+import { v4 as uuidv4 } from "uuid";
 
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
@@ -28,14 +28,75 @@ const ITEM_TYPES = {
   FAKE_CUBE: "fake_cube",
 };
 
-const gameState = {
+type Color = {
+  h: number;
+  s: number;
+  l: number;
+};
+
+type Position = {
+  x: number;
+  y: number;
+  z: number;
+};
+
+type Item = {
+  type: string;
+  quantity: number;
+};
+
+type Player = {
+  id: string;
+  socket: string;
+  position: Position;
+  rotation: number;
+  speed: number;
+  color: Color;
+  vehicle: string;
+  lastUpdate: number;
+  item: Item;
+  lives: number;
+  isSpinning?: boolean;
+  isBoosted?: boolean;
+  isItemSpinning?: boolean;
+};
+
+type Banana = {
+  id: string;
+  position: Position;
+  rotation: number;
+  droppedBy: string;
+  droppedAt: number;
+};
+
+type FakeCube = {
+  id: string;
+  position: Position;
+  rotation: number;
+  droppedBy: string;
+  droppedAt: number;
+};
+
+type ItemBox = {
+  id: number;
+  position: number[];
+};
+
+type GameState = {
+  players: Record<string, Player>;
+  bananas: Record<string, Banana>;
+  fakeCubes: Record<string, FakeCube>;
+  itemBoxes: ItemBox[];
+};
+
+const gameState: GameState = {
   players: {},
   bananas: {},
   fakeCubes: {},
   itemBoxes: [],
 };
 
-function generateRandomColor() {
+function generateRandomColor(): Color {
   return {
     h: Math.random(),
     s: 0.65,
@@ -43,24 +104,24 @@ function generateRandomColor() {
   };
 }
 
-function selectRandomVehicle() {
+function selectRandomVehicle(): string {
   return VEHICLE_MODELS[Math.floor(Math.random() * VEHICLE_MODELS.length)];
 }
 
-function generateId(prefix) {
+function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function generateBananaId() {
+function generateBananaId(): string {
   return generateId("banana");
 }
 
-function generateFakeCubeId() {
+function generateFakeCubeId(): string {
   return generateId("fake_cube");
 }
 
-function generateItemBoxes(count = 20) {
-  const boxes = [];
+function generateItemBoxes(count: number = 20): ItemBox[] {
+  const boxes: ItemBox[] = [];
   const mapSize = 100;
 
   for (let i = 1; i <= count; i++) {
@@ -75,9 +136,9 @@ function generateItemBoxes(count = 20) {
   return boxes;
 }
 
-function getRandomSpawnPosition() {
+function getRandomSpawnPosition(): Position {
   const mapSize = 40;
-  let x, z;
+  let x: number, z: number;
   do {
     x = (Math.random() - 0.5) * mapSize;
     z = (Math.random() - 0.5) * mapSize;
@@ -90,7 +151,7 @@ function getRandomSpawnPosition() {
   };
 }
 
-function initializePlayer(playerId) {
+function initializePlayer(playerId: string): void {
   const player = gameState.players[playerId];
   player.position = getRandomSpawnPosition();
   player.rotation = Math.random() * Math.PI * 2;
@@ -99,7 +160,7 @@ function initializePlayer(playerId) {
   player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
 }
 
-function onHit(playerId, duration = 3000) {
+function onHit(playerId: string, duration: number = 3000): void {
   const player = gameState.players[playerId];
   if (!player || player.lives <= 0 || player.isSpinning) return;
 
@@ -114,7 +175,10 @@ function onHit(playerId, duration = 3000) {
   }, duration);
 }
 
-function updatePlayerPosition(playerId, data) {
+function updatePlayerPosition(
+  playerId: string,
+  data: { position: Position; rotation: number; speed?: number }
+): void {
   const player = gameState.players[playerId];
   if (!player || player.lives <= 0) return;
 
@@ -124,7 +188,11 @@ function updatePlayerPosition(playerId, data) {
   player.lastUpdate = Date.now();
 }
 
-function dropItem(playerId, data, itemType) {
+function dropItem(
+  playerId: string,
+  data: { position: Position; rotation?: number },
+  itemType: string
+): void {
   const itemId =
     itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
   const item = {
@@ -146,7 +214,10 @@ function dropItem(playerId, data, itemType) {
   }, 120000);
 }
 
-function useItem(playerId, data) {
+function useItem(
+  playerId: string,
+  data: { position: Position; rotation?: number }
+): void {
   const player = gameState.players[playerId];
   if (!player?.item?.quantity) return;
 
@@ -170,12 +241,12 @@ function useItem(playerId, data) {
   }
 }
 
-function removeItem(collection, itemId) {
+function removeItem(collection: Record<string, any>, itemId: string): void {
   if (!collection[itemId]) return;
   delete collection[itemId];
 }
 
-function handleItemBoxCollection(playerId, itemBoxId) {
+function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
   const player = gameState.players[playerId];
   if (!player || player.isItemSpinning || player.item?.quantity > 0) {
     gameState.itemBoxes = gameState.itemBoxes.filter(
@@ -204,7 +275,7 @@ function handleItemBoxCollection(playerId, itemBoxId) {
   }, 3000);
 }
 
-function cleanupInactivePlayers() {
+function cleanupInactivePlayers(): void {
   const now = Date.now();
   Object.keys(gameState.players).forEach((playerId) => {
     const player = gameState.players[playerId];
@@ -216,13 +287,17 @@ function cleanupInactivePlayers() {
   });
 }
 
-function checkCollision(pos1, pos2, radius) {
+function checkCollision(
+  pos1: Position,
+  pos2: Position,
+  radius: number
+): boolean {
   const dx = pos1.x - pos2.x;
   const dz = pos1.z - pos2.z;
   return Math.sqrt(dx * dx + dz * dz) < radius;
 }
 
-function handleCollisions() {
+function handleCollisions(): void {
   Object.values(gameState.bananas).forEach((banana) => {
     Object.values(gameState.players).forEach((player) => {
       if (checkCollision(player.position, banana.position, 0.9)) {
@@ -267,7 +342,7 @@ function handleCollisions() {
   });
 }
 
-io.on("connection", (socket) => {
+io.on("connection", (socket: Socket) => {
   const playerId = uuidv4();
   gameState.players[playerId] = {
     id: playerId,
@@ -321,6 +396,7 @@ setInterval(() => {
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
 });
+
 setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);

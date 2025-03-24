@@ -11,3 +11,5 @@ Do not add comments, unless absolutely necessary.
 Use named functions. Do not use const functions.
 
 Use guards over nested conditionals.
+
+Use types over interfaces in typescript code.
