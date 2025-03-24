@@ -23,6 +23,7 @@ const MultiplayerContext = createContext({
   hitBanana: () => {},
   hitFakeCube: () => {},
   collectItemBox: () => {},
+  respawn: () => {},
 });
 
 // Custom hook to use the context
@@ -73,13 +74,6 @@ export const MultiplayerProvider = ({ children }) => {
 
         socket.current.on("disconnect", () => {
           setConnected(false);
-        });
-
-        socket.current.on("worldJoined", (data) => {
-          setPlayers(data.players);
-          setBananas(data.bananas);
-          setFakeCubes(data.fakeCubes);
-          setItemBoxes(data.itemBoxes);
         });
 
         socket.current.on("gameState", (state) => {
@@ -182,6 +176,13 @@ export const MultiplayerProvider = ({ children }) => {
     socket.current.emit("collectItemBox", { itemBoxId });
   };
 
+  // Respawn function
+  const respawn = () => {
+    if (connected && socket.current) {
+      socket.current.emit("respawn");
+    }
+  };
+
   // Change server URL
   const changeServerUrl = (useLocalServer = false) => {
     const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
@@ -219,6 +220,7 @@ export const MultiplayerProvider = ({ children }) => {
     hitBanana,
     hitFakeCube,
     collectItemBox,
+    respawn,
     changeServerUrl,
   };
 

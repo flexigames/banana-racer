@@ -9,6 +9,7 @@ import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
+import GameOver from "./GameOver";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -137,6 +138,7 @@ const CarGame = () => {
   const currentPlayer = players[playerId];
   const isSpinning = currentPlayer?.isSpinning;
   const isItemSpinning = currentPlayer?.isItemSpinning;
+  const isGameOver = currentPlayer?.lives <= 0;
 
   // Update car's spinning state based on server state
   useEffect(() => {
@@ -157,9 +159,8 @@ const CarGame = () => {
   };
 
   // Get remote players (all players except current player)
-  const remotePlayers = Object.values(players).filter(
-    (player) => player.id !== playerId
-  );
+  const remotePlayers = Object.values(players)
+    .filter((player) => player.id !== playerId && player.lives > 0);
 
   // Get current player's item data
   const currentItem = currentPlayer?.item;
@@ -256,6 +257,7 @@ const CarGame = () => {
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+      {isGameOver && <GameOver />}
       <Canvas>
         {/* Always use follow camera */}
         <FollowCamera target={carRef} />

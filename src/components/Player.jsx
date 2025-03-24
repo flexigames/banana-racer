@@ -34,6 +34,7 @@ const Player = forwardRef((props, ref) => {
   
   // Get boost state from player data
   const isBoosted = players[playerId]?.isBoosted || false;
+  const isDead = players[playerId]?.lives <= 0;
   
   // Create a THREE.Color from player color data
   const carColor = useMemo(() => {
@@ -121,7 +122,7 @@ const Player = forwardRef((props, ref) => {
 
   // Update physics each frame
   useFrame((state, delta) => {
-    if (!car.current) return;
+    if (!car.current || isDead) return;
     
     if (spinningOut) {
       // When spinning out, gradually decrease the spinning rate
@@ -199,6 +200,8 @@ const Player = forwardRef((props, ref) => {
     triggerSpinOut,
     isSpinningOut: () => spinningOut
   }));
+
+  if (isDead) return null;
 
   return (
     <group ref={car} position={[0, 0.1, 0]}>

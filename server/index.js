@@ -75,34 +75,48 @@ function generateItemBoxes(count = 20) {
   return boxes;
 }
 
-function initializePlayer(socket, playerId) {
-  const player = gameState.players[playerId];
-  const playerCount = Object.keys(gameState.players).length;
-  const spacing = 3;
+function getRandomSpawnPosition() {
+  const mapSize = 40;
+  let x, z;
+  do {
+    x = (Math.random() - 0.5) * mapSize;
+    z = (Math.random() - 0.5) * mapSize;
+  } while (Math.sqrt(x * x + z * z) < 5); // Ensure not too close to origin
 
-  player.position = {
-    x: (playerCount - 1) * spacing,
+  return {
+    x,
     y: 0.1,
-    z: 0,
+    z,
   };
-  player.rotation = 0;
+}
+
+function initializePlayer(playerId) {
+  const player = gameState.players[playerId];
+  player.position = getRandomSpawnPosition();
+  player.rotation = Math.random() * Math.PI * 2;
   player.speed = 0;
+  player.lives = 3;
+  player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
+}
 
-  const existingPlayers = Object.values(gameState.players).filter(
-    (p) => p.id !== playerId
-  );
+function onHit(playerId, duration = 3000) {
+  const player = gameState.players[playerId];
+  if (!player || player.lives <= 0 || player.isSpinning) return;
 
-  socket.emit("worldJoined", {
-    players: existingPlayers,
-    bananas: Object.values(gameState.bananas),
-    fakeCubes: Object.values(gameState.fakeCubes),
-    itemBoxes: gameState.itemBoxes,
-  });
+  player.lives--;
+  player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
+  player.isSpinning = true;
+
+  setTimeout(() => {
+    if (gameState.players[playerId]) {
+      gameState.players[playerId].isSpinning = false;
+    }
+  }, duration);
 }
 
 function updatePlayerPosition(playerId, data) {
   const player = gameState.players[playerId];
-  if (!player) return;
+  if (!player || player.lives <= 0) return;
 
   player.position = data.position;
   player.rotation = data.rotation;
@@ -208,23 +222,12 @@ function checkCollision(pos1, pos2, radius) {
   return Math.sqrt(dx * dx + dz * dz) < radius;
 }
 
-function setPlayerSpinning(playerId, duration = 3000) {
-  if (!gameState.players[playerId]) return;
-
-  gameState.players[playerId].isSpinning = true;
-  setTimeout(() => {
-    if (gameState.players[playerId]) {
-      gameState.players[playerId].isSpinning = false;
-    }
-  }, duration);
-}
-
 function handleCollisions() {
   Object.values(gameState.bananas).forEach((banana) => {
     Object.values(gameState.players).forEach((player) => {
       if (checkCollision(player.position, banana.position, 0.9)) {
         removeItem(gameState.bananas, banana.id);
-        setPlayerSpinning(player.id);
+        onHit(player.id);
       }
     });
   });
@@ -233,7 +236,7 @@ function handleCollisions() {
     Object.values(gameState.players).forEach((player) => {
       if (checkCollision(player.position, fakeCube.position, 0.9)) {
         removeItem(gameState.fakeCubes, fakeCube.id);
-        setPlayerSpinning(player.id);
+        onHit(player.id);
       }
     });
   });
@@ -245,7 +248,7 @@ function handleCollisions() {
         player2.isBoosted &&
         checkCollision(player1.position, player2.position, 1.2)
       ) {
-        setPlayerSpinning(player1.id);
+        onHit(player1.id);
       }
     });
   });
@@ -276,6 +279,7 @@ io.on("connection", (socket) => {
     vehicle: selectRandomVehicle(),
     lastUpdate: Date.now(),
     item: { type: ITEM_TYPES.BANANA, quantity: 0 },
+    lives: 3,
   };
 
   socket.emit("init", {
@@ -285,7 +289,7 @@ io.on("connection", (socket) => {
     item: gameState.players[playerId].item,
   });
 
-  initializePlayer(socket, playerId);
+  initializePlayer(playerId);
 
   socket.on("update", (data) => updatePlayerPosition(playerId, data));
   socket.on("useItem", (data) => useItem(playerId, data));
@@ -298,6 +302,9 @@ io.on("connection", (socket) => {
   socket.on("collectItemBox", (data) =>
     handleItemBoxCollection(playerId, data.itemBoxId)
   );
+  socket.on("respawn", () => {
+    initializePlayer(playerId);
+  });
 
   socket.on("disconnect", () => {
     delete gameState.players[playerId];
@@ -317,4 +324,3 @@ httpServer.listen(PORT, () => {
 setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
-

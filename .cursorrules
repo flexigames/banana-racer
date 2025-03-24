@@ -6,8 +6,8 @@ there is a server in the /server folder. Adapt it, if needed (which is most of t
 
 Do not change constants unless needed for your task.
 
-Do not add unnecessary comments.
+Do not add comments, unless absolutely necessary.
 
-Use named functions over const functions.
+Use named functions. Do not use const functions.
 
 Use guards over nested conditionals.
