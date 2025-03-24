@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { io } from "socket.io-client";
 
 // Constants
@@ -26,7 +32,7 @@ const MultiplayerContext = createContext({
 export const useMultiplayer = () => {
   const context = useContext(MultiplayerContext);
   if (!context) {
-    throw new Error('useMultiplayer must be used within a MultiplayerProvider');
+    throw new Error("useMultiplayer must be used within a MultiplayerProvider");
   }
   return context;
 };
@@ -35,7 +41,7 @@ export const useMultiplayer = () => {
 export const MultiplayerProvider = ({ children }) => {
   // Socket connection
   const socket = useRef(null);
-  
+
   // State
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(null);
@@ -52,8 +58,9 @@ export const MultiplayerProvider = ({ children }) => {
   // Server URL
   const [serverUrl, setServerUrl] = useState(() => {
     if (import.meta.env.DEV) {
-      const useLocalServer = import.meta.env.VITE_USE_LOCAL_SERVER === 'true' || 
-                            window.localStorage.getItem('useLocalServer') === 'true';
+      const useLocalServer =
+        import.meta.env.VITE_USE_LOCAL_SERVER === "true" ||
+        window.localStorage.getItem("useLocalServer") === "true";
       return useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
     }
     return REMOTE_SERVER_URL;
@@ -110,7 +117,10 @@ export const MultiplayerProvider = ({ children }) => {
 
         // Cannon hit event (needs local handling)
         socket.current.on("cannonHit", (data) => {
-          if (data.hitPlayer === playerId && window.playerCarRef?.triggerSpinOut) {
+          if (
+            data.hitPlayer === playerId &&
+            window.playerCarRef?.triggerSpinOut
+          ) {
             window.playerCarRef.triggerSpinOut();
           }
         });
@@ -119,7 +129,6 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.on("error", (error) => {
           console.error("[CONTEXT] Connection error:", error);
         });
-        
       } catch (error) {
         console.error("[CONTEXT] Connection initialization error:", error);
       }
@@ -157,12 +166,12 @@ export const MultiplayerProvider = ({ children }) => {
   // Item functions
   const useItem = (carPosition, carRotation) => {
     if (!connected || !socket.current) return false;
-    
+
     const now = Date.now();
     if (now - lastItemUseTime < itemUseTimeout) return false;
 
     if (!playerId) return false;
-    
+
     const playerData = players[playerId];
     if (!playerData?.item?.quantity) return false;
 
@@ -194,9 +203,9 @@ export const MultiplayerProvider = ({ children }) => {
 
   const collectItemBox = (itemBoxId) => {
     if (!connected || !socket.current) return;
-    socket.current.emit('collectItemBox', {
+    socket.current.emit("collectItemBox", {
       playerId: playerId,
-      itemBoxId: itemBoxId
+      itemBoxId: itemBoxId,
     });
   };
 
@@ -213,24 +222,24 @@ export const MultiplayerProvider = ({ children }) => {
   // Change server URL
   const changeServerUrl = (useLocalServer = false) => {
     const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
-    
+
     if (newUrl !== serverUrl) {
       if (socket.current) {
         socket.current.disconnect();
       }
-      
+
       setServerUrl(newUrl);
       setConnected(false);
-      
+
       if (useLocalServer) {
-        window.localStorage.setItem('useLocalServer', 'true');
+        window.localStorage.setItem("useLocalServer", "true");
       } else {
-        window.localStorage.removeItem('useLocalServer');
+        window.localStorage.removeItem("useLocalServer");
       }
-      
+
       console.log(`Server URL changed to: ${newUrl}`);
     }
-    
+
     return newUrl;
   };
 
@@ -249,7 +258,7 @@ export const MultiplayerProvider = ({ children }) => {
     hitCannon,
     hitFakeCube,
     collectItemBox,
-    changeServerUrl
+    changeServerUrl,
   };
 
   return (
@@ -259,4 +268,4 @@ export const MultiplayerProvider = ({ children }) => {
   );
 };
 
-export default MultiplayerProvider; 
+export default MultiplayerProvider;

@@ -137,8 +137,6 @@ function handlePlayerUpdate(playerId, data) {
   player.rotation = data.rotation;
   player.speed = data.speed || 0;
   player.lastUpdate = Date.now();
-
-  io.emit("playerUpdate", player);
 }
 
 function handleItemUse(playerId, data) {
@@ -375,12 +373,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// Clean up inactive players every 30 seconds
 setInterval(() => {
   cleanupInactivePlayers();
 }, 30000);
 
-// Start the server
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
   console.log(
@@ -389,6 +385,11 @@ httpServer.listen(PORT, () => {
 });
 
 setInterval(() => {
-  console.log("Emitting game state");
-  io.emit("gameState", gameState);
+  const timestamp =
+    new Date().toLocaleTimeString() +
+    "." +
+    new Date().getMilliseconds().toString().padStart(3, "0");
+  console.log(`[${timestamp}] Emitting game state`);
+
+  io.emit("gameState", { ...gameState });
 }, 10);
