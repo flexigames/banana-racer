@@ -2,19 +2,17 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const { v4: uuidv4 } = require("uuid");
 
-// Create HTTP server and Socket.IO server
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Allow all origins
+    origin: "*",
     methods: ["GET", "POST"],
     allowedHeaders: ["*"],
     credentials: true,
   },
 });
 
-// Define available vehicle models (from actual files in assets)
 const VEHICLE_MODELS = [
   "vehicle-racer",
   "vehicle-truck",
@@ -24,18 +22,15 @@ const VEHICLE_MODELS = [
   "vehicle-speedster",
 ];
 
-// Define available item types
 const ITEM_TYPES = {
   BANANA: "banana",
   BOOST: "boost",
-  CANNON: "cannon",
   FAKE_CUBE: "fake_cube",
 };
 
 const gameState = {
   players: {},
   bananas: {},
-  cannonballs: {},
   fakeCubes: {},
   itemBoxes: [],
 };
@@ -49,24 +44,22 @@ function generateRandomColor() {
 }
 
 function selectRandomVehicle() {
-  const randomIndex = Math.floor(Math.random() * VEHICLE_MODELS.length);
-  return VEHICLE_MODELS[randomIndex];
+  return VEHICLE_MODELS[Math.floor(Math.random() * VEHICLE_MODELS.length)];
+}
+
+function generateId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 function generateBananaId() {
-  return `banana-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function generateCannonballId() {
-  return `cannon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return generateId("banana");
 }
 
 function generateFakeCubeId() {
-  return `fake_cube_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return generateId("fake_cube");
 }
 
 function generateItemBoxes(count = 20) {
-  console.log(`[ITEM] Generating ${count} item boxes`);
   const boxes = [];
   const mapSize = 100;
 
@@ -76,21 +69,12 @@ function generateItemBoxes(count = 20) {
       -0.1,
       Math.random() * mapSize - mapSize / 2,
     ];
-
-    boxes.push({
-      id: i,
-      position: position,
-    });
-    console.log(
-      `[ITEM] Generated item box ${i} at position [${position.join(", ")}]`
-    );
+    boxes.push({ id: i, position });
   }
 
-  console.log(`[ITEM] Total item boxes generated: ${boxes.length}`);
   return boxes;
 }
 
-// Game logic functions
 function initializePlayer(socket, playerId) {
   const player = gameState.players[playerId];
   const playerCount = Object.keys(gameState.players).length;
@@ -104,32 +88,21 @@ function initializePlayer(socket, playerId) {
   player.rotation = 0;
   player.speed = 0;
 
-  console.log(`Positioned player ${playerId} at:`, player.position);
-
   const existingPlayers = Object.values(gameState.players).filter(
     (p) => p.id !== playerId
-  );
-
-  console.log(
-    `[ITEM] Sending ${gameState.itemBoxes.length} item boxes to player ${playerId}`
   );
 
   socket.emit("worldJoined", {
     players: existingPlayers,
     bananas: Object.values(gameState.bananas),
-    cannonballs: Object.values(gameState.cannonballs),
-    itemBoxes: gameState.itemBoxes,
     fakeCubes: Object.values(gameState.fakeCubes),
+    itemBoxes: gameState.itemBoxes,
   });
 
-  socket.broadcast.emit("playerJoined", {
-    player,
-  });
-
-  console.log(`Player ${playerId} joined the world`);
+  socket.broadcast.emit("playerJoined", { player });
 }
 
-function handlePlayerUpdate(playerId, data) {
+function updatePlayerPosition(playerId, data) {
   const player = gameState.players[playerId];
   if (!player) return;
 
@@ -139,161 +112,91 @@ function handlePlayerUpdate(playerId, data) {
   player.lastUpdate = Date.now();
 }
 
-function handleItemUse(playerId, data) {
-  const player = gameState.players[playerId];
-  console.log(`[ITEM USE] Player ${playerId} attempting to use item`);
+function dropItem(playerId, data, itemType) {
+  const itemId =
+    itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
+  const item = {
+    id: itemId,
+    position: data.position,
+    rotation: data.rotation || 0,
+    droppedBy: playerId,
+    droppedAt: Date.now(),
+  };
 
-  if (!player || !player.item || player.item.quantity <= 0) {
-    console.log(`[ITEM USE] Player ${playerId} has no items to use`);
-    return;
-  }
+  const collection =
+    itemType === ITEM_TYPES.BANANA ? gameState.bananas : gameState.fakeCubes;
+  collection[itemId] = item;
+
+  setTimeout(() => {
+    if (collection[itemId]) {
+      delete collection[itemId];
+    }
+  }, 120000);
+}
+
+function useItem(playerId, data) {
+  const player = gameState.players[playerId];
+  if (!player?.item?.quantity) return;
 
   player.item.quantity--;
-  console.log(
-    `[ITEM USE] Player ${playerId} ${player.item.type} count reduced to ${player.item.quantity}`
-  );
 
   switch (player.item.type) {
-    case ITEM_TYPES.BANANA: {
-      const bananaId = generateBananaId();
-      const banana = {
-        id: bananaId,
-        position: data.position,
-        rotation: data.rotation || 0,
-        droppedBy: playerId,
-        droppedAt: Date.now(),
-      };
-
-      gameState.bananas[bananaId] = banana;
-
-      setTimeout(() => {
-        if (gameState.bananas[bananaId]) {
-          delete gameState.bananas[bananaId];
-        }
-      }, 120000);
+    case ITEM_TYPES.BANANA:
+      dropItem(playerId, data, ITEM_TYPES.BANANA);
       break;
-    }
-    case ITEM_TYPES.BOOST: {
-      // Set boost state in player
+    case ITEM_TYPES.BOOST:
       player.isBoosted = true;
-      // Reset boost after 5 seconds
       setTimeout(() => {
         if (gameState.players[playerId]) {
           gameState.players[playerId].isBoosted = false;
         }
       }, 5000);
       break;
-    }
-    case ITEM_TYPES.CANNON: {
-      const cannonId = generateCannonballId();
-      const defaultVelocity = {
-        x: Math.sin(data.rotation || 0) * 30,
-        y: 0,
-        z: Math.cos(data.rotation || 0) * 30,
-      };
-
-      const cannonData = {
-        id: cannonId,
-        position: data.position,
-        rotation: data.rotation || 0,
-        velocity: data.velocity || defaultVelocity,
-        firedBy: playerId,
-        firedAt: Date.now(),
-      };
-
-      gameState.cannonballs[cannonId] = cannonData;
-      io.emit("cannonFired", cannonData);
-
-      setTimeout(() => {
-        if (gameState.cannonballs[cannonId]) {
-          delete gameState.cannonballs[cannonId];
-          io.emit("cannonExpired", { id: cannonId });
-        }
-      }, 10000);
+    case ITEM_TYPES.FAKE_CUBE:
+      dropItem(playerId, data, ITEM_TYPES.FAKE_CUBE);
       break;
-    }
-    case ITEM_TYPES.FAKE_CUBE: {
-      const fakeCubeId = generateFakeCubeId();
-      const fakeCube = {
-        id: fakeCubeId,
-        position: data.position,
-        rotation: data.rotation || 0,
-        droppedBy: playerId,
-        droppedAt: Date.now(),
-      };
-
-      gameState.fakeCubes[fakeCubeId] = fakeCube;
-
-      setTimeout(() => {
-        if (gameState.fakeCubes[fakeCubeId]) {
-          delete gameState.fakeCubes[fakeCubeId];
-        }
-      }, 120000);
-      break;
-    }
   }
 
-  io.emit("itemUpdated", {
-    playerId,
-    item: player.item,
-  });
+  io.emit("itemUpdated", { playerId, item: player.item });
 }
 
-function handleBananaHit(playerId, bananaId) {
-  const player = gameState.players[playerId];
-  if (!player || !gameState.bananas[bananaId]) return;
-
-  delete gameState.bananas[bananaId];
-}
-
-function handleCannonHit(playerId, cannonId) {
-  const player = gameState.players[playerId];
-  if (!player || !gameState.cannonballs[cannonId]) return;
-
-  const hitCannonball = gameState.cannonballs[cannonId];
-  delete gameState.cannonballs[cannonId];
-
-  io.emit("cannonHit", {
-    id: cannonId,
-    hitPlayer: playerId,
-    firedBy: hitCannonball.firedBy,
-  });
-}
-
-function handleFakeCubeHit(playerId, fakeCubeId) {
-  if (!gameState.fakeCubes[fakeCubeId]) return;
-
-  delete gameState.fakeCubes[fakeCubeId];
+function removeItem(collection, itemId) {
+  if (!collection[itemId]) return;
+  delete collection[itemId];
 }
 
 function handleItemBoxCollection(playerId, itemBoxId) {
   const player = gameState.players[playerId];
-  if (!player) return;
+  if (!player || player.isItemSpinning || player.item?.quantity > 0) {
+    gameState.itemBoxes = gameState.itemBoxes.filter(
+      (box) => box.id !== itemBoxId
+    );
+    return;
+  }
 
-  const itemBoxIndex = gameState.itemBoxes.findIndex(
-    (box) => box.id === itemBoxId
+  gameState.itemBoxes = gameState.itemBoxes.filter(
+    (box) => box.id !== itemBoxId
   );
-  if (itemBoxIndex === -1) return;
-
-  const itemTypeRoll = Math.random();
-  let itemType;
-
-  if (itemTypeRoll < 0.25) itemType = ITEM_TYPES.BANANA;
-  else if (itemTypeRoll < 0.5) itemType = ITEM_TYPES.BOOST;
-  else if (itemTypeRoll < 0.75) itemType = ITEM_TYPES.CANNON;
-  else itemType = ITEM_TYPES.FAKE_CUBE;
-
-  const quantity = Math.floor(Math.random() * 3) + 1;
-  player.item = { type: itemType, quantity };
-
-  const collectedBox = gameState.itemBoxes.splice(itemBoxIndex, 1)[0];
-
-  io.emit("itemCollected", { playerId, itemBoxId });
-  io.emit("itemUpdated", { playerId, item: player.item });
+  player.isItemSpinning = true;
 
   setTimeout(() => {
-    gameState.itemBoxes.push(collectedBox);
-  }, 15000);
+    if (gameState.players[playerId]) {
+      const itemTypes = Object.values(ITEM_TYPES);
+      const randomItemType =
+        itemTypes[Math.floor(Math.random() * itemTypes.length)];
+
+      gameState.players[playerId].item = {
+        type: randomItemType,
+        quantity: 1,
+      };
+      gameState.players[playerId].isItemSpinning = false;
+
+      io.emit("itemUpdated", {
+        playerId,
+        item: gameState.players[playerId].item,
+      });
+    }
+  }, 3000);
 }
 
 function cleanupInactivePlayers() {
@@ -302,19 +205,74 @@ function cleanupInactivePlayers() {
     const player = gameState.players[playerId];
     if (now - player.lastUpdate > 30000) {
       const socket = io.sockets.sockets.get(player.socket);
-      if (socket) {
-        socket.disconnect(true);
-        console.log(`Player ${playerId} timed out (inactive)`);
-      }
+      if (socket) socket.disconnect(true);
       delete gameState.players[playerId];
     }
   });
 }
 
-// Initialize item boxes
-gameState.itemBoxes = generateItemBoxes(20);
+function checkCollision(pos1, pos2, radius) {
+  const dx = pos1.x - pos2.x;
+  const dz = pos1.z - pos2.z;
+  return Math.sqrt(dx * dx + dz * dz) < radius;
+}
 
-// Socket.IO connection handling
+function setPlayerSpinning(playerId, duration = 3000) {
+  if (!gameState.players[playerId]) return;
+
+  gameState.players[playerId].isSpinning = true;
+  setTimeout(() => {
+    if (gameState.players[playerId]) {
+      gameState.players[playerId].isSpinning = false;
+    }
+  }, duration);
+}
+
+function handleCollisions() {
+  Object.values(gameState.bananas).forEach((banana) => {
+    Object.values(gameState.players).forEach((player) => {
+      if (checkCollision(player.position, banana.position, 0.9)) {
+        removeItem(gameState.bananas, banana.id);
+        setPlayerSpinning(player.id);
+      }
+    });
+  });
+
+  Object.values(gameState.fakeCubes).forEach((fakeCube) => {
+    Object.values(gameState.players).forEach((player) => {
+      if (checkCollision(player.position, fakeCube.position, 0.9)) {
+        removeItem(gameState.fakeCubes, fakeCube.id);
+        setPlayerSpinning(player.id);
+      }
+    });
+  });
+
+  Object.values(gameState.players).forEach((player1) => {
+    Object.values(gameState.players).forEach((player2) => {
+      if (
+        player1.id !== player2.id &&
+        player2.isBoosted &&
+        checkCollision(player1.position, player2.position, 1.2)
+      ) {
+        setPlayerSpinning(player1.id);
+      }
+    });
+  });
+
+  gameState.itemBoxes.forEach((itemBox) => {
+    Object.values(gameState.players).forEach((player) => {
+      const itemBoxPosition = {
+        x: itemBox.position[0],
+        y: itemBox.position[1],
+        z: itemBox.position[2],
+      };
+      if (checkCollision(player.position, itemBoxPosition, 0.9)) {
+        handleItemBoxCollection(player.id, itemBox.id);
+      }
+    });
+  });
+}
+
 io.on("connection", (socket) => {
   const playerId = uuidv4();
   gameState.players[playerId] = {
@@ -329,10 +287,6 @@ io.on("connection", (socket) => {
     item: { type: ITEM_TYPES.BANANA, quantity: 0 },
   };
 
-  console.log(
-    `Player ${playerId} connected (socket: ${socket.id}), assigned vehicle: ${gameState.players[playerId].vehicle}`
-  );
-
   socket.emit("init", {
     id: playerId,
     color: gameState.players[playerId].color,
@@ -342,46 +296,33 @@ io.on("connection", (socket) => {
 
   initializePlayer(socket, playerId);
 
-  socket.on("update", (data) => {
-    handlePlayerUpdate(playerId, data);
-  });
-
-  socket.on("useItem", (data) => {
-    handleItemUse(playerId, data);
-  });
-
-  socket.on("hitBanana", (data) => {
-    handleBananaHit(playerId, data.bananaId);
-  });
-
-  socket.on("hitCannon", (data) => {
-    handleCannonHit(playerId, data.cannonId);
-  });
-
-  socket.on("collectItemBox", (data) => {
-    handleItemBoxCollection(playerId, data.itemBoxId);
-  });
-
-  socket.on("hitFakeCube", (data) => {
-    handleFakeCubeHit(playerId, data.fakeCubeId);
-  });
+  socket.on("update", (data) => updatePlayerPosition(playerId, data));
+  socket.on("useItem", (data) => useItem(playerId, data));
+  socket.on("hitBanana", (data) =>
+    removeItem(gameState.bananas, data.bananaId)
+  );
+  socket.on("hitFakeCube", (data) =>
+    removeItem(gameState.fakeCubes, data.fakeCubeId)
+  );
+  socket.on("collectItemBox", (data) =>
+    handleItemBoxCollection(playerId, data.itemBoxId)
+  );
 
   socket.on("disconnect", () => {
     socket.broadcast.emit("playerLeft", { id: playerId });
     delete gameState.players[playerId];
-    console.log(`Player ${playerId} disconnected`);
   });
 });
 
+gameState.itemBoxes = generateItemBoxes(20);
+
 setInterval(() => {
+  handleCollisions();
   cleanupInactivePlayers();
-}, 30000);
+}, 1000 / 60);
 
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
-  console.log(
-    `[ITEM] Server initialized with ${gameState.itemBoxes.length} item boxes`
-  );
 });
 
 setInterval(() => {

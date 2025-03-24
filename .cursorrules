@@ -5,3 +5,9 @@ everything socket related client-side should be in the MultiplayerContext
 there is a server in the /server folder. Adapt it, if needed (which is most of the time), whenever you make changes
 
 Do not change constants unless needed for your task.
+
+Do not add unnecessary comments.
+
+Use named functions over const functions.
+
+Use guards over nested conditionals.

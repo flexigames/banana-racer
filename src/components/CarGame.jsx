@@ -4,18 +4,11 @@ import { PerspectiveCamera, Grid } from "@react-three/drei";
 import Player from "./Player";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
-import Bomb from "./Bomb";
 import FakeCube from "./FakeCube";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
-import {
-  BANANA_COLLISION_RADIUS,
-  ITEM_BOX_COLLISION_RADIUS,
-  FAKE_CUBE_COLLISION_RADIUS,
-  PLAYER_COLLISION_RADIUS,
-} from "../constants";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -83,129 +76,15 @@ const FollowCamera = ({ target }) => {
   );
 };
 
-// Component to handle collision detection and game logic
-const GameLogic = ({
-  carRef,
-  bananas,
-  itemBoxes,
-  fakeCubes,
-  remotePlayers,
-  onBananaHit,
-  onItemBoxCollect,
-  onFakeCubeHit,
-  onPlayerCollision,
-}) => {
-  // Check for collisions each frame
-  useFrame(() => {
-    if (!carRef.current || carRef.current.isSpinningOut?.()) return;
-
-    const carPosition = new THREE.Vector3(
-      carRef.current.position.x,
-      carRef.current.position.y,
-      carRef.current.position.z
-    );
-
-    // Check collision with other players
-    remotePlayers.forEach((player) => {
-      if (!player.position) return;
-
-      const playerPosition = new THREE.Vector3(
-        player.position.x,
-        player.position.y,
-        player.position.z
-      );
-
-      const distance = carPosition.distanceTo(playerPosition);
-
-      // If close enough to another player and they are boosting, trigger collision
-      if (distance < PLAYER_COLLISION_RADIUS && player.speed >= 15) { // speed >= 15 indicates boost
-        console.log(
-          `[PLAYER COLLISION] Detected collision with boosted player ${player.id} at distance ${distance.toFixed(2)}`
-        );
-        onPlayerCollision(player.id);
-      }
-    });
-
-    // Check collision with each banana
-    bananas.forEach((banana) => {
-      const bananaPosition = new THREE.Vector3(
-        banana.position.x,
-        banana.position.y,
-        banana.position.z
-      );
-
-      const distance = carPosition.distanceTo(bananaPosition);
-
-      // If close enough to banana, trigger collision
-      if (distance < BANANA_COLLISION_RADIUS) {
-        console.log(
-          `Collision detected with banana ${
-            banana.id
-          } at distance ${distance.toFixed(2)}`
-        );
-        onBananaHit(banana.id);
-      }
-    });
-
-    // Check collision with each fake cube
-    fakeCubes.forEach((fakeCube) => {
-      const fakeCubePosition = new THREE.Vector3(
-        fakeCube.position.x,
-        fakeCube.position.y,
-        fakeCube.position.z
-      );
-
-      const distance = carPosition.distanceTo(fakeCubePosition);
-      
-
-      // If close enough to fake cube, trigger collision
-      if (distance < FAKE_CUBE_COLLISION_RADIUS) {
-        console.log(
-          `[FAKE CUBE] Collision detected with fake cube ${
-            fakeCube.id
-          } at distance ${distance.toFixed(2)}`
-        );
-        onFakeCubeHit(fakeCube.id);
-      }
-    });
-
-    // Check collision with each item box
-    itemBoxes.forEach((box) => {
-      const boxPosition = new THREE.Vector3(
-        box.position[0],
-        box.position[1],
-        box.position[2]
-      );
-
-      const distance = carPosition.distanceTo(boxPosition);
-
-      // If close enough to item box, trigger collection
-      if (distance < ITEM_BOX_COLLISION_RADIUS) {
-        console.log(
-          `Collision detected with item box ${
-            box.id
-          } at distance ${distance.toFixed(2)}`
-        );
-        onItemBoxCollect(box.id);
-      }
-    });
-  });
-
-  return null; // This component doesn't render anything
-};
-
-// New component to handle position updates
 const PlayerUpdater = ({ carRef }) => {
   const { connected, updatePlayerPosition } = useMultiplayer();
 
   useFrame(() => {
     if (carRef.current && connected) {
-      // Get car data
       const position = carRef.current.position;
       const rotation = carRef.current.rotation.y;
       const speed = carRef.current.speed || 0;
 
-      // Update position via context
       updatePlayerPosition(
         { x: position.x, y: position.y, z: position.z },
         rotation,
@@ -220,17 +99,12 @@ const PlayerUpdater = ({ carRef }) => {
 const CarGame = () => {
   const carRef = useRef();
   const {
-    connected,
     playerId,
     players,
     bananas,
-    cannonballs,
     itemBoxes,
     fakeCubes,
     useItem,
-    hitBanana,
-    hitCannon,
-    hitFakeCube,
     collectItemBox,
   } = useMultiplayer();
 
@@ -259,90 +133,27 @@ const CarGame = () => {
     };
   }, [useItem]);
 
-  // Handle banana collision
-  const handleBananaHit = (bananaId) => {
-    // Trigger car spinout
-    if (carRef.current && carRef.current.triggerSpinOut) {
+  // Get current player's data
+  const currentPlayer = players[playerId];
+  const isSpinning = currentPlayer?.isSpinning;
+  const isItemSpinning = currentPlayer?.isItemSpinning;
+
+  // Update car's spinning state based on server state
+  useEffect(() => {
+    if (carRef.current && isSpinning) {
       carRef.current.triggerSpinOut();
     }
-
-    // Notify context about banana hit
-    hitBanana(bananaId);
-  };
-
-  // Handle fake cube collision
-  const handleFakeCubeHit = (fakeCubeId) => {
-    console.log(`[FAKE CUBE] Triggering spinout for fake cube hit ${fakeCubeId}`);
-    
-    // Trigger car spinout
-    if (carRef.current && carRef.current.triggerSpinOut) {
-      console.log(`[FAKE CUBE] Car reference exists, calling triggerSpinOut`);
-      carRef.current.triggerSpinOut();
-    } else {
-      console.log(`[FAKE CUBE] Warning: Car reference or triggerSpinOut not available`);
-    }
-
-    // Notify context about fake cube hit
-    hitFakeCube(fakeCubeId);
-  };
+  }, [isSpinning]);
 
   // Item animation states
-  const [isSpinning, setIsSpinning] = useState(false);
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(50); // ms between item changes
-  const possibleItems = ["🍌", "🚀", "💣", "🎲"];
+  const possibleItems = ["🍌", "🚀", "🎲"];
 
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
     // Immediately notify context about item box collection to remove it from the scene
     collectItemBox(itemBoxId);
-
-    // Start item spinning animation
-    setIsSpinning(true);
-    setSpinSpeed(50); // Start fast
-
-    // Schedule the animation to slow down and stop
-    const slowDownInterval = 600; // ms - slightly faster first slowdown
-    const totalAnimationTime = 3000; // ms - longer total animation
-
-    // Gradually slow down the spin with more dramatic slowdown at the end
-    const slowDown = (factor = 1.5) => {
-      setSpinSpeed((prevSpeed) => {
-        const newSpeed = prevSpeed * factor; // Increase interval (slow down)
-        return newSpeed > 800 ? 800 : newSpeed; // Cap at 800ms
-      });
-    };
-
-    // Set up the slowdown intervals with increasing slowdown effect
-    const interval1 = setTimeout(() => slowDown(1.5), slowDownInterval);
-    const interval2 = setTimeout(() => slowDown(1.8), slowDownInterval * 2);
-    const interval3 = setTimeout(() => slowDown(2.0), slowDownInterval * 3);
-    const interval4 = setTimeout(() => slowDown(2.5), slowDownInterval * 4);
-
-    // Stop the animation after the total time
-    const stopTimeout = setTimeout(() => {
-      setIsSpinning(false);
-    }, totalAnimationTime);
-
-    // Set up the spinning animation
-    const spinInterval = setInterval(() => {
-      if (!isSpinning) {
-        clearInterval(spinInterval);
-        return;
-      }
-
-      setSpinningItemIndex((prev) => (prev + 1) % possibleItems.length);
-    }, spinSpeed);
-
-    // Cleanup all timers and intervals
-    return () => {
-      clearTimeout(interval1);
-      clearTimeout(interval2);
-      clearTimeout(interval3);
-      clearTimeout(interval4);
-      clearTimeout(stopTimeout);
-      clearInterval(spinInterval);
-    };
   };
 
   // Get remote players (all players except current player)
@@ -351,7 +162,6 @@ const CarGame = () => {
   );
 
   // Get current player's item data
-  const currentPlayer = players[playerId];
   const currentItem = currentPlayer?.item;
 
   // Track previous item for animation
@@ -372,14 +182,14 @@ const CarGame = () => {
 
   // Update spinning interval effect
   useEffect(() => {
-    if (!isSpinning) return;
+    if (!isItemSpinning) return;
 
     const spinInterval = setInterval(() => {
       setSpinningItemIndex((prev) => (prev + 1) % possibleItems.length);
     }, spinSpeed);
 
     return () => clearInterval(spinInterval);
-  }, [spinSpeed, isSpinning, possibleItems.length]);
+  }, [spinSpeed, isItemSpinning, possibleItems.length]);
 
   // Trigger animation when item quantity changes
   useEffect(() => {
@@ -393,7 +203,7 @@ const CarGame = () => {
 
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
-    if (isSpinning) {
+    if (isItemSpinning) {
       return possibleItems[spinningItemIndex];
     }
 
@@ -415,13 +225,6 @@ const CarGame = () => {
             🚀<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
-      case "cannon":
-        // Always use the number format to prevent overflow
-        return (
-          <>
-            💣<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
-        );
       case "fake_cube":
         // Add fake cube display
         return (
@@ -436,7 +239,7 @@ const CarGame = () => {
 
   // Helper to get animation style
   const getItemDisplayStyle = () => {
-    if (isSpinning) {
+    if (isItemSpinning) {
       return {
         animation: "spin 0.5s infinite linear",
         fontSize: "2.5rem",
@@ -451,35 +254,11 @@ const CarGame = () => {
     return {};
   };
 
-  // Handle player collision
-  const handlePlayerCollision = (collidingPlayerId) => {
-    console.log(`[PLAYER COLLISION] Handling collision with player ${collidingPlayerId}`);
-    
-    // Only spin out if we're not boosting
-    if (carRef.current && carRef.current.triggerSpinOut && (!carRef.current.speed || carRef.current.speed < 15)) {
-      console.log(`[PLAYER COLLISION] Triggering spinout from player collision`);
-      carRef.current.triggerSpinOut();
-    }
-  };
-
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       <Canvas>
         {/* Always use follow camera */}
         <FollowCamera target={carRef} />
-
-        {/* Game logic with collision detection */}
-        <GameLogic
-          carRef={carRef}
-          bananas={bananas}
-          itemBoxes={itemBoxes}
-          fakeCubes={fakeCubes}
-          remotePlayers={remotePlayers}
-          onBananaHit={handleBananaHit}
-          onItemBoxCollect={handleItemBoxCollect}
-          onFakeCubeHit={handleFakeCubeHit}
-          onPlayerCollision={handlePlayerCollision}
-        />
 
         {/* Player position updater */}
         <PlayerUpdater carRef={carRef} />
@@ -540,22 +319,15 @@ const CarGame = () => {
           />
         ))}
 
-        {/* Bombs */}
-        {cannonballs.map((bomb) => (
-          <Bomb
-            key={bomb.id}
-            id={bomb.id}
-            position={bomb.position}
-            velocity={bomb.velocity}
-            firedAt={bomb.firedAt}
-          />
-        ))}
-
         {/* Fake Cubes */}
         {fakeCubes.map((fakeCube) => (
           <FakeCube
             key={fakeCube.id}
-            position={[fakeCube.position.x, fakeCube.position.y, fakeCube.position.z]}
+            position={[
+              fakeCube.position.x,
+              fakeCube.position.y,
+              fakeCube.position.z,
+            ]}
             rotation={fakeCube.rotation}
           />
         ))}

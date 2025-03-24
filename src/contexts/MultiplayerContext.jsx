@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { io } from "socket.io-client";
 
-// Constants
 const LOCAL_SERVER_URL = "http://localhost:8080";
 const REMOTE_SERVER_URL = "https://banana-racer.onrender.com";
 
@@ -17,13 +16,11 @@ const MultiplayerContext = createContext({
   playerId: null,
   players: {},
   bananas: [],
-  cannonballs: [],
   itemBoxes: [],
   fakeCubes: [],
   updatePlayerPosition: () => {},
   useItem: () => {},
   hitBanana: () => {},
-  hitCannon: () => {},
   hitFakeCube: () => {},
   collectItemBox: () => {},
 });
@@ -39,21 +36,17 @@ export const useMultiplayer = () => {
 
 // Provider component
 export const MultiplayerProvider = ({ children }) => {
-  // Socket connection
-  const socket = useRef(null);
-
-  // State
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(null);
   const [playerColor, setPlayerColor] = useState(null);
   const [playerVehicle, setPlayerVehicle] = useState("vehicle-racer");
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
-  const [itemBoxes, setItemBoxes] = useState([]);
-  const [cannonballs, setCannonballs] = useState([]);
-  const [lastItemUseTime, setLastItemUseTime] = useState(0);
-  const itemUseTimeout = 20;
   const [fakeCubes, setFakeCubes] = useState([]);
+  const [itemBoxes, setItemBoxes] = useState([]);
+  const [lastItemUseTime, setLastItemUseTime] = useState(0);
+  const itemUseTimeout = 300; // ms
+  const socket = useRef(null);
 
   // Server URL
   const [serverUrl, setServerUrl] = useState(() => {
@@ -72,38 +65,41 @@ export const MultiplayerProvider = ({ children }) => {
 
     const connect = async () => {
       try {
-        socket.current = io(serverUrl, {
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          timeout: 20000,
-        });
+        socket.current = io(serverUrl);
 
-        // Core socket events
         socket.current.on("connect", () => {
-          console.log("Connected to multiplayer server");
           setConnected(true);
         });
 
-        socket.current.on("connect_error", (error) => {
-          console.error("Connection error:", error);
-        });
-
-        socket.current.on("disconnect", (reason) => {
-          console.log(`Disconnected from server: ${reason}`);
+        socket.current.on("disconnect", () => {
           setConnected(false);
-
-          if (reason === "io server disconnect") {
-            socket.current.connect();
-          }
         });
 
-        // Game state event
+        socket.current.on("playerJoined", (data) => {
+          setPlayers((prev) => ({
+            ...prev,
+            [data.player.id]: data.player,
+          }));
+        });
+
+        socket.current.on("playerLeft", (data) => {
+          setPlayers((prev) => {
+            const newPlayers = { ...prev };
+            delete newPlayers[data.id];
+            return newPlayers;
+          });
+        });
+
+        socket.current.on("worldJoined", (data) => {
+          setPlayers(data.players);
+          setBananas(data.bananas);
+          setFakeCubes(data.fakeCubes);
+          setItemBoxes(data.itemBoxes);
+        });
+
         socket.current.on("gameState", (state) => {
           setPlayers(state.players);
           setBananas(Object.values(state.bananas));
-          setCannonballs(Object.values(state.cannonballs));
           setFakeCubes(Object.values(state.fakeCubes));
           setItemBoxes(state.itemBoxes);
         });
@@ -113,16 +109,6 @@ export const MultiplayerProvider = ({ children }) => {
           setPlayerId(data.id);
           setPlayerColor(data.color);
           setPlayerVehicle(data.vehicle || "vehicle-racer");
-        });
-
-        // Cannon hit event (needs local handling)
-        socket.current.on("cannonHit", (data) => {
-          if (
-            data.hitPlayer === playerId &&
-            window.playerCarRef?.triggerSpinOut
-          ) {
-            window.playerCarRef.triggerSpinOut();
-          }
         });
 
         // Error handling
@@ -201,22 +187,14 @@ export const MultiplayerProvider = ({ children }) => {
     socket.current.emit("hitBanana", { bananaId });
   };
 
-  const collectItemBox = (itemBoxId) => {
-    if (!connected || !socket.current) return;
-    socket.current.emit("collectItemBox", {
-      playerId: playerId,
-      itemBoxId: itemBoxId,
-    });
-  };
-
-  const hitCannon = (cannonId) => {
-    if (!connected || !socket.current) return;
-    socket.current.emit("hitCannon", { cannonId });
-  };
-
   const hitFakeCube = (fakeCubeId) => {
     if (!connected || !socket.current) return;
     socket.current.emit("hitFakeCube", { fakeCubeId });
+  };
+
+  const collectItemBox = (itemBoxId) => {
+    if (!connected || !socket.current) return;
+    socket.current.emit("collectItemBox", { itemBoxId });
   };
 
   // Change server URL
@@ -249,13 +227,11 @@ export const MultiplayerProvider = ({ children }) => {
     playerId,
     players,
     bananas,
-    cannonballs,
     itemBoxes,
     fakeCubes,
     updatePlayerPosition,
     useItem,
     hitBanana,
-    hitCannon,
     hitFakeCube,
     collectItemBox,
     changeServerUrl,
