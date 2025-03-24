@@ -385,11 +385,5 @@ httpServer.listen(PORT, () => {
 });
 
 setInterval(() => {
-  const timestamp =
-    new Date().toLocaleTimeString() +
-    "." +
-    new Date().getMilliseconds().toString().padStart(3, "0");
-  console.log(`[${timestamp}] Emitting game state`);
-
   io.emit("gameState", { ...gameState });
 }, 10);
