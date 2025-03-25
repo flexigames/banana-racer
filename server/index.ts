@@ -295,29 +295,26 @@ function removeItem(collection: Record<string, any>, itemId: string): void {
 
 function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
   const player = gameState.players[playerId];
-  if (!player || player.isItemSpinning || player.item?.quantity > 0) {
-    gameState.itemBoxes = gameState.itemBoxes.filter(
-      (box) => box.id !== itemBoxId
-    );
-    return;
-  }
 
   const collectedBox = gameState.itemBoxes.find((box) => box.id === itemBoxId);
-  const boxPosition = collectedBox ? { ...collectedBox.position } : null;
+
+  if (!collectedBox) return;
 
   gameState.itemBoxes = gameState.itemBoxes.filter(
     (box) => box.id !== itemBoxId
   );
-  player.isItemSpinning = true;
 
-  if (boxPosition) {
+  if (collectedBox.position) {
     setTimeout(() => {
-      gameState.itemBoxes.push({
-        id: Date.now(),
-        position: boxPosition,
-      });
+      gameState.itemBoxes.push(collectedBox);
     }, 15000);
   }
+
+  if (!player || player.isItemSpinning || player.item?.quantity > 0) {
+    return;
+  }
+
+  player.isItemSpinning = true;
 
   setTimeout(() => {
     if (gameState.players[playerId]) {
@@ -405,14 +402,16 @@ function updateGreenShells(): void {
   Object.values(gameState.greenShells).forEach((shell) => {
     const deltaTime = 1 / 60; // Assuming 60 FPS
     const mapSize = 30.5; // Half the map size (61/2)
-    
+
     // Calculate new position
-    const newX = shell.position.x + Math.sin(shell.direction) * shell.speed * deltaTime;
-    const newZ = shell.position.z + Math.cos(shell.direction) * shell.speed * deltaTime;
+    const newX =
+      shell.position.x + Math.sin(shell.direction) * shell.speed * deltaTime;
+    const newZ =
+      shell.position.z + Math.cos(shell.direction) * shell.speed * deltaTime;
 
     // Check for wall collisions
     let hitWall = false;
-    
+
     if (Math.abs(newX) > mapSize) {
       // Hit left or right wall
       shell.direction = -shell.direction;
@@ -440,7 +439,10 @@ function updateGreenShells(): void {
     // Check for player collisions
     Object.values(gameState.players).forEach((player) => {
       // Only allow hitting the player who shot the shell after 1 second
-      if (player.id === shell.droppedBy && Date.now() - shell.droppedAt < 1000) {
+      if (
+        player.id === shell.droppedBy &&
+        Date.now() - shell.droppedAt < 1000
+      ) {
         return;
       }
 
