@@ -10,6 +10,7 @@ import { useFrame } from "@react-three/fiber";
 import { updateVehiclePhysics, updateObjectPosition } from "../lib/physics";
 import { useVehicleControls } from "../lib/input";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
+import { useEngineSound } from "../lib/useEngineSound";
 import * as THREE from "three";
 import Car from "./Car";
 
@@ -68,6 +69,13 @@ const Player = forwardRef((props, ref) => {
 
   // Set up vehicle controls
   useVehicleControls(movement);
+
+  // Add acceleration tracking
+  const lastSpeed = useRef(0);
+  const acceleration = useRef(0);
+
+  // Initialize engine sound
+  useEngineSound(movement.current.speed ?? 0);
 
   // Function to get a random spawn position
   const getRandomSpawnPosition = () => {
@@ -155,6 +163,11 @@ const Player = forwardRef((props, ref) => {
       // Normal driving physics with boost adjustments
       updateVehiclePhysics(movement.current, delta, isBoosted ? 3.0 : 1.0);
       updateObjectPosition(car.current, movement.current, delta);
+
+      // Calculate acceleration
+      acceleration.current =
+        (movement.current.speed - lastSpeed.current) / delta;
+      lastSpeed.current = movement.current.speed;
     }
 
     // Ensure the car stays on the ground
