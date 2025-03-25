@@ -126,9 +126,9 @@ const gameState: GameState = {
   fakeCubes: {},
   greenShells: {},
   itemBoxes: [],
-  battleBlocks: BATTLE_BLOCKS.positions.map(position => ({
+  battleBlocks: BATTLE_BLOCKS.positions.map((position) => ({
     position,
-    size: BATTLE_BLOCKS.size
+    size: BATTLE_BLOCKS.size,
   })),
 };
 
@@ -222,48 +222,60 @@ function onHit(playerId: string, duration: number = 3000): void {
  * @returns Height at that position or DEFAULT_HEIGHT if not on ramp
  */
 function calculateHeightAtPosition(x: number, z: number): number {
+  // Check each battle block first
+  for (const block of gameState.battleBlocks) {
+    const blockHalfSize = block.size / 2;
+    const dx = Math.abs(x - block.position.x);
+    const dz = Math.abs(z - block.position.z);
+
+    if (dx <= blockHalfSize && dz <= blockHalfSize) {
+      // Player is on top of a block
+      return block.position.y + blockHalfSize;
+    }
+  }
+
   // Check each ramp
   for (const ramp of RAMPS) {
     // Get ramp properties
     const [rampX, rampY, rampZ] = ramp.position;
     const rotation = ramp.rotation;
     const [scaleX, scaleY, scaleZ] = ramp.scale;
-    
+
     // Adjust to ramp's local coordinates
     // First, shift to center of ramp
     const localX = x - rampX;
     const localZ = z - rampZ;
-    
+
     // Then rotate around Y axis to align with ramp's orientation
     const cosRot = Math.cos(-rotation);
     const sinRot = Math.sin(-rotation);
     const rotatedX = localX * cosRot - localZ * sinRot;
     const rotatedZ = localX * sinRot + localZ * cosRot;
-    
+
     // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
     const normalizedX = rotatedX / scaleX;
     const normalizedZ = rotatedZ / scaleZ;
-    
+
     // Check if point is within ramp bounds
     if (
-      normalizedX >= -0.5 && 
-      normalizedX <= 0.5 && 
-      normalizedZ >= -0.5 && 
+      normalizedX >= -0.5 &&
+      normalizedX <= 0.5 &&
+      normalizedZ >= -0.5 &&
       normalizedZ <= 0.5
     ) {
       // Calculate height based on position on ramp
       // Ramp slopes from back (high) to front (low)
       // back is at normalizedZ = -0.5, front is at normalizedZ = 0.5
-      
+
       // Linear interpolation from max height at back to min height at front
       const heightPercentage = 0.5 - normalizedZ; // 1 at back, 0 at front
-      const height = DEFAULT_HEIGHT + (heightPercentage * scaleY);
-      
+      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
+
       return height;
     }
   }
-  
-  // Not on any ramp
+
+  // Not on any ramp or block
   return DEFAULT_HEIGHT;
 }
 
@@ -277,7 +289,7 @@ function updatePlayerPosition(
   gameState.players[playerId].position = {
     ...data.position,
     // Update y position based on ramp height
-    y: calculateHeightAtPosition(data.position.x, data.position.z)
+    y: calculateHeightAtPosition(data.position.x, data.position.z),
   };
   gameState.players[playerId].rotation = data.rotation;
   if (data.speed !== undefined) {
@@ -321,7 +333,7 @@ function dropGreenShell(
     id: shellId,
     position: {
       ...data.position,
-      y: DEFAULT_HEIGHT
+      y: DEFAULT_HEIGHT,
     },
     rotation: data.rotation,
     direction: data.rotation,
@@ -436,11 +448,19 @@ function checkCollision(
   return Math.sqrt(dx * dx + dz * dz) < radius;
 }
 
-function checkBlockCollision(pos: Position, block: { position: Position; size: number }): boolean {
+function checkBlockCollision(
+  pos: Position,
+  block: { position: Position; size: number }
+): boolean {
   const blockHalfSize = block.size / 2;
   const dx = Math.abs(pos.x - block.position.x);
   const dz = Math.abs(pos.z - block.position.z);
-  return dx < blockHalfSize && dz < blockHalfSize;
+
+  // High enough
+  const onTop = pos.y > block.position.y - 0.25;
+
+  // Only register a collision if we're not on top of the block
+  return dx < blockHalfSize && dz < blockHalfSize && !onTop;
 }
 
 function handleCollisions(): void {
@@ -541,13 +561,32 @@ function updateGreenShells(): void {
       bounced = true;
     }
 
-    // Check battle block collisions
-    for (const block of gameState.battleBlocks) {
-      if (checkBlockCollision(newPosition, block)) {
-        // Simplified bounce logic
-        shell.rotation = shell.rotation + Math.PI;
-        bounced = true;
-        break;
+    // Check if shell is currently on a block
+    const isOnBlock = gameState.battleBlocks.some((block) => {
+      const blockHalfSize = block.size / 2;
+      const dx = Math.abs(shell.position.x - block.position.x);
+      const dz = Math.abs(shell.position.z - block.position.z);
+      const onTop = shell.position.y > block.position.y + blockHalfSize / 2;
+      return dx < blockHalfSize && dz < blockHalfSize && onTop;
+    });
+
+    // Check if shell will be on a block after movement
+    const willBeOnBlock = gameState.battleBlocks.some((block) => {
+      const blockHalfSize = block.size / 2;
+      const dx = Math.abs(newPosition.x - block.position.x);
+      const dz = Math.abs(newPosition.z - block.position.z);
+      return dx < blockHalfSize && dz < blockHalfSize;
+    });
+
+    // Check battle block collisions (but only if not driving on top)
+    if (!isOnBlock && !willBeOnBlock) {
+      for (const block of gameState.battleBlocks) {
+        if (checkBlockCollision(newPosition, block)) {
+          // Simplified bounce logic
+          shell.rotation = shell.rotation + Math.PI;
+          bounced = true;
+          break;
+        }
       }
     }
 

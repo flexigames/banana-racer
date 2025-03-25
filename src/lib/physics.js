@@ -1,4 +1,10 @@
-import { ARENA_SIZE, ARENA_HALF_SIZE, BATTLE_BLOCKS, RAMPS, DEFAULT_HEIGHT } from "./gameConfig";
+import {
+  ARENA_SIZE,
+  ARENA_HALF_SIZE,
+  BATTLE_BLOCKS,
+  RAMPS,
+  DEFAULT_HEIGHT,
+} from "./gameConfig";
 
 /**
  * Improved arcade-style vehicle physics
@@ -92,48 +98,60 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
  * @returns {number} Height at that position or DEFAULT_HEIGHT if not on ramp
  */
 export const calculateHeightAtPosition = (x, z) => {
+  // Check each battle block first
+  for (const block of BATTLE_BLOCKS.positions) {
+    const blockHalfSize = BATTLE_BLOCKS.size / 2;
+    const dx = Math.abs(x - block.x);
+    const dz = Math.abs(z - block.z);
+
+    if (dx <= blockHalfSize && dz <= blockHalfSize) {
+      // Player is on top of a block
+      return block.y + 2;
+    }
+  }
+
   // Check each ramp
   for (const ramp of RAMPS) {
     // Get ramp properties
     const [rampX, rampY, rampZ] = ramp.position;
     const rotation = ramp.rotation;
     const [scaleX, scaleY, scaleZ] = ramp.scale;
-    
+
     // Adjust to ramp's local coordinates
     // First, shift to center of ramp
     const localX = x - rampX;
     const localZ = z - rampZ;
-    
+
     // Then rotate around Y axis to align with ramp's orientation
     const cosRot = Math.cos(+rotation);
     const sinRot = Math.sin(+rotation);
     const rotatedX = localX * cosRot - localZ * sinRot;
     const rotatedZ = localX * sinRot + localZ * cosRot;
-    
+
     // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
     const normalizedX = rotatedX / scaleX;
     const normalizedZ = rotatedZ / scaleZ;
-    
+
     // Check if point is within ramp bounds
     if (
-      normalizedX >= -0.5 && 
-      normalizedX <= 0.5 && 
-      normalizedZ >= -0.5 && 
+      normalizedX >= -0.5 &&
+      normalizedX <= 0.5 &&
+      normalizedZ >= -0.5 &&
       normalizedZ <= 0.5
     ) {
       // Calculate height based on position on ramp
       // Ramp slopes from back (high) to front (low)
       // back is at normalizedZ = -0.5, front is at normalizedZ = 0.5
-      
+
       // Linear interpolation from max height at back to min height at front
       const heightPercentage = 0.5 - normalizedZ; // 1 at back, 0 at front
-      const height = DEFAULT_HEIGHT + (heightPercentage * scaleY);
-      
+      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
+
       return height;
     }
   }
-  
-  // Not on any ramp
+
+  // Not on any ramp or block
   return DEFAULT_HEIGHT;
 };
 
@@ -168,30 +186,35 @@ export const updateObjectPosition = (object, movement, delta) => {
   if (newZ < -ARENA_HALF_SIZE + buffer && moveZ < 0) return; // Front wall
   if (newZ > ARENA_HALF_SIZE - buffer && moveZ > 0) return; // Back wall
 
-  // Check battle block collisions
-  for (const block of BATTLE_BLOCKS.positions) {
-    const blockHalfSize = BATTLE_BLOCKS.size / 2;
-    const dx = Math.abs(newX - block.x);
-    const dz = Math.abs(newZ - block.z);
+  const highEnough = object.position.y >= 2 - 0.25;
 
-    if (dx < blockHalfSize + carRadius && dz < blockHalfSize + carRadius) {
-      // Determine which side was hit
-      if (dx > dz) {
-        // Hit vertical side
-        if (newX < block.x) {
-          object.position.x = block.x - blockHalfSize - carRadius;
+  // Check battle block collisions, but only if not driving on top
+  if (!highEnough) {
+    for (const block of BATTLE_BLOCKS.positions) {
+      const blockHalfSize = BATTLE_BLOCKS.size / 2;
+      const dx = Math.abs(newX - block.x);
+      const dz = Math.abs(newZ - block.z);
+
+      // Vertical collision check - allow if we're above the block
+      if (dx < blockHalfSize + carRadius && dz < blockHalfSize + carRadius) {
+        // Determine which side was hit
+        if (dx > dz) {
+          // Hit vertical side
+          if (newX < block.x) {
+            object.position.x = block.x - blockHalfSize - carRadius;
+          } else {
+            object.position.x = block.x + blockHalfSize + carRadius;
+          }
         } else {
-          object.position.x = block.x + blockHalfSize + carRadius;
+          // Hit horizontal side
+          if (newZ < block.z) {
+            object.position.z = block.z - blockHalfSize - carRadius;
+          } else {
+            object.position.z = block.z + blockHalfSize + carRadius;
+          }
         }
-      } else {
-        // Hit horizontal side
-        if (newZ < block.z) {
-          object.position.z = block.z - blockHalfSize - carRadius;
-        } else {
-          object.position.z = block.z + blockHalfSize + carRadius;
-        }
+        return;
       }
-      return;
     }
   }
 
@@ -199,7 +222,7 @@ export const updateObjectPosition = (object, movement, delta) => {
   object.position.x = newX;
   object.position.z = newZ;
 
-  // Calculate and set height at current position (for ramps)
+  // Calculate and set height at current position (for ramps and blocks)
   object.position.y = calculateHeightAtPosition(newX, newZ);
 };
 
