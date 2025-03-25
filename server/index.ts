@@ -2,6 +2,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { BATTLE_BLOCKS, RAMPS } from "../src/lib/gameConfig";
+import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
 
 // Define constants to match client-side configuration
 const DEFAULT_HEIGHT = 0.1;
@@ -26,100 +27,12 @@ const VEHICLE_MODELS = [
   "vehicle-speedster",
 ];
 
-const ITEM_TYPES = {
-  BANANA: "banana",
-  BOOST: "boost",
-  FAKE_CUBE: "fake_cube",
-  GREEN_SHELL: "green_shell",
-};
-
-type Color = {
-  h: number;
-  s: number;
-  l: number;
-};
-
-type Position = {
-  x: number;
-  y: number;
-  z: number;
-};
-
-type Item = {
-  type: string;
-  quantity: number;
-};
-
-type GreenShell = {
-  id: string;
-  position: Position;
-  rotation: number;
-  direction: number;
-  speed: number;
-  droppedBy: string;
-  droppedAt: number;
-  bounces: number;
-};
-
-type Player = {
-  id: string;
-  socket: string;
-  position: Position;
-  rotation: number;
-  speed: number;
-  color: Color;
-  vehicle: string;
-  lastUpdate: number;
-  item: Item;
-  lives: number;
-  isSpinning?: boolean;
-  isBoosted?: boolean;
-  isItemSpinning?: boolean;
-};
-
-type Banana = {
-  id: string;
-  position: Position;
-  rotation: number;
-  droppedBy: string;
-  droppedAt: number;
-};
-
-type FakeCube = {
-  id: string;
-  position: Position;
-  rotation: number;
-  droppedBy: string;
-  droppedAt: number;
-};
-
-type ItemBox = {
-  id: number;
-  position: number[];
-};
-
-type GameState = {
-  players: Record<string, Player>;
-  bananas: Record<string, Banana>;
-  fakeCubes: Record<string, FakeCube>;
-  greenShells: Record<string, GreenShell>;
-  itemBoxes: ItemBox[];
-  battleBlocks: {
-    position: Position;
-    size: number;
-  }[];
-};
-
 const gameState: GameState = {
   players: {},
   bananas: {},
   fakeCubes: {},
   greenShells: {},
   itemBoxes: [],
-  battleBlocks: BATTLE_BLOCKS.positions.map((position) => ({
-    position,
-    size: BATTLE_BLOCKS.size,
-  })),
 };
 
 function generateRandomColor(): Color {
@@ -213,14 +126,14 @@ function onHit(playerId: string, duration: number = 3000): void {
  */
 function calculateHeightAtPosition(x: number, z: number): number {
   // Check each battle block first
-  for (const block of gameState.battleBlocks) {
-    const blockHalfSize = block.size / 2;
-    const dx = Math.abs(x - block.position.x);
-    const dz = Math.abs(z - block.position.z);
+  for (const block of BATTLE_BLOCKS.positions) {
+    const blockHalfSize = BATTLE_BLOCKS.size / 2;
+    const dx = Math.abs(x - block.x);
+    const dz = Math.abs(z - block.z);
 
     if (dx <= blockHalfSize && dz <= blockHalfSize) {
       // Player is on top of a block
-      return block.position.y + 2;
+      return block.y + 2;
     }
   }
 
@@ -434,21 +347,6 @@ function checkCollision(
   return Math.sqrt(dx * dx + dz * dz) < radius;
 }
 
-function checkBlockCollision(
-  pos: Position,
-  block: { position: Position; size: number }
-): boolean {
-  const blockHalfSize = block.size / 2;
-  const dx = Math.abs(pos.x - block.position.x);
-  const dz = Math.abs(pos.z - block.position.z);
-
-  // High enough
-  const onTop = pos.y > block.position.y - 0.25;
-
-  // Only register a collision if we're not on top of the block
-  return dx < blockHalfSize && dz < blockHalfSize && !onTop;
-}
-
 function handleCollisions(): void {
   Object.values(gameState.bananas).forEach((banana) => {
     Object.values(gameState.players).forEach((player) => {
@@ -547,28 +445,17 @@ function updateGreenShells(): void {
       bounced = true;
     }
 
-    // Check if shell is currently on a block
-    const isOnBlock = gameState.battleBlocks.some((block) => {
-      const blockHalfSize = block.size / 2;
-      const dx = Math.abs(shell.position.x - block.position.x);
-      const dz = Math.abs(shell.position.z - block.position.z);
-      const onTop = shell.position.y > block.position.y + blockHalfSize / 2;
-      return dx < blockHalfSize && dz < blockHalfSize && onTop;
-    });
-
-    // Check if shell will be on a block after movement
-    const willBeOnBlock = gameState.battleBlocks.some((block) => {
-      const blockHalfSize = block.size / 2;
-      const dx = Math.abs(newPosition.x - block.position.x);
-      const dz = Math.abs(newPosition.z - block.position.z);
-      return dx < blockHalfSize && dz < blockHalfSize;
-    });
+    const isHighEnough = newPosition.y > 2 - 0.25;
 
     // Check battle block collisions (but only if not driving on top)
-    if (!isOnBlock && !willBeOnBlock) {
-      for (const block of gameState.battleBlocks) {
-        if (checkBlockCollision(newPosition, block)) {
-          // Simplified bounce logic
+    if (isHighEnough) {
+      for (const block of BATTLE_BLOCKS.positions) {
+        const dx = Math.abs(newPosition.x - block.x);
+        const dz = Math.abs(newPosition.z - block.z);
+
+        const blockHalfSize = BATTLE_BLOCKS.size / 2;
+        // Only register a collision if we're not on top of the block
+        if (dx < blockHalfSize && dz < blockHalfSize) {
           shell.rotation = shell.rotation + Math.PI;
           bounced = true;
           break;
