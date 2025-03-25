@@ -26,6 +26,7 @@ const ITEM_TYPES = {
   BANANA: "banana",
   BOOST: "boost",
   FAKE_CUBE: "fake_cube",
+  GREEN_SHELL: "green_shell",
 };
 
 type Color = {
@@ -43,6 +44,17 @@ type Position = {
 type Item = {
   type: string;
   quantity: number;
+};
+
+type GreenShell = {
+  id: string;
+  position: Position;
+  rotation: number;
+  direction: number;
+  speed: number;
+  droppedBy: string;
+  droppedAt: number;
+  bounces: number;
 };
 
 type Player = {
@@ -86,6 +98,7 @@ type GameState = {
   players: Record<string, Player>;
   bananas: Record<string, Banana>;
   fakeCubes: Record<string, FakeCube>;
+  greenShells: Record<string, GreenShell>;
   itemBoxes: ItemBox[];
 };
 
@@ -93,6 +106,7 @@ const gameState: GameState = {
   players: {},
   bananas: {},
   fakeCubes: {},
+  greenShells: {},
   itemBoxes: [],
 };
 
@@ -118,6 +132,10 @@ function generateBananaId(): string {
 
 function generateFakeCubeId(): string {
   return generateId("fake_cube");
+}
+
+function generateGreenShellId(): string {
+  return `green_shell_${uuidv4()}`;
 }
 
 function generateItemBoxes(count: number = 20): ItemBox[] {
@@ -214,9 +232,35 @@ function dropItem(
   }, 120000);
 }
 
+function dropGreenShell(
+  playerId: string,
+  data: { position: Position; rotation: number }
+): void {
+  const shellId = generateGreenShellId();
+  const shell = {
+    id: shellId,
+    position: data.position,
+    rotation: data.rotation,
+    direction: data.rotation,
+    speed: 15,
+    droppedBy: playerId,
+    droppedAt: Date.now(),
+    bounces: 0,
+  };
+
+  gameState.greenShells[shellId] = shell;
+
+  // Remove shell after 10 seconds
+  setTimeout(() => {
+    if (gameState.greenShells[shellId]) {
+      delete gameState.greenShells[shellId];
+    }
+  }, 10000);
+}
+
 function useItem(
   playerId: string,
-  data: { position: Position; rotation?: number }
+  data: { position: Position; rotation: number }
 ): void {
   const player = gameState.players[playerId];
   if (!player?.item?.quantity) return;
@@ -237,6 +281,9 @@ function useItem(
       break;
     case ITEM_TYPES.FAKE_CUBE:
       dropItem(playerId, data, ITEM_TYPES.FAKE_CUBE);
+      break;
+    case ITEM_TYPES.GREEN_SHELL:
+      dropGreenShell(playerId, data);
       break;
   }
 }
@@ -354,6 +401,57 @@ function handleCollisions(): void {
   });
 }
 
+function updateGreenShells(): void {
+  Object.values(gameState.greenShells).forEach((shell) => {
+    const deltaTime = 1 / 60; // Assuming 60 FPS
+    const mapSize = 30.5; // Half the map size (61/2)
+    
+    // Calculate new position
+    const newX = shell.position.x + Math.sin(shell.direction) * shell.speed * deltaTime;
+    const newZ = shell.position.z + Math.cos(shell.direction) * shell.speed * deltaTime;
+
+    // Check for wall collisions
+    let hitWall = false;
+    
+    if (Math.abs(newX) > mapSize) {
+      // Hit left or right wall
+      shell.direction = -shell.direction;
+      shell.rotation = shell.direction;
+      shell.position.x = Math.sign(newX) * mapSize;
+      hitWall = true;
+    } else {
+      shell.position.x = newX;
+    }
+
+    if (Math.abs(newZ) > mapSize) {
+      // Hit front or back wall
+      shell.direction = Math.PI - shell.direction;
+      shell.rotation = shell.direction;
+      shell.position.z = Math.sign(newZ) * mapSize;
+      hitWall = true;
+    } else {
+      shell.position.z = newZ;
+    }
+
+    if (hitWall) {
+      shell.bounces++;
+    }
+
+    // Check for player collisions
+    Object.values(gameState.players).forEach((player) => {
+      // Only allow hitting the player who shot the shell after 1 second
+      if (player.id === shell.droppedBy && Date.now() - shell.droppedAt < 1000) {
+        return;
+      }
+
+      if (checkCollision(player.position, shell.position, 0.9)) {
+        onHit(player.id);
+        delete gameState.greenShells[shell.id];
+      }
+    });
+  });
+}
+
 io.on("connection", (socket: Socket) => {
   const playerId = uuidv4();
   gameState.players[playerId] = {
@@ -402,6 +500,7 @@ gameState.itemBoxes = generateItemBoxes(20);
 
 setInterval(() => {
   handleCollisions();
+  updateGreenShells();
   cleanupInactivePlayers();
 }, 1000 / 60);
 

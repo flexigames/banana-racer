@@ -5,6 +5,7 @@ import Player from "./Player";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
 import FakeCube from "./FakeCube";
+import GreenShell from "./GreenShell";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import ItemBox from "./ItemBox";
@@ -105,6 +106,7 @@ const CarGame = () => {
     bananas,
     itemBoxes,
     fakeCubes,
+    greenShells,
     useItem,
     collectItemBox,
   } = useMultiplayer();
@@ -150,7 +152,7 @@ const CarGame = () => {
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const [spinSpeed, setSpinSpeed] = useState(50); // ms between item changes
-  const possibleItems = ["🍌", "🚀", "🎲"];
+  const possibleItems = ["🍌", "🚀", "🎲", "🐢"];
 
   // Handle item box collection
   const handleItemBoxCollect = (itemBoxId) => {
@@ -232,6 +234,13 @@ const CarGame = () => {
         return (
           <>
             🎲<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
+      case "green_shell":
+        // Add green shell display
+        return (
+          <>
+            🐢<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
       default:
@@ -327,6 +336,19 @@ const CarGame = () => {
               fakeCube.position.z,
             ]}
             rotation={fakeCube.rotation}
+          />
+        ))}
+
+        {/* Green Shells */}
+        {greenShells.map((shell) => (
+          <GreenShell
+            key={shell.id}
+            position={[
+              shell.position.x,
+              shell.position.y,
+              shell.position.z,
+            ]}
+            rotation={shell.rotation}
           />
         ))}
 

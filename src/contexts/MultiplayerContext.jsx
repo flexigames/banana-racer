@@ -18,6 +18,7 @@ const MultiplayerContext = createContext({
   bananas: [],
   itemBoxes: [],
   fakeCubes: [],
+  greenShells: [],
   updatePlayerPosition: () => {},
   useItem: () => {},
   hitBanana: () => {},
@@ -44,6 +45,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
   const [fakeCubes, setFakeCubes] = useState([]);
+  const [greenShells, setGreenShells] = useState([]);
   const [itemBoxes, setItemBoxes] = useState([]);
   const [lastItemUseTime, setLastItemUseTime] = useState(0);
   const itemUseTimeout = 300; // ms
@@ -80,6 +82,7 @@ export const MultiplayerProvider = ({ children }) => {
           setPlayers(state.players);
           setBananas(Object.values(state.bananas));
           setFakeCubes(Object.values(state.fakeCubes));
+          setGreenShells(Object.values(state.greenShells));
           setItemBoxes(state.itemBoxes);
         });
 
@@ -205,6 +208,45 @@ export const MultiplayerProvider = ({ children }) => {
     return newUrl;
   };
 
+  // Helper function to format item display text
+  const getItemDisplayText = (item) => {
+    if (isItemSpinning) {
+      return possibleItems[spinningItemIndex];
+    }
+
+    if (!item || item.quantity <= 0) return "";
+
+    // Format based on item type
+    switch (item.type) {
+      case "banana":
+        return (
+          <>
+            🍌<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
+      case "boost":
+        return (
+          <>
+            🚀<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
+      case "fake_cube":
+        return (
+          <>
+            🎲<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
+      case "green_shell":
+        return (
+          <>
+            🐢<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
+      default:
+        return `${item.type}: ${item.quantity}`;
+    }
+  };
+
   // Provide context value
   const contextValue = {
     connected,
@@ -213,6 +255,7 @@ export const MultiplayerProvider = ({ children }) => {
     bananas,
     itemBoxes,
     fakeCubes,
+    greenShells,
     updatePlayerPosition,
     useItem,
     hitBanana,
