@@ -7,9 +7,9 @@ import Banana from "./Banana";
 import FakeCube from "./FakeCube";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
-import ScatteredElements from "./ScatteredElements";
 import ItemBox from "./ItemBox";
 import GameOver from "./GameOver";
+import Arena from "./Arena";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -159,8 +159,9 @@ const CarGame = () => {
   };
 
   // Get remote players (all players except current player)
-  const remotePlayers = Object.values(players)
-    .filter((player) => player.id !== playerId && player.lives > 0);
+  const remotePlayers = Object.values(players).filter(
+    (player) => player.id !== playerId && player.lives > 0
+  );
 
   // Get current player's item data
   const currentItem = currentPlayer?.item;
@@ -269,12 +270,6 @@ const CarGame = () => {
         <ambientLight intensity={0.8} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
 
-        {/* Ground with grid for better movement visibility */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-          <planeGeometry args={[100, 100]} />
-          <meshStandardMaterial color="#4a7023" />
-        </mesh>
-
         {/* Grid overlay for visual movement reference */}
         <Grid
           position={[0, 0.01, 0]}
@@ -289,8 +284,8 @@ const CarGame = () => {
           infiniteGrid
         />
 
-        {/* Scattered rocks and elements to make movement more visible */}
-        <ScatteredElements />
+        {/* Arena with walls and ground */}
+        <Arena />
 
         {/* Player car */}
         <Player

@@ -122,7 +122,7 @@ function generateFakeCubeId(): string {
 
 function generateItemBoxes(count: number = 20): ItemBox[] {
   const boxes: ItemBox[] = [];
-  const mapSize = 100;
+  const mapSize = 60;
 
   for (let i = 1; i <= count; i++) {
     const position = [

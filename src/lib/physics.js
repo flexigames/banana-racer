@@ -95,9 +95,26 @@ export const updateObjectPosition = (object, movement, delta) => {
   const moveX = Math.sin(movement.rotation) * movement.speed * delta;
   const moveZ = Math.cos(movement.rotation) * movement.speed * delta;
   
-  // Apply movement
-  object.position.x += moveX;
-  object.position.z += moveZ;
+  // Calculate new position
+  const newX = object.position.x + moveX;
+  const newZ = object.position.z + moveZ;
+  
+  // Arena boundaries (must match Arena.jsx)
+  const arenaSize = 61;
+  const wallThickness = 1;
+  const halfSize = arenaSize / 2;
+  const carRadius = 0.5; // Approximate car collision radius
+  
+  // Check wall collisions
+  const buffer = carRadius + wallThickness / 2;
+  if (newX < -halfSize + buffer && moveX < 0) return; // Left wall
+  if (newX > halfSize - buffer && moveX > 0) return;  // Right wall
+  if (newZ < -halfSize + buffer && moveZ < 0) return; // Front wall
+  if (newZ > halfSize - buffer && moveZ > 0) return;  // Back wall
+  
+  // Apply movement if no collision
+  object.position.x = newX;
+  object.position.z = newZ;
   
   // Keep car on the ground
   object.position.y = 0.1;
