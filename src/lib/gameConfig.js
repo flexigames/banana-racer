@@ -19,8 +19,5 @@ export const BATTLE_BLOCKS = {
 };
 
 export const RAMPS = [
-  { position: [-10, 0, 0], rotation: Math.PI / 2, scale: [6, 1.5, 12] },
-  { position: [10, 0, 0], rotation: -Math.PI / 2, scale: [6, 1.5, 12] },
-  { position: [0, 0, 15], rotation: Math.PI, scale: [6, 1.5, 12] },
-  { position: [0, 0, -15], rotation: 0, scale: [6, 1.5, 12] },
+  { position: [-1.25, 0, 10], rotation: Math.PI / 2, scale: [3, 2, 12] },
 ]; 
