@@ -222,8 +222,37 @@ export const updateObjectPosition = (object, movement, delta) => {
   object.position.x = newX;
   object.position.z = newZ;
 
-  // Calculate and set height at current position (for ramps and blocks)
-  object.position.y = calculateHeightAtPosition(newX, newZ);
+  // Calculate target height based on terrain
+  const targetHeight = calculateHeightAtPosition(newX, newZ);
+
+  // Apply gravity
+  const gravity = 9.8; // Gravity acceleration in m/s²
+  const terminalVelocity = 20; // Maximum falling speed
+  const groundFriction = 0.8; // Friction when hitting the ground
+
+  // Initialize vertical velocity if not exists
+  if (movement.verticalVelocity === undefined) {
+    movement.verticalVelocity = 0;
+  }
+
+  // Apply gravity to vertical velocity
+  movement.verticalVelocity -= gravity * delta;
+
+  // Limit falling speed
+  movement.verticalVelocity = Math.max(-terminalVelocity, movement.verticalVelocity);
+
+  // Calculate new height
+  const newHeight = object.position.y + movement.verticalVelocity * delta;
+
+  // Check if we've hit the ground
+  if (newHeight <= targetHeight) {
+    // We've hit the ground
+    object.position.y = targetHeight;
+    movement.verticalVelocity = 0;
+  } else {
+    // We're in the air
+    object.position.y = newHeight;
+  }
 };
 
 /**

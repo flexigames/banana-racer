@@ -40,6 +40,7 @@ export type GreenShell = {
   droppedBy: string;
   droppedAt: number;
   bounces: number;
+  verticalVelocity?: number;
 };
 
 export type Player = {

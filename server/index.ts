@@ -397,6 +397,9 @@ function updateGreenShells(): void {
   const now = Date.now();
   const MAX_SHELL_AGE = 10000; // 10 seconds
   const MAX_BOUNCES = 3;
+  const gravity = 9.8; // Gravity acceleration in m/s²
+  const terminalVelocity = 20; // Maximum falling speed
+  const groundFriction = 0.8; // Friction when hitting the ground
 
   // For each green shell
   Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
@@ -404,6 +407,11 @@ function updateGreenShells(): void {
     if (now - shell.droppedAt > MAX_SHELL_AGE || shell.bounces > MAX_BOUNCES) {
       greenShellsToRemove.push(shellId);
       return;
+    }
+
+    // Initialize vertical velocity if not exists
+    if (shell.verticalVelocity === undefined) {
+      shell.verticalVelocity = 0;
     }
 
     // Calculate movement
@@ -414,9 +422,16 @@ function updateGreenShells(): void {
     // Update position
     const newPosition = {
       x: shell.position.x + moveX,
-      y: 0.1, // Will be updated below
+      y: shell.position.y, // Will be updated below
       z: shell.position.z + moveZ,
     };
+
+    // Apply gravity
+    shell.verticalVelocity -= gravity * 0.033; // Apply gravity over frame time
+    shell.verticalVelocity = Math.max(-terminalVelocity, shell.verticalVelocity);
+
+    // Calculate new height
+    const newHeight = shell.position.y + shell.verticalVelocity * 0.033;
 
     // Check for arena boundaries
     const ARENA_HALF_SIZE = 30;
@@ -467,8 +482,18 @@ function updateGreenShells(): void {
       shell.bounces++;
     }
 
-    // Update height based on terrain
-    newPosition.y = calculateHeightAtPosition(newPosition.x, newPosition.z);
+    // Calculate target height based on terrain
+    const targetHeight = calculateHeightAtPosition(newPosition.x, newPosition.z);
+
+    // Check if we've hit the ground
+    if (newHeight <= targetHeight) {
+      // We've hit the ground
+      newPosition.y = targetHeight;
+      shell.verticalVelocity = 0;
+    } else {
+      // We're in the air
+      newPosition.y = newHeight;
+    }
 
     // Update shell position
     shell.position = newPosition;
