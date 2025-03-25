@@ -14,3 +14,11 @@ export interface BattleBlocks {
 }
 
 export const BATTLE_BLOCKS: BattleBlocks; 
+
+export const RAMPS: Ramp[];
+
+export interface Ramp {
+  position: [number, number, number];
+  rotation: number;
+  scale: [number, number, number];
+}

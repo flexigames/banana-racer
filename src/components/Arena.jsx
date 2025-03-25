@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { ARENA_SIZE, BATTLE_BLOCKS } from "../lib/gameConfig";
+import { ARENA_SIZE, BATTLE_BLOCKS, RAMPS } from "../lib/gameConfig";
 import BlockyRamp from "./BlockyRamp";
 
 // Create skybox texture
@@ -328,26 +328,14 @@ const Arena = () => {
       })}
 
       {/* Blocky Ramps */}
-      <BlockyRamp 
-        position={[-10, 0, 0]} 
-        rotation={Math.PI / 2} 
-        scale={[6, 1.5, 12]} 
-      />
-      <BlockyRamp 
-        position={[10, 0, 0]} 
-        rotation={-Math.PI / 2} 
-        scale={[6, 1.5, 12]} 
-      />
-      <BlockyRamp 
-        position={[0, 0, 15]} 
-        rotation={Math.PI} 
-        scale={[6, 1.5, 12]} 
-      />
-      <BlockyRamp 
-        position={[0, 0, -15]} 
-        rotation={0} 
-        scale={[6, 1.5, 12]} 
-      />
+      {RAMPS.map((ramp, index) => (
+        <BlockyRamp 
+          key={`ramp-${index}`}
+          position={ramp.position}
+          rotation={ramp.rotation}
+          scale={ramp.scale}
+        />
+      ))}
     </group>
   );
 };

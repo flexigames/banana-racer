@@ -2,6 +2,19 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { BATTLE_BLOCKS } from "../src/lib/gameConfig";
+import { Ramp, RampsConfig } from "./types";
+
+// Define constants to match client-side configuration
+const DEFAULT_HEIGHT = 0.1;
+
+// Import RAMPS but define it with the correct type
+// Since TypeScript server can't directly use the client-side export
+const RAMPS: RampsConfig = [
+  { position: [-10, 0, 0], rotation: Math.PI / 2, scale: [6, 1.5, 12] },
+  { position: [10, 0, 0], rotation: -Math.PI / 2, scale: [6, 1.5, 12] },
+  { position: [0, 0, 15], rotation: Math.PI, scale: [6, 1.5, 12] },
+  { position: [0, 0, -15], rotation: 0, scale: [6, 1.5, 12] },
+];
 
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
@@ -154,7 +167,7 @@ function generateItemBoxes(count: number = 20): ItemBox[] {
   for (let i = 1; i <= count; i++) {
     const position = [
       Math.random() * mapSize - mapSize / 2,
-      -0.1,
+      DEFAULT_HEIGHT - 0.2, // Slightly lower than default height
       Math.random() * mapSize - mapSize / 2,
     ];
     boxes.push({ id: i, position });
@@ -173,7 +186,7 @@ function getRandomSpawnPosition(): Position {
 
   return {
     x,
-    y: 0.1,
+    y: DEFAULT_HEIGHT,
     z,
   };
 }
@@ -202,17 +215,75 @@ function onHit(playerId: string, duration: number = 3000): void {
   }, duration);
 }
 
+/**
+ * Check if a position is on a ramp and calculate height
+ * @param x - X position to check
+ * @param z - Z position to check
+ * @returns Height at that position or DEFAULT_HEIGHT if not on ramp
+ */
+function calculateHeightAtPosition(x: number, z: number): number {
+  // Check each ramp
+  for (const ramp of RAMPS) {
+    // Get ramp properties
+    const [rampX, rampY, rampZ] = ramp.position;
+    const rotation = ramp.rotation;
+    const [scaleX, scaleY, scaleZ] = ramp.scale;
+    
+    // Adjust to ramp's local coordinates
+    // First, shift to center of ramp
+    const localX = x - rampX;
+    const localZ = z - rampZ;
+    
+    // Then rotate around Y axis to align with ramp's orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+    
+    // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
+    const normalizedX = rotatedX / scaleX;
+    const normalizedZ = rotatedZ / scaleZ;
+    
+    // Check if point is within ramp bounds
+    if (
+      normalizedX >= -0.5 && 
+      normalizedX <= 0.5 && 
+      normalizedZ >= -0.5 && 
+      normalizedZ <= 0.5
+    ) {
+      // Calculate height based on position on ramp
+      // Ramp slopes from back (high) to front (low)
+      // back is at normalizedZ = -0.5, front is at normalizedZ = 0.5
+      
+      // Linear interpolation from max height at back to min height at front
+      const heightPercentage = 0.5 - normalizedZ; // 1 at back, 0 at front
+      const height = DEFAULT_HEIGHT + (heightPercentage * scaleY);
+      
+      return height;
+    }
+  }
+  
+  // Not on any ramp
+  return DEFAULT_HEIGHT;
+}
+
 function updatePlayerPosition(
   playerId: string,
   data: { position: Position; rotation: number; speed?: number }
 ): void {
-  const player = gameState.players[playerId];
-  if (!player || player.lives <= 0) return;
+  if (!gameState.players[playerId]) return;
 
-  player.position = data.position;
-  player.rotation = data.rotation;
-  player.speed = data.speed || 0;
-  player.lastUpdate = Date.now();
+  // Update the player position
+  gameState.players[playerId].position = {
+    ...data.position,
+    // Update y position based on ramp height
+    y: calculateHeightAtPosition(data.position.x, data.position.z)
+  };
+  gameState.players[playerId].rotation = data.rotation;
+  if (data.speed !== undefined) {
+    gameState.players[playerId].speed = data.speed;
+  }
+  gameState.players[playerId].lastUpdate = Date.now();
 }
 
 function dropItem(
@@ -248,7 +319,10 @@ function dropGreenShell(
   const shellId = generateGreenShellId();
   const shell = {
     id: shellId,
-    position: data.position,
+    position: {
+      ...data.position,
+      y: DEFAULT_HEIGHT
+    },
     rotation: data.rotation,
     direction: data.rotation,
     speed: 15,
@@ -415,81 +489,82 @@ function handleCollisions(): void {
 }
 
 function updateGreenShells(): void {
-  Object.values(gameState.greenShells).forEach((shell) => {
-    const deltaTime = 1 / 60; // Assuming 60 FPS
-    const mapSize = 30.5; // Half the map size (61/2)
+  const greenShellsToRemove: string[] = [];
+  const now = Date.now();
+  const MAX_SHELL_AGE = 10000; // 10 seconds
+  const MAX_BOUNCES = 3;
 
-    // Calculate new position
-    const newX =
-      shell.position.x + Math.sin(shell.direction) * shell.speed * deltaTime;
-    const newZ =
-      shell.position.z + Math.cos(shell.direction) * shell.speed * deltaTime;
-
-    // Check for wall collisions
-    let hitWall = false;
-
-    if (Math.abs(newX) > mapSize) {
-      // Hit left or right wall
-      shell.direction = -shell.direction;
-      shell.rotation = shell.direction;
-      shell.position.x = Math.sign(newX) * mapSize;
-      hitWall = true;
-    } else {
-      shell.position.x = newX;
+  // For each green shell
+  Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
+    // Check if shell is too old
+    if (now - shell.droppedAt > MAX_SHELL_AGE || shell.bounces > MAX_BOUNCES) {
+      greenShellsToRemove.push(shellId);
+      return;
     }
 
-    if (Math.abs(newZ) > mapSize) {
-      // Hit front or back wall
-      shell.direction = Math.PI - shell.direction;
-      shell.rotation = shell.direction;
-      shell.position.z = Math.sign(newZ) * mapSize;
-      hitWall = true;
-    } else {
-      shell.position.z = newZ;
+    // Calculate movement
+    const moveSpeed = shell.speed * 0.033; // Simulate 30fps
+    const moveX = Math.sin(shell.rotation) * moveSpeed;
+    const moveZ = Math.cos(shell.rotation) * moveSpeed;
+
+    // Update position
+    const newPosition = {
+      x: shell.position.x + moveX,
+      y: 0.1, // Will be updated below
+      z: shell.position.z + moveZ,
+    };
+
+    // Check for arena boundaries
+    const ARENA_HALF_SIZE = 30;
+    const shellRadius = 0.5;
+    let bounced = false;
+
+    // Left and right walls
+    if (newPosition.x < -ARENA_HALF_SIZE + shellRadius) {
+      newPosition.x = -ARENA_HALF_SIZE + shellRadius;
+      shell.rotation = Math.PI - shell.rotation;
+      bounced = true;
+    } else if (newPosition.x > ARENA_HALF_SIZE - shellRadius) {
+      newPosition.x = ARENA_HALF_SIZE - shellRadius;
+      shell.rotation = Math.PI - shell.rotation;
+      bounced = true;
     }
 
-    // Check for battle block collisions
+    // Front and back walls
+    if (newPosition.z < -ARENA_HALF_SIZE + shellRadius) {
+      newPosition.z = -ARENA_HALF_SIZE + shellRadius;
+      shell.rotation = -shell.rotation;
+      bounced = true;
+    } else if (newPosition.z > ARENA_HALF_SIZE - shellRadius) {
+      newPosition.z = ARENA_HALF_SIZE - shellRadius;
+      shell.rotation = -shell.rotation;
+      bounced = true;
+    }
+
+    // Check battle block collisions
     for (const block of gameState.battleBlocks) {
-      if (checkBlockCollision(shell.position, block)) {
-        // Reflect the shell based on which side it hit
-        const dx = shell.position.x - block.position.x;
-        const dz = shell.position.z - block.position.z;
-        
-        if (Math.abs(dx) > Math.abs(dz)) {
-          // Hit vertical side
-          shell.direction = -shell.direction;
-          shell.rotation = shell.direction;
-          shell.position.x = block.position.x + Math.sign(dx) * (block.size / 2);
-        } else {
-          // Hit horizontal side
-          shell.direction = Math.PI - shell.direction;
-          shell.rotation = shell.direction;
-          shell.position.z = block.position.z + Math.sign(dz) * (block.size / 2);
-        }
-        hitWall = true;
+      if (checkBlockCollision(newPosition, block)) {
+        // Simplified bounce logic
+        shell.rotation = shell.rotation + Math.PI;
+        bounced = true;
         break;
       }
     }
 
-    if (hitWall) {
+    if (bounced) {
       shell.bounces++;
     }
 
-    // Check for player collisions
-    Object.values(gameState.players).forEach((player) => {
-      // Only allow hitting the player who shot the shell after 1 second
-      if (
-        player.id === shell.droppedBy &&
-        Date.now() - shell.droppedAt < 1000
-      ) {
-        return;
-      }
+    // Update height based on terrain
+    newPosition.y = calculateHeightAtPosition(newPosition.x, newPosition.z);
 
-      if (checkCollision(player.position, shell.position, 0.9)) {
-        onHit(player.id);
-        delete gameState.greenShells[shell.id];
-      }
-    });
+    // Update shell position
+    shell.position = newPosition;
+  });
+
+  // Remove old shells
+  greenShellsToRemove.forEach((shellId) => {
+    delete gameState.greenShells[shellId];
   });
 }
 

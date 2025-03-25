@@ -7,9 +7,10 @@ import React, {
   useState,
 } from "react";
 import { useFrame } from "@react-three/fiber";
-import { updateVehiclePhysics, updateObjectPosition } from "../lib/physics";
+import { updateVehiclePhysics, updateObjectPosition, calculateHeightAtPosition } from "../lib/physics";
 import { useVehicleControls } from "../lib/input";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
+import { DEFAULT_HEIGHT } from "../lib/gameConfig";
 import * as THREE from "three";
 import Car from "./Car";
 
@@ -79,7 +80,7 @@ const Player = forwardRef((props, ref) => {
       z = (Math.random() - 0.5) * 40;
     } while (Math.sqrt(x * x + z * z) < 5); // Ensure not too close to origin
 
-    return { x, y: 0.1, z };
+    return { x, y: DEFAULT_HEIGHT, z };
   };
 
   // Position car at random start position
@@ -154,9 +155,6 @@ const Player = forwardRef((props, ref) => {
       updateObjectPosition(car.current, movement.current, delta);
     }
 
-    // Ensure the car stays on the ground
-    car.current.position.y = 0.1;
-
     // Send position updates to server (limit to 10 updates per second)
     if (state.clock.elapsedTime - lastUpdateTime.current > 0.1) {
       lastUpdateTime.current = state.clock.elapsedTime;
@@ -187,7 +185,7 @@ const Player = forwardRef((props, ref) => {
   if (isDead) return null;
 
   return (
-    <group ref={car} position={[0, 0.1, 0]}>
+    <group ref={car} position={[0, DEFAULT_HEIGHT, 0]}>
       <Car
         vehicleType={effectiveVehicle}
         color={carColor}
