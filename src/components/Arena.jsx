@@ -3,10 +3,11 @@ import * as THREE from "three";
 import { ARENA_SIZE, BATTLE_BLOCKS } from "../lib/gameConfig";
 
 const Arena = () => {
-  const wallHeight = 5;
+  const wallHeight = 2;
   const wallThickness = 1;
   const blockHeight = 2;
   const groundRef = useRef();
+  const wallColor = "#fa5858";
 
   const walls = [
     // North wall
@@ -14,28 +15,24 @@ const Arena = () => {
       position: [0, wallHeight / 2, -ARENA_SIZE / 2],
       scale: [ARENA_SIZE + wallThickness, wallHeight, wallThickness],
       rotation: [0, 0, 0],
-      color: "#808080",
     },
     // South wall
     {
       position: [0, wallHeight / 2, ARENA_SIZE / 2],
       scale: [ARENA_SIZE + wallThickness, wallHeight, wallThickness],
       rotation: [0, 0, 0],
-      color: "#808080",
     },
     // East wall
     {
       position: [ARENA_SIZE / 2, wallHeight / 2, 0],
       scale: [ARENA_SIZE + wallThickness, wallHeight, wallThickness],
       rotation: [0, Math.PI / 2, 0],
-      color: "#808080",
     },
     // West wall
     {
       position: [-ARENA_SIZE / 2, wallHeight / 2, 0],
       scale: [ARENA_SIZE + wallThickness, wallHeight, wallThickness],
       rotation: [0, Math.PI / 2, 0],
-      color: "#808080",
     },
   ];
 
@@ -92,11 +89,11 @@ const Arena = () => {
   const createBrickTexture = (baseColor) => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    const brickWidth = 200; // Smaller bricks for more detail
+    const brickWidth = 200;
     const brickHeight = 150;
     const mortarThickness = 9;
-    const numBricksX = 2; // More bricks horizontally
-    const numBricksY = 2; // More bricks vertically
+    const numBricksX = 2;
+    const numBricksY = 2;
 
     canvas.width = brickWidth * numBricksX;
     canvas.height = brickHeight * numBricksY;
@@ -109,10 +106,9 @@ const Arena = () => {
     ctx.fillStyle = baseColor;
 
     for (let y = 0; y < numBricksY; y++) {
-      const rowOffset = (y % 3) * (brickWidth / 3); // Three different offsets
+      const rowOffset = (y % 3) * (brickWidth / 3);
 
       for (let x = -1; x < numBricksX + 1; x++) {
-        // Extra bricks for wrapping
         ctx.fillRect(
           ((x * brickWidth + rowOffset) % canvas.width) + mortarThickness,
           y * brickHeight + mortarThickness,
@@ -120,7 +116,6 @@ const Arena = () => {
           brickHeight - mortarThickness * 2
         );
 
-        // Add brick details
         const brickX =
           ((x * brickWidth + rowOffset) % canvas.width) + mortarThickness;
         const brickY = y * brickHeight + mortarThickness;
@@ -155,10 +150,21 @@ const Arena = () => {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(6, 6); // Adjusted repeat to match new brick size
+    texture.repeat.set(6, 6);
 
     return texture;
   };
+
+  // Create wall texture once and reuse
+  const createWallTexture = () => {
+    const texture = createBrickTexture("#A0A0A0");
+    // Don't set repeat here as it will be set per wall
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  };
+
+  const wallBrickTexture = createWallTexture();
 
   // Helper function to adjust color brightness
   function adjustColor(color, amount) {
@@ -193,17 +199,30 @@ const Arena = () => {
       </mesh>
 
       {/* Walls */}
-      {walls.map((wall, index) => (
-        <mesh
-          key={`wall-${index}`}
-          position={wall.position}
-          rotation={wall.rotation}
-          scale={wall.scale}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={wall.color} roughness={0.9} />
-        </mesh>
-      ))}
+      {walls.map((wall, index) => {
+        // Clone the texture for each wall to have independent repeat settings
+        const wallTexture = wallBrickTexture.clone();
+        // Set repeat based on wall dimensions
+        // The scale[0] is width, scale[1] is height
+        wallTexture.repeat.set(wall.scale[0] / 2, wall.scale[1] / 2);
+        
+        return (
+          <mesh
+            key={`wall-${index}`}
+            position={wall.position}
+            rotation={wall.rotation}
+            scale={wall.scale}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial
+              color={wallColor}
+              roughness={0.7}
+              metalness={0.2}
+              map={wallTexture}
+            />
+          </mesh>
+        );
+      })}
 
       {/* Battle Blocks */}
       {BATTLE_BLOCKS.positions.map((block, index) => {
