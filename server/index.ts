@@ -1,6 +1,7 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
+import { BATTLE_BLOCKS } from "../src/lib/gameConfig";
 
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
@@ -112,16 +113,10 @@ const gameState: GameState = {
   fakeCubes: {},
   greenShells: {},
   itemBoxes: [],
-  battleBlocks: [
-    // Top-left block
-    { position: { x: -15.25, y: 0, z: -15.25 }, size: 8 },
-    // Top-right block
-    { position: { x: 15.25, y: 0, z: -15.25 }, size: 8 },
-    // Bottom-left block
-    { position: { x: -15.25, y: 0, z: 15.25 }, size: 8 },
-    // Bottom-right block
-    { position: { x: 15.25, y: 0, z: 15.25 }, size: 8 },
-  ],
+  battleBlocks: BATTLE_BLOCKS.positions.map(position => ({
+    position,
+    size: BATTLE_BLOCKS.size
+  })),
 };
 
 function generateRandomColor(): Color {
