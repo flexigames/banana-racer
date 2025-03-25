@@ -1,20 +1,10 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
-import { BATTLE_BLOCKS } from "../src/lib/gameConfig";
-import { Ramp, RampsConfig } from "./types";
+import { BATTLE_BLOCKS, RAMPS } from "../src/lib/gameConfig";
 
 // Define constants to match client-side configuration
 const DEFAULT_HEIGHT = 0.1;
-
-// Import RAMPS but define it with the correct type
-// Since TypeScript server can't directly use the client-side export
-const RAMPS: RampsConfig = [
-  { position: [-10, 0, 0], rotation: Math.PI / 2, scale: [6, 1.5, 12] },
-  { position: [10, 0, 0], rotation: -Math.PI / 2, scale: [6, 1.5, 12] },
-  { position: [0, 0, 15], rotation: Math.PI, scale: [6, 1.5, 12] },
-  { position: [0, 0, -15], rotation: 0, scale: [6, 1.5, 12] },
-];
 
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
@@ -230,7 +220,7 @@ function calculateHeightAtPosition(x: number, z: number): number {
 
     if (dx <= blockHalfSize && dz <= blockHalfSize) {
       // Player is on top of a block
-      return block.position.y + blockHalfSize;
+      return block.position.y + 2;
     }
   }
 
@@ -247,8 +237,8 @@ function calculateHeightAtPosition(x: number, z: number): number {
     const localZ = z - rampZ;
 
     // Then rotate around Y axis to align with ramp's orientation
-    const cosRot = Math.cos(-rotation);
-    const sinRot = Math.sin(-rotation);
+    const cosRot = Math.cos(rotation);
+    const sinRot = Math.sin(rotation);
     const rotatedX = localX * cosRot - localZ * sinRot;
     const rotatedZ = localX * sinRot + localZ * cosRot;
 
@@ -286,11 +276,7 @@ function updatePlayerPosition(
   if (!gameState.players[playerId]) return;
 
   // Update the player position
-  gameState.players[playerId].position = {
-    ...data.position,
-    // Update y position based on ramp height
-    y: calculateHeightAtPosition(data.position.x, data.position.z),
-  };
+  gameState.players[playerId].position = data.position;
   gameState.players[playerId].rotation = data.rotation;
   if (data.speed !== undefined) {
     gameState.players[playerId].speed = data.speed;

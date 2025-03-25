@@ -12,6 +12,7 @@ const RemotePlayer = ({
   lives,
   vehicle = "vehicle-racer",
 }) => {
+  console.log("remote", position.y);
   const car = useRef();
   const targetPosition = useRef(
     new THREE.Vector3(position.x, position.y, position.z)

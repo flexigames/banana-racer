@@ -7,7 +7,11 @@ import React, {
   useState,
 } from "react";
 import { useFrame } from "@react-three/fiber";
-import { updateVehiclePhysics, updateObjectPosition, calculateHeightAtPosition } from "../lib/physics";
+import {
+  updateVehiclePhysics,
+  updateObjectPosition,
+  calculateHeightAtPosition,
+} from "../lib/physics";
 import { useVehicleControls } from "../lib/input";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import { DEFAULT_HEIGHT } from "../lib/gameConfig";
@@ -166,6 +170,7 @@ const Player = forwardRef((props, ref) => {
           y: parseFloat(car.current.position.y.toFixed(2)),
           z: parseFloat(car.current.position.z.toFixed(2)),
         };
+        console.log('player', position.y)
 
         const rotation = parseFloat(car.current.rotation.y.toFixed(2));
         const speed = parseFloat(movement.current.speed.toFixed(2));
