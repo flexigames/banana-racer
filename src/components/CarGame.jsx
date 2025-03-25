@@ -37,8 +37,8 @@ const FollowCamera = ({ target }) => {
       // Calculate camera position: behind and above the car
       // Get car's forward direction (negative Z axis rotated by car's Y rotation)
       const carRotation = target.current.rotation.y;
-      const distance = 4;
-      const height = 2;
+      const distance = 3;
+      const height = 1.5;
 
       // Calculate position behind the car based on its rotation
       const offsetX = Math.sin(carRotation) * distance;
