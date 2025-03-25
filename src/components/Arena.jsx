@@ -48,22 +48,22 @@ const Arena = () => {
 
   // Create tile texture
   useEffect(() => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     const tileSize = 64;
     canvas.width = tileSize;
     canvas.height = tileSize;
 
     // Draw tile pattern
-    ctx.fillStyle = '#A9A9A9';
+    ctx.fillStyle = "#A9A9A9";
     ctx.fillRect(0, 0, tileSize, tileSize);
 
     // Draw tile lines
-    ctx.strokeStyle = '#808080';
+    ctx.strokeStyle = "#808080";
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, tileSize, tileSize);
-    ctx.strokeRect(tileSize/2, 0, tileSize/2, tileSize);
-    ctx.strokeRect(0, tileSize/2, tileSize, tileSize/2);
+    ctx.strokeRect(tileSize / 2, 0, tileSize / 2, tileSize);
+    ctx.strokeRect(0, tileSize / 2, tileSize, tileSize / 2);
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
@@ -88,10 +88,106 @@ const Arena = () => {
     };
   }, []);
 
+  // Create brick texture
+  const createBrickTexture = (baseColor) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const brickWidth = 200; // Smaller bricks for more detail
+    const brickHeight = 150;
+    const mortarThickness = 9;
+    const numBricksX = 2; // More bricks horizontally
+    const numBricksY = 2; // More bricks vertically
+
+    canvas.width = brickWidth * numBricksX;
+    canvas.height = brickHeight * numBricksY;
+
+    // Draw background (mortar color)
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw brick pattern with multiple offsets
+    ctx.fillStyle = baseColor;
+
+    for (let y = 0; y < numBricksY; y++) {
+      const rowOffset = (y % 3) * (brickWidth / 3); // Three different offsets
+
+      for (let x = -1; x < numBricksX + 1; x++) {
+        // Extra bricks for wrapping
+        ctx.fillRect(
+          ((x * brickWidth + rowOffset) % canvas.width) + mortarThickness,
+          y * brickHeight + mortarThickness,
+          brickWidth - mortarThickness * 2,
+          brickHeight - mortarThickness * 2
+        );
+
+        // Add brick details
+        const brickX =
+          ((x * brickWidth + rowOffset) % canvas.width) + mortarThickness;
+        const brickY = y * brickHeight + mortarThickness;
+
+        // Add shading to create depth
+        const gradient = ctx.createLinearGradient(
+          brickX,
+          brickY,
+          brickX,
+          brickY + brickHeight - mortarThickness * 2
+        );
+        gradient.addColorStop(0, adjustColor(baseColor, 20));
+        gradient.addColorStop(1, adjustColor(baseColor, -20));
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          brickX,
+          brickY,
+          brickWidth - mortarThickness * 2,
+          brickHeight - mortarThickness * 2
+        );
+
+        // Add highlight line
+        ctx.strokeStyle = adjustColor(baseColor, 30);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(brickX + 2, brickY + 2);
+        ctx.lineTo(brickX + brickWidth - mortarThickness * 2 - 2, brickY + 2);
+        ctx.stroke();
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(6, 6); // Adjusted repeat to match new brick size
+
+    return texture;
+  };
+
+  // Helper function to adjust color brightness
+  function adjustColor(color, amount) {
+    const hex = color.replace("#", "");
+    const r = Math.max(
+      0,
+      Math.min(255, parseInt(hex.substring(0, 2), 16) + amount)
+    );
+    const g = Math.max(
+      0,
+      Math.min(255, parseInt(hex.substring(2, 4), 16) + amount)
+    );
+    const b = Math.max(
+      0,
+      Math.min(255, parseInt(hex.substring(4, 6), 16) + amount)
+    );
+    return `#${r.toString(16).padStart(2, "0")}${g
+      .toString(16)
+      .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+  }
+
   return (
     <group>
       {/* Ground with grid for better movement visibility */}
-      <mesh ref={groundRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      <mesh
+        ref={groundRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0, 0]}
+      >
         <planeGeometry args={[ARENA_SIZE, ARENA_SIZE]} />
         <meshStandardMaterial color="#A9A9A9" />
       </mesh>
@@ -110,22 +206,28 @@ const Arena = () => {
       ))}
 
       {/* Battle Blocks */}
-      {BATTLE_BLOCKS.positions.map((block, index) => (
-        <mesh
-          key={`block-${index}`}
-          position={[block.x, blockHeight / 2, block.z]}
-          scale={[BATTLE_BLOCKS.size, blockHeight, BATTLE_BLOCKS.size]}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial 
-            color={blockColors[index]} 
-            roughness={0.3}
-            metalness={0.7}
-            emissive={blockColors[index]}
-            emissiveIntensity={0.2}
-          />
-        </mesh>
-      ))}
+      {BATTLE_BLOCKS.positions.map((block, index) => {
+        const baseColor = blockColors[index];
+        const brickTexture = createBrickTexture(baseColor);
+
+        return (
+          <mesh
+            key={`block-${index}`}
+            position={[block.x, blockHeight / 2, block.z]}
+            scale={[BATTLE_BLOCKS.size, blockHeight, BATTLE_BLOCKS.size]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial
+              color={baseColor}
+              roughness={0.5}
+              metalness={0.3}
+              emissive={baseColor}
+              emissiveIntensity={0.2}
+              map={brickTexture}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 };
