@@ -100,6 +100,10 @@ type GameState = {
   fakeCubes: Record<string, FakeCube>;
   greenShells: Record<string, GreenShell>;
   itemBoxes: ItemBox[];
+  battleBlocks: {
+    position: Position;
+    size: number;
+  }[];
 };
 
 const gameState: GameState = {
@@ -108,6 +112,16 @@ const gameState: GameState = {
   fakeCubes: {},
   greenShells: {},
   itemBoxes: [],
+  battleBlocks: [
+    // Top-left block
+    { position: { x: -15.25, y: 0, z: -15.25 }, size: 8 },
+    // Top-right block
+    { position: { x: 15.25, y: 0, z: -15.25 }, size: 8 },
+    // Bottom-left block
+    { position: { x: -15.25, y: 0, z: 15.25 }, size: 8 },
+    // Bottom-right block
+    { position: { x: 15.25, y: 0, z: 15.25 }, size: 8 },
+  ],
 };
 
 function generateRandomColor(): Color {
@@ -353,6 +367,13 @@ function checkCollision(
   return Math.sqrt(dx * dx + dz * dz) < radius;
 }
 
+function checkBlockCollision(pos: Position, block: { position: Position; size: number }): boolean {
+  const blockHalfSize = block.size / 2;
+  const dx = Math.abs(pos.x - block.position.x);
+  const dz = Math.abs(pos.z - block.position.z);
+  return dx < blockHalfSize && dz < blockHalfSize;
+}
+
 function handleCollisions(): void {
   Object.values(gameState.bananas).forEach((banana) => {
     Object.values(gameState.players).forEach((player) => {
@@ -430,6 +451,29 @@ function updateGreenShells(): void {
       hitWall = true;
     } else {
       shell.position.z = newZ;
+    }
+
+    // Check for battle block collisions
+    for (const block of gameState.battleBlocks) {
+      if (checkBlockCollision(shell.position, block)) {
+        // Reflect the shell based on which side it hit
+        const dx = shell.position.x - block.position.x;
+        const dz = shell.position.z - block.position.z;
+        
+        if (Math.abs(dx) > Math.abs(dz)) {
+          // Hit vertical side
+          shell.direction = -shell.direction;
+          shell.rotation = shell.direction;
+          shell.position.x = block.position.x + Math.sign(dx) * (block.size / 2);
+        } else {
+          // Hit horizontal side
+          shell.direction = Math.PI - shell.direction;
+          shell.rotation = shell.direction;
+          shell.position.z = block.position.z + Math.sign(dz) * (block.size / 2);
+        }
+        hitWall = true;
+        break;
+      }
     }
 
     if (hitWall) {

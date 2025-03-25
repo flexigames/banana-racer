@@ -6,6 +6,9 @@ export const ARENA_SIZE = 61;
 const Arena = () => {
   const wallHeight = 5;
   const wallThickness = 1;
+  const blockSize = 8;
+  const blockHeight = 3;
+  const blockOffset = ARENA_SIZE / 4;
 
   const walls = [
     // North wall
@@ -38,6 +41,33 @@ const Arena = () => {
     },
   ];
 
+  const battleBlocks = [
+    // Top-left block
+    {
+      position: [-blockOffset, blockHeight / 2, -blockOffset],
+      scale: [blockSize, blockHeight, blockSize],
+      color: "#8B4513",
+    },
+    // Top-right block
+    {
+      position: [blockOffset, blockHeight / 2, -blockOffset],
+      scale: [blockSize, blockHeight, blockSize],
+      color: "#8B4513",
+    },
+    // Bottom-left block
+    {
+      position: [-blockOffset, blockHeight / 2, blockOffset],
+      scale: [blockSize, blockHeight, blockSize],
+      color: "#8B4513",
+    },
+    // Bottom-right block
+    {
+      position: [blockOffset, blockHeight / 2, blockOffset],
+      scale: [blockSize, blockHeight, blockSize],
+      color: "#8B4513",
+    },
+  ];
+
   return (
     <group>
       {/* Ground with grid for better movement visibility */}
@@ -56,6 +86,18 @@ const Arena = () => {
         >
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color={wall.color} roughness={0.9} />
+        </mesh>
+      ))}
+
+      {/* Battle Blocks */}
+      {battleBlocks.map((block, index) => (
+        <mesh
+          key={`block-${index}`}
+          position={block.position}
+          scale={block.scale}
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color={block.color} roughness={0.9} />
         </mesh>
       ))}
     </group>

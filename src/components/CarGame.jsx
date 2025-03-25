@@ -151,14 +151,8 @@ const CarGame = () => {
 
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
-  const [spinSpeed, setSpinSpeed] = useState(50); // ms between item changes
+  const spinSpeed = 50
   const possibleItems = ["🍌", "🚀", "🎲", "🐢"];
-
-  // Handle item box collection
-  const handleItemBoxCollect = (itemBoxId) => {
-    // Immediately notify context about item box collection to remove it from the scene
-    collectItemBox(itemBoxId);
-  };
 
   // Get remote players (all players except current player)
   const remotePlayers = Object.values(players).filter(

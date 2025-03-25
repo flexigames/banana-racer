@@ -120,9 +120,6 @@ const Player = forwardRef((props, ref) => {
       setSpinningOut(false);
       spinTimer.current = null;
     }, 2000);
-
-    // Notify about the collision
-    console.log("Hit a banana! Spinning out for 2 seconds");
   };
 
   // Track spinout progress
@@ -180,32 +177,9 @@ const Player = forwardRef((props, ref) => {
     }
   });
 
-  // Add a new function to teleport to another player
-  const teleportToPlayer = (targetPlayerId) => {
-    const targetPlayer = players[targetPlayerId];
-    if (targetPlayer && car.current) {
-      car.current.position.set(
-        targetPlayer.position.x + 2, // Position slightly to the side
-        targetPlayer.position.y,
-        targetPlayer.position.z
-      );
-      // Update the server with our new position
-      updatePlayerPosition(
-        {
-          x: car.current.position.x,
-          y: car.current.position.y,
-          z: car.current.position.z,
-        },
-        car.current.rotation.y,
-        0 // Speed is zero after teleporting
-      );
-    }
-  };
-
   // Expose the car ref and functions to parent components
   useImperativeHandle(ref, () => ({
     ...car.current,
-    teleportToPlayer,
     triggerSpinOut,
     isSpinningOut: () => spinningOut,
   }));

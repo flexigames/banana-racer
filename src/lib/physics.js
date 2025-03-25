@@ -116,6 +116,43 @@ export const updateObjectPosition = (object, movement, delta) => {
   if (newZ < -halfSize + buffer && moveZ < 0) return; // Front wall
   if (newZ > halfSize - buffer && moveZ > 0) return; // Back wall
 
+  // Battle block positions and sizes (must match server)
+  const blockSize = 8;
+  const blockOffset = arenaSize / 4;
+  const blocks = [
+    { x: -blockOffset, z: -blockOffset },
+    { x: blockOffset, z: -blockOffset },
+    { x: -blockOffset, z: blockOffset },
+    { x: blockOffset, z: blockOffset },
+  ];
+
+  // Check battle block collisions
+  for (const block of blocks) {
+    const blockHalfSize = blockSize / 2;
+    const dx = Math.abs(newX - block.x);
+    const dz = Math.abs(newZ - block.z);
+    
+    if (dx < blockHalfSize + carRadius && dz < blockHalfSize + carRadius) {
+      // Determine which side was hit
+      if (dx > dz) {
+        // Hit vertical side
+        if (newX < block.x) {
+          object.position.x = block.x - blockHalfSize - carRadius;
+        } else {
+          object.position.x = block.x + blockHalfSize + carRadius;
+        }
+      } else {
+        // Hit horizontal side
+        if (newZ < block.z) {
+          object.position.z = block.z - blockHalfSize - carRadius;
+        } else {
+          object.position.z = block.z + blockHalfSize + carRadius;
+        }
+      }
+      return;
+    }
+  }
+
   // Apply movement if no collision
   object.position.x = newX;
   object.position.z = newZ;
