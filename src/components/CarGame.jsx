@@ -273,20 +273,6 @@ const CarGame = () => {
         <ambientLight intensity={0.8} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
 
-        {/* Grid overlay for visual movement reference */}
-        <Grid
-          position={[0, 0.01, 0]}
-          args={[100, 100]}
-          cellSize={2}
-          cellThickness={0.6}
-          cellColor="#388004"
-          sectionSize={10}
-          sectionThickness={1.5}
-          sectionColor="#2d6605"
-          fadeDistance={50}
-          infiniteGrid
-        />
-
         {/* Arena with walls and ground */}
         <Arena />
 

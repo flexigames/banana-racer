@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { ARENA_SIZE, BATTLE_BLOCKS } from "../lib/gameConfig";
 
@@ -6,6 +6,7 @@ const Arena = () => {
   const wallHeight = 5;
   const wallThickness = 1;
   const blockHeight = 2;
+  const groundRef = useRef();
 
   const walls = [
     // North wall
@@ -45,10 +46,52 @@ const Arena = () => {
     "#FF1493", // Deep Pink
   ];
 
+  // Create tile texture
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const tileSize = 64;
+    canvas.width = tileSize;
+    canvas.height = tileSize;
+
+    // Draw tile pattern
+    ctx.fillStyle = '#A9A9A9';
+    ctx.fillRect(0, 0, tileSize, tileSize);
+
+    // Draw tile lines
+    ctx.strokeStyle = '#808080';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, tileSize, tileSize);
+    ctx.strokeRect(tileSize/2, 0, tileSize/2, tileSize);
+    ctx.strokeRect(0, tileSize/2, tileSize, tileSize/2);
+
+    // Create texture from canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(ARENA_SIZE / 4, ARENA_SIZE / 4);
+
+    // Apply texture to ground material
+    const groundMaterial = new THREE.MeshStandardMaterial({
+      map: texture,
+      roughness: 0.8,
+      metalness: 0.2,
+    });
+
+    // Update ground material
+    if (groundRef.current) {
+      groundRef.current.material = groundMaterial;
+    }
+
+    return () => {
+      texture.dispose();
+    };
+  }, []);
+
   return (
     <group>
       {/* Ground with grid for better movement visibility */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      <mesh ref={groundRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[ARENA_SIZE, ARENA_SIZE]} />
         <meshStandardMaterial color="#A9A9A9" />
       </mesh>
