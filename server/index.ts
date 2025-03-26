@@ -401,7 +401,6 @@ function updateGreenShells(): void {
   const MAX_SHELL_AGE = 10000; // 10 seconds
   const gravity = 9.8; // Gravity acceleration in m/s²
   const terminalVelocity = 20; // Maximum falling speed
-  const groundFriction = 0.8; // Friction when hitting the ground
 
   // For each green shell
   Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {

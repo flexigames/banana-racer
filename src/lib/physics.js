@@ -218,12 +218,20 @@ export const updateObjectPosition = (object, movement, delta) => {
     }
   }
 
+  // Calculate target height based on terrain
+  const targetHeight = calculateHeightAtPosition(newX, newZ);
+  const currentHeight = calculateHeightAtPosition(object.position.x, object.position.z);
+
+  // Check if we're trying to go up a ramp from the side
+  const heightDelta = targetHeight - currentHeight;
+  if (heightDelta > 0.2) {
+    // If we're trying to go up too steeply, prevent movement
+    return;
+  }
+
   // Apply movement if no collision
   object.position.x = newX;
   object.position.z = newZ;
-
-  // Calculate target height based on terrain
-  const targetHeight = calculateHeightAtPosition(newX, newZ);
 
   // Apply gravity
   const gravity = 9.8; // Gravity acceleration in m/s²
