@@ -8,9 +8,9 @@ export type Ramp = {
 export type RampsConfig = Ramp[]; 
 
 export const ITEM_TYPES = {
-  // BANANA: "banana",
-  // BOOST: "boost",
-  // FAKE_CUBE: "fake_cube",
+  BANANA: "banana",
+  BOOST: "boost",
+  FAKE_CUBE: "fake_cube",
   GREEN_SHELL: "green_shell",
 };
 

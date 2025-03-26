@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
-import { blocks, mapSize } from "./map";
+import { blocks, ramps, mapSize } from "./map";
 
 // Define constants to match client-side configuration
 const DEFAULT_HEIGHT = 0.1;
@@ -125,18 +125,72 @@ function onHit(playerId: string, duration: number = 3000): void {
  * @returns Height at that position or DEFAULT_HEIGHT if not on ramp
  */
 function calculateHeightAtPosition(x: number, z: number): number {
-  // Check each battle block first
+  // Check each block first
   for (const block of blocks) {
-    const blockHalfSizeX = block.size.x / 2;
-    const blockHalfSizeZ = block.size.z / 2;
+    const blockHalfWidth = block.size.x / 2;
+    const blockHalfDepth = block.size.z / 2;
+
     const dx = Math.abs(x - block.position.x);
     const dz = Math.abs(z - block.position.z);
 
-    if (dx <= blockHalfSizeX && dz <= blockHalfSizeZ) {
-      return block.position.y + 2;
+    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
+      return block.position.y + block.size.y;
     }
   }
 
+  // Check each ramp
+  for (const ramp of ramps) {
+    // Get ramp properties
+    const [rampX, rampY, rampZ] = ramp.position;
+    const rotation = Math.PI / 2 - ramp.rotation;
+    const [scaleX, scaleY, scaleZ] = ramp.scale;
+
+    // Adjust to ramp's local coordinates
+    // First, shift to center of ramp
+    const localX = x - rampX;
+    const localZ = z - rampZ;
+
+    // Then rotate around Y axis to align with ramp's orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+
+    // Handle different ramp orientations
+    let rampWidth, rampLength;
+
+    // Determine orientation based on the rotation value
+    if (ramp.rotation === 0 || Math.abs(ramp.rotation) === Math.PI) {
+      // Horizontal ramps (< or >)
+      rampWidth = scaleZ;
+      rampLength = scaleX;
+    } else {
+      // Vertical ramps (^ or v)
+      rampWidth = scaleX;
+      rampLength = scaleZ;
+    }
+
+    // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
+    const normalizedX = rotatedX / rampWidth;
+    const normalizedZ = rotatedZ / rampLength;
+
+    // Check if point is within ramp bounds
+    if (
+      normalizedX >= -0.5 &&
+      normalizedX <= 0.5 &&
+      normalizedZ >= -0.5 &&
+      normalizedZ <= 0.5
+    ) {
+      // Calculate height based on position on ramp
+      // The slope always goes from back to front in local coordinates
+      const heightPercentage = 0.5 - normalizedZ;
+      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
+
+      return height;
+    }
+  }
+
+  // Not on any ramp or block
   return DEFAULT_HEIGHT;
 }
 
@@ -392,7 +446,7 @@ function updateGreenShells(): void {
       shell.verticalVelocity
     );
 
-    // Calculate new height
+    // Calculate new height based on gravity
     const newHeightBasedOnGravity =
       shell.position.y + shell.verticalVelocity * 0.033;
 
@@ -418,12 +472,16 @@ function updateGreenShells(): void {
 
           if (penetrationX < penetrationZ) {
             shell.rotation = -shell.rotation;
-            newPosition.x = block.position.x + (relativeX > 0 ? 1 : -1) * (blockHalfWidth + 0.5);
+            newPosition.x =
+              block.position.x +
+              (relativeX > 0 ? 1 : -1) * (blockHalfWidth + 0.5);
             newPosition.z = newPosition.z;
           } else {
             shell.rotation = Math.PI - shell.rotation;
             newPosition.x = newPosition.x;
-            newPosition.z = block.position.z + (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + 0.5);
+            newPosition.z =
+              block.position.z +
+              (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + 0.5);
           }
           bounced = true;
           break;
