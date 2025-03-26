@@ -1,10 +1,3 @@
-import {
-  ARENA_SIZE,
-  ARENA_HALF_SIZE,
-  BATTLE_BLOCKS,
-  RAMPS,
-  DEFAULT_HEIGHT,
-} from "./gameConfig";
 import { blocks, ramps, mapSize } from "./map";
 
 
@@ -97,7 +90,7 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
  * Check if a position is on a ramp and calculate height
  * @param {number} x - X position to check
  * @param {number} z - Z position to check
- * @returns {number} Height at that position or DEFAULT_HEIGHT if not on ramp
+ * @returns {number} Height at that position
  */
 export const calculateHeightAtPosition = (x, z) => {
   // Check each block first
@@ -159,14 +152,14 @@ export const calculateHeightAtPosition = (x, z) => {
       // Calculate height based on position on ramp
       // The slope always goes from back to front in local coordinates
       const heightPercentage = 0.5 - normalizedZ;
-      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
+      const height = heightPercentage * scaleY;
       
       return height;
     }
   }
 
   // Not on any ramp or block
-  return DEFAULT_HEIGHT;
+  return 0;
 };
 
 /**

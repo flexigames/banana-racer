@@ -4,9 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
 import { blocks, ramps, mapSize } from "./map";
 
-// Define constants to match client-side configuration
-const DEFAULT_HEIGHT = 0.1;
-
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -70,7 +67,7 @@ function generateItemBoxes(count: number = 20): ItemBox[] {
   for (let i = 1; i <= count; i++) {
     const position = [
       Math.random() * mapSize - mapSize / 2,
-      DEFAULT_HEIGHT - 0.2, // Slightly lower than default height
+      -0.2, // Slightly lower than default height
       Math.random() * mapSize - mapSize / 2,
     ];
     boxes.push({ id: i, position });
@@ -89,7 +86,7 @@ function getRandomSpawnPosition(): Position {
 
   return {
     x,
-    y: DEFAULT_HEIGHT,
+    y: 0,
     z,
   };
 }
@@ -122,7 +119,7 @@ function onHit(playerId: string, duration: number = 3000): void {
  * Check if a position is on a ramp and calculate height
  * @param x - X position to check
  * @param z - Z position to check
- * @returns Height at that position or DEFAULT_HEIGHT if not on ramp
+ * @returns Height at that position
  */
 function calculateHeightAtPosition(x: number, z: number): number {
   // Check each block first
@@ -184,14 +181,14 @@ function calculateHeightAtPosition(x: number, z: number): number {
       // Calculate height based on position on ramp
       // The slope always goes from back to front in local coordinates
       const heightPercentage = 0.5 - normalizedZ;
-      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
+      const height = 0 + heightPercentage * scaleY;
 
       return height;
     }
   }
 
   // Not on any ramp or block
-  return DEFAULT_HEIGHT;
+  return 0;
 }
 
 function updatePlayerPosition(
