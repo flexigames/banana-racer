@@ -5,6 +5,8 @@ import {
   RAMPS,
   DEFAULT_HEIGHT,
 } from "./gameConfig";
+import { blocks, mapSize } from "./map";
+
 
 /**
  * Improved arcade-style vehicle physics
@@ -98,60 +100,18 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
  * @returns {number} Height at that position or DEFAULT_HEIGHT if not on ramp
  */
 export const calculateHeightAtPosition = (x, z) => {
-  // Check each battle block first
-  for (const block of BATTLE_BLOCKS.positions) {
-    const blockHalfSize = BATTLE_BLOCKS.size / 2;
-    const dx = Math.abs(x - block.x);
-    const dz = Math.abs(z - block.z);
+  for (const block of blocks) {
+    const blockHalfWidth = block.size.x / 2;
+    const blockHalfDepth = block.size.z / 2;
+    
+    const dx = Math.abs(x - block.position.x);
+    const dz = Math.abs(z - block.position.z);
 
-    if (dx <= blockHalfSize && dz <= blockHalfSize) {
-      // Player is on top of a block
-      return block.y + 2;
+    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
+      return block.position.y + block.size.y;
     }
   }
 
-  // Check each ramp
-  for (const ramp of RAMPS) {
-    // Get ramp properties
-    const [rampX, rampY, rampZ] = ramp.position;
-    const rotation = ramp.rotation;
-    const [scaleX, scaleY, scaleZ] = ramp.scale;
-
-    // Adjust to ramp's local coordinates
-    // First, shift to center of ramp
-    const localX = x - rampX;
-    const localZ = z - rampZ;
-
-    // Then rotate around Y axis to align with ramp's orientation
-    const cosRot = Math.cos(+rotation);
-    const sinRot = Math.sin(+rotation);
-    const rotatedX = localX * cosRot - localZ * sinRot;
-    const rotatedZ = localX * sinRot + localZ * cosRot;
-
-    // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
-    const normalizedX = rotatedX / scaleX;
-    const normalizedZ = rotatedZ / scaleZ;
-
-    // Check if point is within ramp bounds
-    if (
-      normalizedX >= -0.5 &&
-      normalizedX <= 0.5 &&
-      normalizedZ >= -0.5 &&
-      normalizedZ <= 0.5
-    ) {
-      // Calculate height based on position on ramp
-      // Ramp slopes from back (high) to front (low)
-      // back is at normalizedZ = -0.5, front is at normalizedZ = 0.5
-
-      // Linear interpolation from max height at back to min height at front
-      const heightPercentage = 0.5 - normalizedZ; // 1 at back, 0 at front
-      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
-
-      return height;
-    }
-  }
-
-  // Not on any ramp or block
   return DEFAULT_HEIGHT;
 };
 
@@ -176,41 +136,37 @@ export const updateObjectPosition = (object, movement, delta) => {
   const newZ = object.position.z + moveZ;
 
   // Arena boundaries
-  const wallThickness = 1;
   const carRadius = 0.5; // Approximate car collision radius
 
   // Check wall collisions
-  const buffer = carRadius + wallThickness / 2;
-  if (newX < -ARENA_HALF_SIZE + buffer && moveX < 0) return; // Left wall
-  if (newX > ARENA_HALF_SIZE - buffer && moveX > 0) return; // Right wall
-  if (newZ < -ARENA_HALF_SIZE + buffer && moveZ < 0) return; // Front wall
-  if (newZ > ARENA_HALF_SIZE - buffer && moveZ > 0) return; // Back wall
 
   const highEnough = object.position.y >= 2 - 0.25;
 
   // Check battle block collisions, but only if not driving on top
   if (!highEnough) {
-    for (const block of BATTLE_BLOCKS.positions) {
-      const blockHalfSize = BATTLE_BLOCKS.size / 2;
-      const dx = Math.abs(newX - block.x);
-      const dz = Math.abs(newZ - block.z);
+    for (const block of blocks) {
+      const blockHalfWidth = block.size.x / 2;
+      const blockHalfDepth = block.size.z / 2;
+
+      const dx = Math.abs(newX - block.position.x);
+      const dz = Math.abs(newZ - block.position.z);
 
       // Vertical collision check - allow if we're above the block
-      if (dx < blockHalfSize + carRadius && dz < blockHalfSize + carRadius) {
+      if (dx < blockHalfWidth + carRadius && dz < blockHalfDepth + carRadius) {
         // Determine which side was hit
         if (dx > dz) {
-          // Hit vertical side
-          if (newX < block.x) {
-            object.position.x = block.x - blockHalfSize - carRadius;
+          // Hit vertical side (X axis)
+          if (newX < block.position.x) {
+            object.position.x = block.position.x - blockHalfWidth - carRadius;
           } else {
-            object.position.x = block.x + blockHalfSize + carRadius;
+            object.position.x = block.position.x + blockHalfWidth + carRadius;
           }
         } else {
-          // Hit horizontal side
-          if (newZ < block.z) {
-            object.position.z = block.z - blockHalfSize - carRadius;
+          // Hit horizontal side (Z axis)
+          if (newZ < block.position.z) {
+            object.position.z = block.position.z - blockHalfDepth - carRadius;
           } else {
-            object.position.z = block.z + blockHalfSize + carRadius;
+            object.position.z = block.position.z + blockHalfDepth + carRadius;
           }
         }
         return;
@@ -220,7 +176,10 @@ export const updateObjectPosition = (object, movement, delta) => {
 
   // Calculate target height based on terrain
   const targetHeight = calculateHeightAtPosition(newX, newZ);
-  const currentHeight = calculateHeightAtPosition(object.position.x, object.position.z);
+  const currentHeight = calculateHeightAtPosition(
+    object.position.x,
+    object.position.z
+  );
 
   // Check if we're trying to go up a ramp from the side
   const heightDelta = targetHeight - currentHeight;
@@ -247,7 +206,10 @@ export const updateObjectPosition = (object, movement, delta) => {
   movement.verticalVelocity -= gravity * delta;
 
   // Limit falling speed
-  movement.verticalVelocity = Math.max(-terminalVelocity, movement.verticalVelocity);
+  movement.verticalVelocity = Math.max(
+    -terminalVelocity,
+    movement.verticalVelocity
+  );
 
   // Calculate new height
   const newHeight = object.position.y + movement.verticalVelocity * delta;

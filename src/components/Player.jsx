@@ -7,11 +7,7 @@ import React, {
   useState,
 } from "react";
 import { useFrame } from "@react-three/fiber";
-import {
-  updateVehiclePhysics,
-  updateObjectPosition,
-  calculateHeightAtPosition,
-} from "../lib/physics";
+import { updateVehiclePhysics, updateObjectPosition } from "../lib/physics";
 import { useVehicleControls } from "../lib/input";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import { DEFAULT_HEIGHT } from "../lib/gameConfig";
