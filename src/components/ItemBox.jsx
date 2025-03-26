@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo } from "react";
 import { useModelWithMaterials, prepareModel } from "../lib/loaders";
 
-const ItemBox = ({ position = [0, 0, 0], scale = 0.5 }) => {
+const ItemBox = ({ position = [0, 0, 0], scale = 1.0 }) => {
   const itemBox = useRef();
 
   // Load the item box model
@@ -16,13 +16,21 @@ const ItemBox = ({ position = [0, 0, 0], scale = 0.5 }) => {
 
     const clone = itemBoxModel.clone();
 
-    // Ensure all materials are cloned
+    // Ensure all materials are cloned and set opacity
     clone.traverse((child) => {
       if (child.isMesh && child.material) {
         if (Array.isArray(child.material)) {
-          child.material = child.material.map((m) => m.clone());
+          child.material = child.material.map((m) => {
+            const newMat = m.clone();
+            newMat.transparent = true;
+            newMat.opacity = 0.5;
+            return newMat;
+          });
         } else {
-          child.material = child.material.clone();
+          const newMat = child.material.clone();
+          newMat.transparent = true;
+          newMat.opacity = 0.5;
+          child.material = newMat;
         }
       }
     });

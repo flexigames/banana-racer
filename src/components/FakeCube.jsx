@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { useModelWithMaterials, prepareModel } from "../lib/loaders";
 import * as THREE from "three";
 
-const FakeCube = ({ position = [0, 0, 0], rotation = 0, scale = 0.5 }) => {
+const FakeCube = ({ position = [0, 0, 0], rotation = 0, scale = 1.0 }) => {
   const fakeCube = useRef();
 
   // Load the item box model (we'll use the same model but with different materials)
@@ -25,13 +25,15 @@ const FakeCube = ({ position = [0, 0, 0], rotation = 0, scale = 0.5 }) => {
             const newMat = m.clone();
             // Make it slightly darker and more reddish
             newMat.color = new THREE.Color(0.8, 0.6, 0.6);
-            newMat.opacity = 0.9;
+            newMat.transparent = true;
+            newMat.opacity = 0.5;
             return newMat;
           });
         } else {
           const newMat = child.material.clone();
           newMat.color = new THREE.Color(0.8, 0.6, 0.6);
-          newMat.opacity = 0.9;
+          newMat.transparent = true;
+          newMat.opacity = 0.5;
           child.material = newMat;
         }
       }
