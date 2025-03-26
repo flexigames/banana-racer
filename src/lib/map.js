@@ -5,26 +5,26 @@ x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
-x_______>>>>>>>>>>>>>>>xxx________xxx<<<<<<<<<<<<<<<_______x
-x_______>>>>>>>>>>>>>>>xxx________xxx<<<<<<<<<<<<<<<_______x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____vvxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxvv_____x
-x_____xxxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxxx_____x
-x_____xxxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxxx_____x
-x_____xxxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxxx_____x
+x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
+x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
+x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
+x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
@@ -33,26 +33,26 @@ x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
-x_____xxxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxxx_____x
-x_____xxxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxxx_____x
-x_____xxxxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxxxx_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_____^^xxxxxxxxxxxxxxxxxx________xxxxxxxxxxxxxxxxxx^^_____x
-x_______>>>>>>>>>>>>>>>xxx________xxx<<<<<<<<<<<<<<<_______x
-x_______>>>>>>>>>>>>>>>xxx________xxx<<<<<<<<<<<<<<<_______x
+x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
+x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
+x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_______>>>>>>>>>>>>>>>ggg________rrr<<<<<<<<<<<<<<<_______x
+x_______>>>>>>>>>>>>>>>ggg________rrr<<<<<<<<<<<<<<<_______x
 x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
@@ -81,27 +81,25 @@ export function loadMap() {
     mapRows.forEach((mapRow, rowIndex) => {
       Array.from(mapRow).forEach((mapCell, columnIndex) => {
         if (!visited.has(`${rowIndex},${columnIndex}`)) {
-          if (mapCell === "x") {
-            // Find width of continuous block
+          if (mapCell === "x" || mapCell === "r" || mapCell === "g" || mapCell === "b" || mapCell === "y") {
             let width = 0;
             while (
               columnIndex + width < mapRow.length &&
-              mapRow[columnIndex + width] === "x" &&
+              mapRow[columnIndex + width] === mapCell &&
               !visited.has(`${rowIndex},${columnIndex + width}`)
             ) {
               width++;
             }
 
-            // Find height of continuous block
             let height = 0;
             while (
               rowIndex + height < mapRows.length &&
-              mapRows[rowIndex + height][columnIndex] === "x"
+              mapRows[rowIndex + height][columnIndex] === mapCell
             ) {
               let isFullRow = true;
               for (let w = 0; w < width; w++) {
                 if (
-                  mapRows[rowIndex + height][columnIndex + w] !== "x" ||
+                  mapRows[rowIndex + height][columnIndex + w] !== mapCell ||
                   visited.has(`${rowIndex + height},${columnIndex + w}`)
                 ) {
                   isFullRow = false;
@@ -112,14 +110,12 @@ export function loadMap() {
               height++;
             }
 
-            // Mark all cells in this block as visited
             for (let h = 0; h < height; h++) {
               for (let w = 0; w < width; w++) {
                 visited.add(`${rowIndex + h},${columnIndex + w}`);
               }
             }
 
-            // Add block if it's larger than 1x1
             if (width > 0 && height > 0) {
               blocks.push({
                 position: {
@@ -132,6 +128,10 @@ export function loadMap() {
                   y: 2,
                   z: height,
                 },
+                color: mapCell === "x" ? "gray" : 
+                       mapCell === "r" ? "red" : 
+                       mapCell === "g" ? "green" : 
+                       mapCell === "b" ? "blue" : "yellow"
               });
             }
           } else if (

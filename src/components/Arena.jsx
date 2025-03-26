@@ -1,13 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { SKYBOX_TEXTURE, WALL_TEXTURE, GROUND_TEXTURE } from "../lib/textures";
+import { SKYBOX_TEXTURE, GROUND_TEXTURE, createWallTexture } from "../lib/textures";
 import { blocks, ramps, mapSize } from "../lib/map";
 
 const Arena = () => {
   const groundRef = useRef();
   const blockRefs = useRef([]);
-  const blockColor = "#fa5858";
-
   useEffect(() => {
     if (groundRef.current) {
       const groundMaterial = new THREE.MeshStandardMaterial({
@@ -22,16 +20,16 @@ const Arena = () => {
     blocks.forEach((block, index) => {
       if (blockRefs.current[index]) {
         const material = blockRefs.current[index].material;
-        material.map = WALL_TEXTURE.clone();
+        material.map = createWallTexture(block.color);
         
         // Create an array of materials for each face
         const materials = [
-          new THREE.MeshStandardMaterial({ map: WALL_TEXTURE.clone(), roughness: 0.7, metalness: 0.2 }), // right
-          new THREE.MeshStandardMaterial({ map: WALL_TEXTURE.clone(), roughness: 0.7, metalness: 0.2 }), // left
-          new THREE.MeshStandardMaterial({ map: WALL_TEXTURE.clone(), roughness: 0.7, metalness: 0.2 }), // top
-          new THREE.MeshStandardMaterial({ map: WALL_TEXTURE.clone(), roughness: 0.7, metalness: 0.2 }), // bottom
-          new THREE.MeshStandardMaterial({ map: WALL_TEXTURE.clone(), roughness: 0.7, metalness: 0.2 }), // front
-          new THREE.MeshStandardMaterial({ map: WALL_TEXTURE.clone(), roughness: 0.7, metalness: 0.2 }), // back
+          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color), roughness: 0.7, metalness: 0.2 }), // right
+          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color), roughness: 0.7, metalness: 0.2 }), // left
+          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color), roughness: 0.7, metalness: 0.2 }), // top
+          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color), roughness: 0.7, metalness: 0.2 }), // bottom
+          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color), roughness: 0.7, metalness: 0.2 }), // front
+          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color), roughness: 0.7, metalness: 0.2 }), // back
         ];
 
         // Set texture repeat for each face based on its dimensions

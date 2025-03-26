@@ -19,20 +19,9 @@ function adjustColor(color, amount) {
     .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
-function createBrickTexture(width = 2) {
+export function createWallTexture(color) {
   const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load("/banana-racer/textures/green_wall.png");
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(width, 2);
-  texture.encoding = THREE.sRGBEncoding;
-  texture.colorSpace = "srgb";
-  return texture;
-}
-
-function createWallTexture() {
-  const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load("/banana-racer/textures/green_wall.png");
+  const texture = textureLoader.load(color ? `/banana-racer/textures/wall_${color}.png` : `/banana-racer/textures/wall.png`);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(2, 2);
@@ -128,8 +117,7 @@ export const BLOCK_COLORS = [
 
 // Create and export constant textures
 export const SKYBOX_TEXTURE = createSkyboxTexture();
-export const WALL_TEXTURE = createWallTexture();
 export const GROUND_TEXTURE = createGroundTexture();
 
 // Export functions for dynamic texture creation
-export { createBrickTexture, adjustColor };
+export { adjustColor };
