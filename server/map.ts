@@ -59,12 +59,35 @@ x__________________________________________________________x
 x__________________________________________________________x
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`;
 
-export function loadMap() {
+type Block = {
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  size: {
+    x: number;
+    y: number;
+    z: number;
+  };
+};
+
+type MapSize = {
+  width: number;
+  height: number;
+};
+
+type MapData = {
+  blocks: Block[];
+  mapSize: MapSize;
+};
+
+export function loadMap(): MapData {
   try {
     const mapRows = mapText.trim().split("\n");
 
-    const blocks = [];
-    const mapSize = {
+    const blocks: Block[] = [];
+    const mapSize: MapSize = {
       width: mapRows[0]?.length || 0,
       height: mapRows.length || 0,
     };

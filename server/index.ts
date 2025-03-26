@@ -1,8 +1,8 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
-import { BATTLE_BLOCKS, RAMPS } from "../src/lib/gameConfig";
 import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
+import { blocks, mapSize } from "./map";
 
 // Define constants to match client-side configuration
 const DEFAULT_HEIGHT = 0.1;
@@ -126,59 +126,17 @@ function onHit(playerId: string, duration: number = 3000): void {
  */
 function calculateHeightAtPosition(x: number, z: number): number {
   // Check each battle block first
-  for (const block of BATTLE_BLOCKS.positions) {
-    const blockHalfSize = BATTLE_BLOCKS.size / 2;
-    const dx = Math.abs(x - block.x);
-    const dz = Math.abs(z - block.z);
+  for (const block of blocks) {
+    const blockHalfSizeX = block.size.x / 2;
+    const blockHalfSizeZ = block.size.z / 2;
+    const dx = Math.abs(x - block.position.x);
+    const dz = Math.abs(z - block.position.z);
 
-    if (dx <= blockHalfSize && dz <= blockHalfSize) {
-      // Player is on top of a block
-      return block.y + 2;
+    if (dx <= blockHalfSizeX && dz <= blockHalfSizeZ) {
+      return block.position.y + 2;
     }
   }
 
-  // Check each ramp
-  for (const ramp of RAMPS) {
-    // Get ramp properties
-    const [rampX, rampY, rampZ] = ramp.position;
-    const rotation = ramp.rotation;
-    const [scaleX, scaleY, scaleZ] = ramp.scale;
-
-    // Adjust to ramp's local coordinates
-    // First, shift to center of ramp
-    const localX = x - rampX;
-    const localZ = z - rampZ;
-
-    // Then rotate around Y axis to align with ramp's orientation
-    const cosRot = Math.cos(rotation);
-    const sinRot = Math.sin(rotation);
-    const rotatedX = localX * cosRot - localZ * sinRot;
-    const rotatedZ = localX * sinRot + localZ * cosRot;
-
-    // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
-    const normalizedX = rotatedX / scaleX;
-    const normalizedZ = rotatedZ / scaleZ;
-
-    // Check if point is within ramp bounds
-    if (
-      normalizedX >= -0.5 &&
-      normalizedX <= 0.5 &&
-      normalizedZ >= -0.5 &&
-      normalizedZ <= 0.5
-    ) {
-      // Calculate height based on position on ramp
-      // Ramp slopes from back (high) to front (low)
-      // back is at normalizedZ = -0.5, front is at normalizedZ = 0.5
-
-      // Linear interpolation from max height at back to min height at front
-      const heightPercentage = 0.5 - normalizedZ; // 1 at back, 0 at front
-      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
-
-      return height;
-    }
-  }
-
-  // Not on any ramp or block
   return DEFAULT_HEIGHT;
 }
 
@@ -438,52 +396,34 @@ function updateGreenShells(): void {
     const newHeightBasedOnGravity =
       shell.position.y + shell.verticalVelocity * 0.033;
 
-    // Check for arena boundaries
-    const ARENA_HALF_SIZE = 30;
-    const shellRadius = 0.5;
     let bounced = false;
-
-    // Left and right walls
-    if (newPosition.x < -ARENA_HALF_SIZE + shellRadius) {
-      newPosition.x = -ARENA_HALF_SIZE + shellRadius;
-      shell.rotation = -shell.rotation;
-      bounced = true;
-    } else if (newPosition.x > ARENA_HALF_SIZE - shellRadius) {
-      newPosition.x = ARENA_HALF_SIZE - shellRadius;
-      shell.rotation = -shell.rotation;
-      bounced = true;
-    }
-
-    // Front and back walls
-    if (newPosition.z < -ARENA_HALF_SIZE + shellRadius) {
-      newPosition.z = -ARENA_HALF_SIZE + shellRadius;
-      shell.rotation = Math.PI - shell.rotation;
-      bounced = true;
-    } else if (newPosition.z > ARENA_HALF_SIZE - shellRadius) {
-      newPosition.z = ARENA_HALF_SIZE - shellRadius;
-      shell.rotation = Math.PI - shell.rotation;
-      bounced = true;
-    }
 
     const isHighEnough = shell.position.y > 2 - 0.25;
 
     // Check battle block collisions
     if (!isHighEnough) {
-      for (const block of BATTLE_BLOCKS.positions) {
-        const dx = newPosition.x - block.x;
-        const dz = newPosition.z - block.z;
+      for (const block of blocks) {
+        const blockHalfWidth = block.size.x / 2;
+        const blockHalfDepth = block.size.z / 2;
 
-        const blockHalfSize = BATTLE_BLOCKS.size / 2;
+        const dx = Math.abs(newPosition.x - block.position.x);
+        const dz = Math.abs(newPosition.z - block.position.z);
 
-        if (Math.abs(dx) < blockHalfSize && Math.abs(dz) < blockHalfSize) {
-          if (Math.abs(dx) > Math.abs(dz)) {
-            // Hit vertical side
+        if (dx < blockHalfWidth + 0.5 && dz < blockHalfDepth + 0.5) {
+          const relativeX = newPosition.x - block.position.x;
+          const relativeZ = newPosition.z - block.position.z;
+
+          const penetrationX = blockHalfWidth + 0.5 - Math.abs(relativeX);
+          const penetrationZ = blockHalfDepth + 0.5 - Math.abs(relativeZ);
+
+          if (penetrationX < penetrationZ) {
             shell.rotation = -shell.rotation;
-            newPosition.x = block.x + Math.sign(dx) * blockHalfSize;
+            newPosition.x = block.position.x + (relativeX > 0 ? 1 : -1) * (blockHalfWidth + 0.5);
+            newPosition.z = newPosition.z;
           } else {
-            // Hit horizontal side
             shell.rotation = Math.PI - shell.rotation;
-            newPosition.z = block.z + Math.sign(dz) * blockHalfSize;
+            newPosition.x = newPosition.x;
+            newPosition.z = block.position.z + (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + 0.5);
           }
           bounced = true;
           break;

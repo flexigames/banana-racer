@@ -153,21 +153,21 @@ export const updateObjectPosition = (object, movement, delta) => {
 
       // Vertical collision check - allow if we're above the block
       if (dx < blockHalfWidth + carRadius && dz < blockHalfDepth + carRadius) {
-        // Determine which side was hit
-        if (dx > dz) {
-          // Hit vertical side (X axis)
-          if (newX < block.position.x) {
-            object.position.x = block.position.x - blockHalfWidth - carRadius;
-          } else {
-            object.position.x = block.position.x + blockHalfWidth + carRadius;
-          }
+        // Determine which side was hit and apply collision response
+        const relativeX = newX - block.position.x;
+        const relativeZ = newZ - block.position.z;
+        
+        const penetrationX = blockHalfWidth + carRadius - Math.abs(relativeX);
+        const penetrationZ = blockHalfDepth + carRadius - Math.abs(relativeZ);
+
+        if (penetrationX < penetrationZ) {
+          // Push out along X axis
+          object.position.x = block.position.x + (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
+          object.position.z = object.position.z;
         } else {
-          // Hit horizontal side (Z axis)
-          if (newZ < block.position.z) {
-            object.position.z = block.position.z - blockHalfDepth - carRadius;
-          } else {
-            object.position.z = block.position.z + blockHalfDepth + carRadius;
-          }
+          // Push out along Z axis
+          object.position.x = object.position.x;
+          object.position.z = block.position.z + (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
         }
         return;
       }
