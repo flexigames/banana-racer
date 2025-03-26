@@ -108,26 +108,12 @@ function createSkyboxTexture() {
 }
 
 function createGroundTexture() {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const tileSize = 64;
-  canvas.width = tileSize;
-  canvas.height = tileSize;
-
-  // Draw tile pattern
-  ctx.fillStyle = "#A9A9A9";
-  ctx.fillRect(0, 0, tileSize, tileSize);
-
-  // Draw tile lines
-  ctx.strokeStyle = "#808080";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, tileSize, tileSize);
-  ctx.strokeRect(tileSize / 2, 0, tileSize / 2, tileSize);
-  ctx.strokeRect(0, tileSize / 2, tileSize, tileSize / 2);
-
-  const texture = new THREE.CanvasTexture(canvas);
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load("/banana-racer/textures/floor.png");
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
+  texture.encoding = THREE.sRGBEncoding;
+  texture.colorSpace = "srgb";
   return texture;
 }
 

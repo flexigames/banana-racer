@@ -15,7 +15,7 @@ const Arena = () => {
         roughness: 0.8,
         metalness: 0.2,
       });
-      groundMaterial.map.repeat.set(mapSize.width / 4, mapSize.height / 4);
+      groundMaterial.map.repeat.set(mapSize.width / 2, mapSize.height / 2);
       groundRef.current.material = groundMaterial;
     }
 
@@ -86,7 +86,7 @@ const Arena = () => {
             scale={[block.size.x, block.size.y, block.size.z]}
           >
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial roughness={0.7} metalness={0.2} />
+            <meshStandardMaterial roughness={1} metalness={0} />
           </mesh>
         );
       })}
