@@ -86,7 +86,8 @@ export function loadMap() {
             let width = 0;
             while (
               columnIndex + width < mapRow.length &&
-              mapRow[columnIndex + width] === "x"
+              mapRow[columnIndex + width] === "x" &&
+              !visited.has(`${rowIndex},${columnIndex + width}`)
             ) {
               width++;
             }
@@ -99,7 +100,10 @@ export function loadMap() {
             ) {
               let isFullRow = true;
               for (let w = 0; w < width; w++) {
-                if (mapRows[rowIndex + height][columnIndex + w] !== "x") {
+                if (
+                  mapRows[rowIndex + height][columnIndex + w] !== "x" ||
+                  visited.has(`${rowIndex + height},${columnIndex + w}`)
+                ) {
                   isFullRow = false;
                   break;
                 }
@@ -143,7 +147,8 @@ export function loadMap() {
             // Check horizontal consecutive symbols
             while (
               columnIndex + width < mapRow.length &&
-              mapRow[columnIndex + width] === mapCell
+              mapRow[columnIndex + width] === mapCell &&
+              !visited.has(`${rowIndex},${columnIndex + width}`)
             ) {
               visited.add(`${rowIndex},${columnIndex + width}`);
               width++;
@@ -152,7 +157,8 @@ export function loadMap() {
             // Check vertical consecutive symbols
             while (
               rowIndex + length < mapRows.length &&
-              mapRows[rowIndex + length][columnIndex] === mapCell
+              mapRows[rowIndex + length][columnIndex] === mapCell &&
+              !visited.has(`${rowIndex + length},${columnIndex}`)
             ) {
               visited.add(`${rowIndex + length},${columnIndex}`);
               length++;
