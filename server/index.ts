@@ -206,7 +206,10 @@ function dropItem(
     itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
   const item = {
     id: itemId,
-    position: data.position,
+    position: {
+      ...data.position,
+      y: calculateHeightAtPosition(data.position.x, data.position.z),
+    },
     rotation: data.rotation || 0,
     droppedBy: playerId,
     droppedAt: Date.now(),
@@ -232,7 +235,7 @@ function dropGreenShell(
     id: shellId,
     position: {
       ...data.position,
-      y: DEFAULT_HEIGHT,
+      y: calculateHeightAtPosition(data.position.x, data.position.z),
     },
     rotation: data.rotation,
     direction: data.rotation,
