@@ -5,7 +5,7 @@ import {
   RAMPS,
   DEFAULT_HEIGHT,
 } from "./gameConfig";
-import { blocks, mapSize } from "./map";
+import { blocks, ramps, mapSize } from "./map";
 
 
 /**
@@ -100,6 +100,7 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
  * @returns {number} Height at that position or DEFAULT_HEIGHT if not on ramp
  */
 export const calculateHeightAtPosition = (x, z) => {
+  // Check each block first
   for (const block of blocks) {
     const blockHalfWidth = block.size.x / 2;
     const blockHalfDepth = block.size.z / 2;
@@ -112,6 +113,59 @@ export const calculateHeightAtPosition = (x, z) => {
     }
   }
 
+  // Check each ramp
+  for (const ramp of ramps) {
+    // Get ramp properties
+    const [rampX, rampY, rampZ] = ramp.position;
+    const rotation = Math.PI/2 - ramp.rotation;
+    const [scaleX, scaleY, scaleZ] = ramp.scale;
+
+    // Adjust to ramp's local coordinates
+    // First, shift to center of ramp
+    const localX = x - rampX;
+    const localZ = z - rampZ;
+
+    // Then rotate around Y axis to align with ramp's orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+
+    // Handle different ramp orientations
+    let rampWidth, rampLength;
+    
+    // Determine orientation based on the rotation value
+    if (ramp.rotation === 0 || Math.abs(ramp.rotation) === Math.PI) {
+      // Horizontal ramps (< or >)
+      rampWidth = scaleZ;
+      rampLength = scaleX;
+    } else {
+      // Vertical ramps (^ or v)
+      rampWidth = scaleX;
+      rampLength = scaleZ;
+    }
+    
+    // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
+    const normalizedX = rotatedX / rampWidth;
+    const normalizedZ = rotatedZ / rampLength;
+
+    // Check if point is within ramp bounds
+    if (
+      normalizedX >= -0.5 &&
+      normalizedX <= 0.5 &&
+      normalizedZ >= -0.5 &&
+      normalizedZ <= 0.5
+    ) {
+      // Calculate height based on position on ramp
+      // The slope always goes from back to front in local coordinates
+      const heightPercentage = 0.5 - normalizedZ;
+      const height = DEFAULT_HEIGHT + heightPercentage * scaleY;
+      
+      return height;
+    }
+  }
+
+  // Not on any ramp or block
   return DEFAULT_HEIGHT;
 };
 
@@ -183,7 +237,7 @@ export const updateObjectPosition = (object, movement, delta) => {
 
   // Check if we're trying to go up a ramp from the side
   const heightDelta = targetHeight - currentHeight;
-  if (heightDelta > 0.2) {
+  if (heightDelta > 0.3) {
     // If we're trying to go up too steeply, prevent movement
     return;
   }

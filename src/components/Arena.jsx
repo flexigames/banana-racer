@@ -87,37 +87,40 @@ const Arena = () => {
           // Right face (high end)
           0.5, 0, -0.5,     // bottom front
           0.5, 0, 0.5,      // bottom back
-          0.5, 4, 0.5,      // top back
+          0.5, 1, 0.5,      // top back
           0.5, 0, -0.5,     // bottom front
-          0.5, 4, 0.5,      // top back
-          0.5, 4, -0.5,     // top front
+          0.5, 1, 0.5,      // top back
+          0.5, 1, -0.5,     // top front
           
           // Front face
           -0.5, 0, -0.5,    // left bottom
           0.5, 0, -0.5,     // right bottom
-          0.5, 4, -0.5,     // right top
+          0.5, 1, -0.5,     // right top
           -0.5, 0, -0.5,    // left bottom
-          0.5, 4, -0.5,     // right top
+          0.5, 1, -0.5,     // right top
           -0.5, 0, -0.5,    // left top
           
           // Back face
           -0.5, 0, 0.5,     // left bottom
           0.5, 0, 0.5,      // right bottom
-          0.5, 4, 0.5,      // right top
+          0.5, 1, 0.5,      // right top
           -0.5, 0, 0.5,     // left bottom
-          0.5, 4, 0.5,      // right top
+          0.5, 1, 0.5,      // right top
           -0.5, 0, 0.5,     // left top
           
           // Top face (sloped)
           -0.5, 0, -0.5,    // left front
           -0.5, 0, 0.5,     // left back
-          0.5, 4, 0.5,      // right back
+          0.5, 1, 0.5,      // right back
           -0.5, 0, -0.5,    // left front
-          0.5, 4, 0.5,      // right back
-          0.5, 4, -0.5,     // right front
+          0.5, 1, 0.5,      // right back
+          0.5, 1, -0.5,     // right front
         ]);
 
-        rampGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        rampGeometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(vertices, 3)
+        );
         rampGeometry.computeVertexNormals();
 
         return (
