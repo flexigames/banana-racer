@@ -396,7 +396,6 @@ function updateGreenShells(): void {
   const greenShellsToRemove: string[] = [];
   const now = Date.now();
   const MAX_SHELL_AGE = 10000; // 10 seconds
-  const MAX_BOUNCES = 3;
   const gravity = 9.8; // Gravity acceleration in m/s²
   const terminalVelocity = 20; // Maximum falling speed
   const groundFriction = 0.8; // Friction when hitting the ground
@@ -404,7 +403,7 @@ function updateGreenShells(): void {
   // For each green shell
   Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
     // Check if shell is too old
-    if (now - shell.droppedAt > MAX_SHELL_AGE || shell.bounces > MAX_BOUNCES) {
+    if (now - shell.droppedAt > MAX_SHELL_AGE) {
       greenShellsToRemove.push(shellId);
       return;
     }
@@ -428,10 +427,14 @@ function updateGreenShells(): void {
 
     // Apply gravity
     shell.verticalVelocity -= gravity * 0.033; // Apply gravity over frame time
-    shell.verticalVelocity = Math.max(-terminalVelocity, shell.verticalVelocity);
+    shell.verticalVelocity = Math.max(
+      -terminalVelocity,
+      shell.verticalVelocity
+    );
 
     // Calculate new height
-    const newHeight = shell.position.y + shell.verticalVelocity * 0.033;
+    const newHeightBasedOnGravity =
+      shell.position.y + shell.verticalVelocity * 0.033;
 
     // Check for arena boundaries
     const ARENA_HALF_SIZE = 30;
@@ -441,37 +444,45 @@ function updateGreenShells(): void {
     // Left and right walls
     if (newPosition.x < -ARENA_HALF_SIZE + shellRadius) {
       newPosition.x = -ARENA_HALF_SIZE + shellRadius;
-      shell.rotation = Math.PI - shell.rotation;
+      shell.rotation = -shell.rotation;
       bounced = true;
     } else if (newPosition.x > ARENA_HALF_SIZE - shellRadius) {
       newPosition.x = ARENA_HALF_SIZE - shellRadius;
-      shell.rotation = Math.PI - shell.rotation;
+      shell.rotation = -shell.rotation;
       bounced = true;
     }
 
     // Front and back walls
     if (newPosition.z < -ARENA_HALF_SIZE + shellRadius) {
       newPosition.z = -ARENA_HALF_SIZE + shellRadius;
-      shell.rotation = -shell.rotation;
+      shell.rotation = Math.PI - shell.rotation;
       bounced = true;
     } else if (newPosition.z > ARENA_HALF_SIZE - shellRadius) {
       newPosition.z = ARENA_HALF_SIZE - shellRadius;
-      shell.rotation = -shell.rotation;
+      shell.rotation = Math.PI - shell.rotation;
       bounced = true;
     }
 
-    const isHighEnough = newPosition.y > 2 - 0.25;
+    const isHighEnough = shell.position.y > 2 - 0.25;
 
-    // Check battle block collisions (but only if not driving on top)
-    if (isHighEnough) {
+    // Check battle block collisions
+    if (!isHighEnough) {
       for (const block of BATTLE_BLOCKS.positions) {
-        const dx = Math.abs(newPosition.x - block.x);
-        const dz = Math.abs(newPosition.z - block.z);
+        const dx = newPosition.x - block.x;
+        const dz = newPosition.z - block.z;
 
         const blockHalfSize = BATTLE_BLOCKS.size / 2;
-        // Only register a collision if we're not on top of the block
-        if (dx < blockHalfSize && dz < blockHalfSize) {
-          shell.rotation = shell.rotation + Math.PI;
+
+        if (Math.abs(dx) < blockHalfSize && Math.abs(dz) < blockHalfSize) {
+          if (Math.abs(dx) > Math.abs(dz)) {
+            // Hit vertical side
+            shell.rotation = -shell.rotation;
+            newPosition.x = block.x + Math.sign(dx) * blockHalfSize;
+          } else {
+            // Hit horizontal side
+            shell.rotation = Math.PI - shell.rotation;
+            newPosition.z = block.z + Math.sign(dz) * blockHalfSize;
+          }
           bounced = true;
           break;
         }
@@ -483,16 +494,15 @@ function updateGreenShells(): void {
     }
 
     // Calculate target height based on terrain
-    const targetHeight = calculateHeightAtPosition(newPosition.x, newPosition.z);
-
-    // Check if we've hit the ground
-    if (newHeight <= targetHeight) {
-      // We've hit the ground
-      newPosition.y = targetHeight;
+    const nextHeight = calculateHeightAtPosition(newPosition.x, newPosition.z);
+    if (newHeightBasedOnGravity <= nextHeight) {
+      const delta = nextHeight - newHeightBasedOnGravity;
+      if (delta < 0.2) {
+        newPosition.y = nextHeight;
+      }
       shell.verticalVelocity = 0;
     } else {
-      // We're in the air
-      newPosition.y = newHeight;
+      newPosition.y = newHeightBasedOnGravity;
     }
 
     // Update shell position
