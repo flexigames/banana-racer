@@ -117,19 +117,6 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
  * @returns {number} Height at that position
  */
 export const calculateHeightAtPosition = (x, z) => {
-  // Check each block first
-  for (const block of blocks) {
-    const blockHalfWidth = block.size.x / 2;
-    const blockHalfDepth = block.size.z / 2;
-
-    const dx = Math.abs(x - block.position.x);
-    const dz = Math.abs(z - block.position.z);
-
-    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
-      return block.position.y + block.size.y;
-    }
-  }
-
   // Check each ramp
   for (const ramp of ramps) {
     // Get ramp properties
@@ -183,7 +170,7 @@ export const calculateHeightAtPosition = (x, z) => {
       const heightPercentage = 0.5 - normalizedZ;
       const height = heightPercentage * scaleY;
 
-      return height;
+      return rampY + height;
     }
   }
 
@@ -224,6 +211,19 @@ export const calculateHeightAtPosition = (x, z) => {
     ) {
       // Bridge height is at bridgeY + half the bridge height (0.95 + 0.05)
       return bridgeY + 1;
+    }
+  }
+
+  // Check blocks
+  for (const block of blocks) {
+    const blockHalfWidth = block.size.x / 2;
+    const blockHalfDepth = block.size.z / 2;
+
+    const dx = Math.abs(x - block.position.x);
+    const dz = Math.abs(z - block.position.z);
+
+    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
+      return block.position.y + block.size.y;
     }
   }
 
@@ -305,18 +305,21 @@ export const updateObjectPosition = (object, movement, delta) => {
   // Check if we're under a bridge
   const underBridge = isUnderBridge(newX, newZ, object.position.y);
 
-  // Check wall collisions
-  const highEnough = object.position.y >= 2 - 0.25;
-
   let collidedWithBlock = false;
   let slideX = newX;
   let slideZ = newZ;
 
   // Check battle block collisions, but only if not driving on top and not under a bridge
-  if (!highEnough && !underBridge) {
+  if (!underBridge) {
     for (const block of blocks) {
       const blockHalfWidth = block.size.x / 2;
       const blockHalfDepth = block.size.z / 2;
+
+      const playerTooHighForCollision =
+        block.position.y + 2 - 0.25 < object.position.y;
+      if (playerTooHighForCollision) {
+        continue;
+      }
 
       const dx = Math.abs(newX - block.position.x);
       const dz = Math.abs(newZ - block.position.z);

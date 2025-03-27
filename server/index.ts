@@ -5,6 +5,7 @@ import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
 import { blocks, ramps, bridges, itemBoxes, mapSize } from "./map";
 
 const PORT = process.env.PORT || 8080;
+const carRadius = 0.2;
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
@@ -105,20 +106,7 @@ function onHit(playerId: string, duration: number = 3000): void {
  * @param z - Z position to check
  * @returns Height at that position
  */
-function calculateHeightAtPosition(x: number, z: number): number {
-  // Check each block first
-  for (const block of blocks) {
-    const blockHalfWidth = block.size.x / 2;
-    const blockHalfDepth = block.size.z / 2;
-
-    const dx = Math.abs(x - block.position.x);
-    const dz = Math.abs(z - block.position.z);
-
-    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
-      return block.position.y + block.size.y;
-    }
-  }
-
+export const calculateHeightAtPosition = (x: number, z: number) => {
   // Check each ramp
   for (const ramp of ramps) {
     // Get ramp properties
@@ -152,7 +140,6 @@ function calculateHeightAtPosition(x: number, z: number): number {
     }
 
     // Add extra width to make ramps wider in the perpendicular direction
-    const carRadius = 0.2;
     const extraWidth = carRadius;
     const effectiveRampWidth = rampWidth * (1 + extraWidth);
 
@@ -173,7 +160,7 @@ function calculateHeightAtPosition(x: number, z: number): number {
       const heightPercentage = 0.5 - normalizedZ;
       const height = heightPercentage * scaleY;
 
-      return height;
+      return rampY + height;
     }
   }
 
@@ -185,7 +172,7 @@ function calculateHeightAtPosition(x: number, z: number): number {
     const rotation = bridge.rotation || 0;
     const scale = bridge.scale || [1, 1, 1];
 
-    // Bridge dimensions
+    // Bridge dimensions (based on Bridge.jsx)
     const bridgeWidth = scale[0];
     const bridgeHeight = 0.1; // Height of the bridge walkway
     const bridgeLength = scale[2];
@@ -212,14 +199,27 @@ function calculateHeightAtPosition(x: number, z: number): number {
       Math.abs(rotatedX) <= effectiveWidth / 2 &&
       Math.abs(rotatedZ) <= effectiveLength / 2
     ) {
-      // Bridge height is at bridgeY + 1
+      // Bridge height is at bridgeY + half the bridge height (0.95 + 0.05)
       return bridgeY + 1;
+    }
+  }
+
+  // Check blocks
+  for (const block of blocks) {
+    const blockHalfWidth = block.size.x / 2;
+    const blockHalfDepth = block.size.z / 2;
+
+    const dx = Math.abs(x - block.position.x);
+    const dz = Math.abs(z - block.position.z);
+
+    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
+      return block.position.y + block.size.y;
     }
   }
 
   // Not on any ramp, block, or bridge
   return 0;
-}
+};
 
 /**
  * Check if a position is under a bridge
@@ -295,9 +295,16 @@ function dropItem(
   const itemId =
     itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
 
-  const underBridge = isUnderBridge(data.position.x, data.position.z, data.position.y);
-  const heightAtPosition = calculateHeightAtPosition(data.position.x, data.position.z);
-  
+  const underBridge = isUnderBridge(
+    data.position.x,
+    data.position.z,
+    data.position.y
+  );
+  const heightAtPosition = calculateHeightAtPosition(
+    data.position.x,
+    data.position.z
+  );
+
   const item = {
     id: itemId,
     position: {
@@ -326,8 +333,15 @@ function dropGreenShell(
 ): void {
   const shellId = generateGreenShellId();
 
-  const underBridge = isUnderBridge(data.position.x, data.position.z, data.position.y);
-  const heightAtPosition = calculateHeightAtPosition(data.position.x, data.position.z);
+  const underBridge = isUnderBridge(
+    data.position.x,
+    data.position.z,
+    data.position.y
+  );
+  const heightAtPosition = calculateHeightAtPosition(
+    data.position.x,
+    data.position.z
+  );
 
   const shell = {
     id: shellId,
@@ -470,7 +484,10 @@ function handleCollisions(): void {
 
   Object.values(gameState.greenShells).forEach((shell) => {
     Object.values(gameState.players).forEach((player) => {
-      if (player.id !== shell.droppedBy && checkCollision(player.position, shell.position, 0.9)) {
+      if (
+        player.id !== shell.droppedBy &&
+        checkCollision(player.position, shell.position, 0.9)
+      ) {
         removeItem(gameState.greenShells, shell.id);
         onHit(player.id);
       }
@@ -564,17 +581,25 @@ function updateGreenShells(): void {
     let bounced = false;
 
     // Check if we're under a bridge
-    const underBridge = isUnderBridge(newPosition.x, newPosition.z, shell.position.y);
-    const isHighEnough = shell.position.y > 2 - 0.25;
+    const underBridge = isUnderBridge(
+      newPosition.x,
+      newPosition.z,
+      shell.position.y
+    );
 
     // Check battle block collisions
-    if (!isHighEnough && !underBridge) {
+    if (!underBridge) {
       for (const block of blocks) {
         const blockHalfWidth = block.size.x / 2;
         const blockHalfDepth = block.size.z / 2;
 
         const dx = Math.abs(newPosition.x - block.position.x);
         const dz = Math.abs(newPosition.z - block.position.z);
+
+        const shellIsTooHighForBlock = newPosition.y - 0.25 > block.position.y;
+        if (shellIsTooHighForBlock) {
+          continue;
+        }
 
         if (dx < blockHalfWidth + 0.5 && dz < blockHalfDepth + 0.5) {
           const relativeX = newPosition.x - block.position.x;
@@ -608,7 +633,7 @@ function updateGreenShells(): void {
 
     // Calculate target height based on terrain
     const nextHeight = calculateHeightAtPosition(newPosition.x, newPosition.z);
-    
+
     if (underBridge) {
       // If under a bridge, keep the shell at ground level
       newPosition.y = 0;

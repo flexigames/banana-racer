@@ -1,65 +1,3 @@
-const mapText = `
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-x__________________________________________________________x
-x___?________________________________________________?_____x
-x_____?________________________________________________?___x
-x__?_______________________________________________? ______x
-x__________________________________________________________x
-x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
-x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy========bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
-x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
-x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
-x_______________=_________________________=________________x
-x_______________=_________________________=________________x
-x_______________=__________?__?___________=________________x
-x_______________=_________________________=________________x
-x_______________=_________________________=________________x
-x_______________=__________?__?___________=________________x
-x_______________=_________________________=________________x
-x_______________=_________________________=________________x
-x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
-x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
-x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg=======rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_______>>>>>>>>>>>>>>>ggg_______rrrr<<<<<<<<<<<<<_________x
-x_______>>>>>>>>>>>>>>>ggg_______rrrr<<<<<<<<<<<<<_________x
-x__________________________________________________________x
-x_?________________________________________________?_______x
-x___?___________________________________________________?__x
-x______?____________________________________________?______x
-x__________________________________________________________x
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`;
-
 type Block = {
   position: {
     x: number;
@@ -103,6 +41,68 @@ type MapData = {
   mapSize: MapSize;
 };
 
+const mapText = `
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+x__________________________________________________________x
+x___?________________________________________________?_____x
+x_____?________________________________________________?___x
+x__?_______________________________________________? ______x
+x__________________________________________________________x
+x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
+x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbBBBBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbBBBBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy========bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYY←←←←←←←←←yyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYY←←←←←←←←←yyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
+x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
+x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
+x_______________=_________________________=________________x
+x_______________=_________________________=________________x
+x_______________=__________?__?___________=________________x
+x_______________=_________________________=________________x
+x_______________=_________________________=________________x
+x_______________=__________?__?___________=________________x
+x_______________=_________________________=________________x
+x_______________=_________________________=________________x
+x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
+x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
+x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrr→→→→→→→→→RRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrr→→→→→→→→→RRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg=======rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGG↓↓ggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGGGGggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggGGGGGGGGGGGGggg_______rrrRRRRRRRRRRRrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_______>>>>>>>>>>>>>>>ggg_______rrr<<<<<<<<<<<<<<_________x
+x_______>>>>>>>>>>>>>>>ggg_______rrr<<<<<<<<<<<<<<_________x
+x__________________________________________________________x
+x_?________________________________________________?_______x
+x___?___________________________________________________?__x
+x______?____________________________________________?______x
+x__________________________________________________________x
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`;
+
 export function loadMap(): MapData {
   try {
     const mapRows = mapText.trim().split("\n");
@@ -121,7 +121,7 @@ export function loadMap(): MapData {
     const halfHeight = mapSize.height / 2;
 
     // First pass: Find continuous blocks
-    const visited = new Set();
+    const visited = new Set<string>();
 
     mapRows.forEach((mapRow, rowIndex) => {
       Array.from(mapRow).forEach((mapCell, columnIndex) => {
@@ -143,7 +143,11 @@ export function loadMap(): MapData {
             mapCell === "r" ||
             mapCell === "g" ||
             mapCell === "b" ||
-            mapCell === "y"
+            mapCell === "y" ||
+            mapCell === "R" ||
+            mapCell === "G" ||
+            mapCell === "B" ||
+            mapCell === "Y"
           ) {
             let width = 0;
             while (
@@ -157,7 +161,9 @@ export function loadMap(): MapData {
             let height = 0;
             while (
               rowIndex + height < mapRows.length &&
-              mapRows[rowIndex + height][columnIndex] === mapCell
+              rowIndex + height < mapRows.length &&
+              mapRows[rowIndex + height][columnIndex] === mapCell &&
+              !visited.has(`${rowIndex + height},${columnIndex}`)
             ) {
               let isFullRow = true;
               for (let w = 0; w < width; w++) {
@@ -183,7 +189,13 @@ export function loadMap(): MapData {
               blocks.push({
                 position: {
                   x: columnIndex - halfWidth + width / 2 - 0.5,
-                  y: 0,
+                  y:
+                    mapCell === "R" ||
+                    mapCell === "G" ||
+                    mapCell === "B" ||
+                    mapCell === "Y"
+                      ? 2
+                      : 0,
                   z: rowIndex - halfHeight + height / 2 - 0.5,
                 },
                 size: {
@@ -200,6 +212,14 @@ export function loadMap(): MapData {
                     ? "green"
                     : mapCell === "b"
                     ? "blue"
+                    : mapCell === "y"
+                    ? "yellow"
+                    : mapCell === "R"
+                    ? "red"
+                    : mapCell === "G"
+                    ? "green"
+                    : mapCell === "B"
+                    ? "blue"
                     : "yellow",
               });
             }
@@ -207,7 +227,11 @@ export function loadMap(): MapData {
             mapCell === ">" ||
             mapCell === "<" ||
             mapCell === "v" ||
-            mapCell === "^"
+            mapCell === "^" ||
+            mapCell === "↑" ||
+            mapCell === "←" ||
+            mapCell === "→" ||
+            mapCell === "↓"
           ) {
             // Check for consecutive ramp symbols
             let width = 0;
@@ -242,15 +266,23 @@ export function loadMap(): MapData {
             // Only create a ramp if we have valid dimensions
             if (width > 0 && height > 0) {
               let direction = 0;
-              if (mapCell === ">") direction = 0;
-              else if (mapCell === "<") direction = Math.PI;
-              else if (mapCell === "v") direction = -Math.PI / 2;
-              else if (mapCell === "^") direction = Math.PI / 2;
+              if (mapCell === ">" || mapCell === "→") direction = 0;
+              else if (mapCell === "<" || mapCell === "←") direction = Math.PI;
+              else if (mapCell === "v" || mapCell === "↓")
+                direction = -Math.PI / 2;
+              else if (mapCell === "^" || mapCell === "↑")
+                direction = Math.PI / 2;
+
+              const isLevelTwoRamp =
+                mapCell === "↑" ||
+                mapCell === "←" ||
+                mapCell === "→" ||
+                mapCell === "↓";
 
               ramps.push({
                 position: [
                   columnIndex - halfWidth + width / 2 - 0.5,
-                  0,
+                  isLevelTwoRamp ? 2 : 0,
                   rowIndex - halfHeight + height / 2 - 0.5,
                 ],
                 rotation: direction,
