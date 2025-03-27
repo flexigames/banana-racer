@@ -345,7 +345,7 @@ function dropGreenShell(
     },
     rotation: data.rotation,
     direction: data.rotation,
-    speed: 15,
+    speed: 7.5,
     droppedBy: playerId,
     droppedAt: Date.now(),
     bounces: 0,
@@ -354,7 +354,6 @@ function dropGreenShell(
 
   gameState.greenShells[shellId] = shell;
 
-  // Remove shell after 10 seconds
   setTimeout(() => {
     if (gameState.greenShells[shellId]) {
       delete gameState.greenShells[shellId];
@@ -471,6 +470,15 @@ function handleCollisions(): void {
     Object.values(gameState.players).forEach((player) => {
       if (checkCollision(player.position, fakeCube.position, 0.9)) {
         removeItem(gameState.fakeCubes, fakeCube.id);
+        onHit(player.id);
+      }
+    });
+  });
+
+  Object.values(gameState.greenShells).forEach((shell) => {
+    Object.values(gameState.players).forEach((player) => {
+      if (player.id !== shell.droppedBy && checkCollision(player.position, shell.position, 0.9)) {
+        removeItem(gameState.greenShells, shell.id);
         onHit(player.id);
       }
     });
