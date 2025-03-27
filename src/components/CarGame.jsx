@@ -325,7 +325,23 @@ const CarGame = () => {
 
       {/* Game UI */}
       <div className="game-ui">
-        <div className="item-display" style={getItemDisplayStyle()}>
+        <div 
+          className="item-display" 
+          style={{
+            ...getItemDisplayStyle(),
+            cursor: currentItem?.quantity > 0 ? 'pointer' : 'default',
+            pointerEvents: currentItem?.quantity > 0 ? 'auto' : 'none',
+          }}
+          onClick={() => {
+            if (carRef.current && currentItem?.quantity > 0) {
+              const carPosition = carRef.current.position.clone();
+              const carRotation = carRef.current.rotation.y;
+              setIsAnimating(true);
+              setTimeout(() => setIsAnimating(false), 300);
+              useItem(carPosition, carRotation);
+            }
+          }}
+        >
           {getItemDisplayText(currentItem)}
         </div>
       </div>
