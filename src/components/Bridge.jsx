@@ -15,7 +15,7 @@ const Bridge = ({ position, rotation = 0, scale = [1, 1, 1] }) => {
       <mesh position={[0, 0.95, 0]}>
         <boxGeometry args={geometryArgs} />
         <meshStandardMaterial
-          color="#8B4513"
+          color="#A9A9A9"
           roughness={0.8}
           metalness={0.2}
         />

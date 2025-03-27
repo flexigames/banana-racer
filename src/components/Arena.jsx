@@ -29,7 +29,7 @@ const Arena = () => {
         const materials = [
           new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // right
           new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // left
-          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // top
+          new THREE.MeshStandardMaterial({ color: "#808080", roughness: 0.7, metalness: 0.2 }), // top
           new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // bottom
           new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // front
           new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // back
@@ -43,15 +43,16 @@ const Arena = () => {
         // Set texture repeat for each face based on normalized dimensions
         materials[0].map.repeat.set(zRepeats, yRepeats); // right
         materials[1].map.repeat.set(zRepeats, yRepeats); // left
-        materials[2].map.repeat.set(xRepeats, zRepeats); // top
         materials[3].map.repeat.set(xRepeats, zRepeats); // bottom
         materials[4].map.repeat.set(xRepeats, yRepeats); // front
         materials[5].map.repeat.set(xRepeats, yRepeats); // back
 
         // Enable texture wrapping
         materials.forEach(material => {
-          material.map.wrapS = THREE.RepeatWrapping;
-          material.map.wrapT = THREE.RepeatWrapping;
+          if (material.map) {
+            material.map.wrapS = THREE.RepeatWrapping;
+            material.map.wrapT = THREE.RepeatWrapping;
+          }
         });
 
         blockRefs.current[index].material = materials;
@@ -221,7 +222,7 @@ const Arena = () => {
             geometry={rampGeometry}
           >
             <meshStandardMaterial
-              color="#8B4513"
+              color="#A9A9A9"
               roughness={0.8}
               metalness={0.2}
               side={THREE.DoubleSide}
