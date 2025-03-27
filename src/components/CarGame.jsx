@@ -4,7 +4,6 @@ import { PerspectiveCamera, Grid } from "@react-three/drei";
 import Player from "./Player";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
-import FakeCube from "./FakeCube";
 import GreenShell from "./GreenShell";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
@@ -340,13 +339,14 @@ const CarGame = () => {
 
         {/* Fake Cubes */}
         {fakeCubes.map((fakeCube) => (
-          <FakeCube
+          <ItemBox
             key={fakeCube.id}
             position={[
               fakeCube.position.x,
               fakeCube.position.y,
               fakeCube.position.z,
             ]}
+            isFakeCube
             rotation={fakeCube.rotation}
           />
         ))}

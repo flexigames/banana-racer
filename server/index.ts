@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
-import { blocks, ramps, bridges, mapSize } from "./map";
+import { blocks, ramps, bridges, itemBoxes, mapSize } from "./map";
 
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
@@ -58,22 +58,6 @@ function generateFakeCubeId(): string {
 
 function generateGreenShellId(): string {
   return `green_shell_${uuidv4()}`;
-}
-
-function generateItemBoxes(count: number = 20): ItemBox[] {
-  const boxes: ItemBox[] = [];
-  const mapSize = 60;
-
-  for (let i = 1; i <= count; i++) {
-    const position = [
-      Math.random() * mapSize - mapSize / 2,
-      -0.2, // Slightly lower than default height
-      Math.random() * mapSize - mapSize / 2,
-    ];
-    boxes.push({ id: i, position });
-  }
-
-  return boxes;
 }
 
 function getRandomSpawnPosition(): Position {
@@ -693,7 +677,10 @@ io.on("connection", (socket: Socket) => {
   });
 });
 
-gameState.itemBoxes = generateItemBoxes(20);
+gameState.itemBoxes = itemBoxes.map((box, index) => ({
+  id: index + 1,
+  position: box.position,
+}));
 
 setInterval(() => {
   handleCollisions();

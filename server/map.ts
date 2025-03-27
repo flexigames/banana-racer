@@ -1,9 +1,9 @@
 const mapText = `
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
+x___?________________________________________________?_____x
+x_____?________________________________________________?___x
+x__?_______________________________________________? ______x
 x__________________________________________________________x
 x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
 x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
@@ -27,10 +27,10 @@ x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x_______________=_________________________=________________x
 x_______________=_________________________=________________x
+x_______________=__________?__?___________=________________x
 x_______________=_________________________=________________x
 x_______________=_________________________=________________x
-x_______________=_________________________=________________x
-x_______________=_________________________=________________x
+x_______________=__________?__?___________=________________x
 x_______________=_________________________=________________x
 x_______________=_________________________=________________x
 x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
@@ -54,9 +54,9 @@ x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_______>>>>>>>>>>>>>>>ggg_______rrrr<<<<<<<<<<<<<_________x
 x_______>>>>>>>>>>>>>>>ggg_______rrrr<<<<<<<<<<<<<_________x
 x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
+x_?________________________________________________?_______x
+x___?___________________________________________________?__x
+x______?____________________________________________?______x
 x__________________________________________________________x
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`;
 
@@ -86,6 +86,10 @@ type Bridge = {
   scale: [number, number, number];
 };
 
+type ItemBox = {
+  position: [number, number, number];
+};
+
 type MapSize = {
   width: number;
   height: number;
@@ -95,6 +99,7 @@ type MapData = {
   blocks: Block[];
   ramps: Ramp[];
   bridges: Bridge[];
+  itemBoxes: ItemBox[];
   mapSize: MapSize;
 };
 
@@ -105,6 +110,7 @@ export function loadMap(): MapData {
     const blocks: Block[] = [];
     const ramps: Ramp[] = [];
     const bridges: Bridge[] = [];
+    const itemBoxes: ItemBox[] = [];
     const mapSize: MapSize = {
       width: mapRows[0]?.length || 0,
       height: mapRows.length || 0,
@@ -120,6 +126,18 @@ export function loadMap(): MapData {
     mapRows.forEach((mapRow, rowIndex) => {
       Array.from(mapRow).forEach((mapCell, columnIndex) => {
         if (!visited.has(`${rowIndex},${columnIndex}`)) {
+          if (mapCell === "?") {
+            itemBoxes.push({
+              position: [
+                columnIndex - halfWidth + 0.5,
+                0,
+                rowIndex - halfHeight + 0.5,
+              ],
+            });
+            visited.add(`${rowIndex},${columnIndex}`);
+            return;
+          }
+
           if (
             mapCell === "x" ||
             mapCell === "r" ||
@@ -294,21 +312,23 @@ export function loadMap(): MapData {
       });
     });
 
-    return { blocks, ramps, bridges, mapSize };
+    return { blocks, ramps, bridges, itemBoxes, mapSize };
   } catch (error) {
     console.error("Error loading map:", error);
     return {
       blocks: [],
       ramps: [],
       bridges: [],
+      itemBoxes: [],
       mapSize: { width: 0, height: 0 },
     };
   }
 }
 
-const { blocks, ramps, bridges, mapSize } = loadMap();
+const { blocks, ramps, bridges, itemBoxes, mapSize } = loadMap();
 
 console.log("ramps", ramps);
 console.log("bridges", bridges);
+console.log("itemBoxes", itemBoxes);
 
-export { blocks, ramps, bridges, mapSize };
+export { blocks, ramps, bridges, itemBoxes, mapSize };
