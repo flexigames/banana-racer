@@ -29,7 +29,7 @@ const FollowCamera = ({ target }) => {
     if (!isSpinningOut) {
       // Get car's current speed for adaptive camera behavior
       const carSpeed = target.current.speed || 0;
-      
+
       // Update target position from the car
       targetPosition.current.set(
         target.current.position.x,
@@ -39,7 +39,7 @@ const FollowCamera = ({ target }) => {
 
       // Calculate camera position: behind and above the car
       const carRotation = target.current.rotation.y;
-      
+
       // Adaptive distance and height based on speed
       const baseDistance = 1;
       const baseHeight = 0.7;
@@ -55,18 +55,21 @@ const FollowCamera = ({ target }) => {
       const predictionFactor = Math.min(Math.abs(carSpeed) / 20, 0.3); // Max 30% prediction
       const forwardX = Math.sin(carRotation);
       const forwardZ = Math.cos(carRotation);
-      
+
       // Position camera behind and above the car with prediction
       position.current.set(
-        targetPosition.current.x - offsetX + (forwardX * predictionFactor),
+        targetPosition.current.x - offsetX + forwardX * predictionFactor,
         targetPosition.current.y + height,
-        targetPosition.current.z - offsetZ + (forwardZ * predictionFactor)
+        targetPosition.current.z - offsetZ + forwardZ * predictionFactor
       );
 
       // Adaptive smoothing based on speed
       const baseLerpFactor = 0.15;
-      const speedLerpFactor = Math.max(baseLerpFactor, Math.min(carSpeed / 20, 0.3));
-      
+      const speedLerpFactor = Math.max(
+        baseLerpFactor,
+        Math.min(carSpeed / 20, 0.3)
+      );
+
       // Update camera position with adaptive smoothing
       cameraRef.current.position.lerp(position.current, speedLerpFactor);
 
@@ -166,7 +169,7 @@ const CarGame = () => {
 
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
-  const spinSpeed = 50
+  const spinSpeed = 50;
   const possibleItems = ["🍌", "🚀", "🎲", "🐢"];
 
   // Get remote players (all players except current player)
@@ -338,33 +341,24 @@ const CarGame = () => {
         {greenShells.map((shell) => (
           <GreenShell
             key={shell.id}
-            position={[
-              shell.position.x,
-              shell.position.y,
-              shell.position.z,
-            ]}
+            position={[shell.position.x, shell.position.y, shell.position.z]}
             rotation={shell.rotation}
           />
         ))}
 
         {/* Add item boxes */}
-        {itemBoxes.length > 0 ? (
-          itemBoxes.map((box) => (
-            <ItemBox key={box.id} position={box.position} />
-          ))
-        ) : (
-          <mesh position={[0, 5, 0]}>
-            <sphereGeometry args={[0.5, 16, 16]} />
-            <meshStandardMaterial color="red" />
-          </mesh>
-        )}
+        {itemBoxes.map((box) => (
+          <ItemBox key={box.id} position={box.position} />
+        ))}
       </Canvas>
-      <JoystickControl onMove={(x, y) => {
-        if (carRef.current) {
-          carRef.current.movement.forward = y;
-          carRef.current.movement.turn = -x;
-        }
-      }} />
+      <JoystickControl
+        onMove={(x, y) => {
+          if (carRef.current) {
+            carRef.current.movement.forward = y;
+            carRef.current.movement.turn = -x;
+          }
+        }}
+      />
 
       {/* Item instructions */}
       <div
@@ -384,12 +378,12 @@ const CarGame = () => {
 
       {/* Game UI */}
       <div className="game-ui">
-        <div 
-          className="item-display" 
+        <div
+          className="item-display"
           style={{
             ...getItemDisplayStyle(),
-            cursor: currentItem?.quantity > 0 ? 'pointer' : 'default',
-            pointerEvents: currentItem?.quantity > 0 ? 'auto' : 'none',
+            cursor: currentItem?.quantity > 0 ? "pointer" : "default",
+            pointerEvents: currentItem?.quantity > 0 ? "auto" : "none",
           }}
           onClick={() => {
             if (carRef.current && currentItem?.quantity > 0) {

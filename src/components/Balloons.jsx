@@ -25,7 +25,7 @@ function Balloons({ color, lives }) {
   });
 
   return (
-    <group position={[0, 0.5, 0]}>
+    <group position={[0, 0.7, 0]}>
       <group ref={balloonsGroup}>
         {[...Array(lives)].map((_, index) => {
           // Calculate angle for outer balloons with more extreme angles
