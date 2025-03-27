@@ -446,8 +446,41 @@ export const updateObjectPosition = (object, movement, delta) => {
   // Update last valid height
   movement.lastValidHeight = targetHeight;
 
+  // Fix for teleporting to bridge top when under bridge
   if (underBridge) {
+    // Ensure we stay at ground level when under a bridge
     object.position.y = 0;
+    
+    // Prevent any upward movement when under a bridge
+    movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
+    
+    // Check if we're colliding with blocks while under a bridge
+    for (const block of blocks) {
+      const blockHalfWidth = block.size.x / 2;
+      const blockHalfDepth = block.size.z / 2;
+
+      const dx = Math.abs(object.position.x - block.position.x);
+      const dz = Math.abs(object.position.z - block.position.z);
+
+      if (dx < blockHalfWidth + carRadius && dz < blockHalfDepth + carRadius) {
+        // Apply sliding collision response
+        const relativeX = object.position.x - block.position.x;
+        const relativeZ = object.position.z - block.position.z;
+
+        const penetrationX = blockHalfWidth + carRadius - Math.abs(relativeX);
+        const penetrationZ = blockHalfDepth + carRadius - Math.abs(relativeZ);
+
+        if (penetrationX < penetrationZ) {
+          object.position.x = block.position.x + (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
+        } else {
+          object.position.z = block.position.z + (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+        }
+        
+        // Reduce speed when hitting walls under bridge
+        movement.speed *= 0.9;
+        break;
+      }
+    }
   }
 };
 
