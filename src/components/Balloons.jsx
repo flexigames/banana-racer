@@ -7,8 +7,9 @@ const floatingOffsets = [0.7, 0.5, 0.6];
 const balloonOpacity = 0.8;
 const floatingAmplitude = 0.0005;
 const floatingSpeed = 2;
-const balloonSpacing = 0.25;
-const balloonScale = 0.15;
+const balloonSpacing = 0.14;
+const balloonScale = 0.075;
+const balloonsVerticalOffset = 0.3;
 
 function Balloons({ color, lives }) {
   const balloonsGroup = useRef();
@@ -43,14 +44,14 @@ function Balloons({ color, lives }) {
             : -0.5 * distanceFromCenter;
 
           // Add vertical offset for middle balloon when there are exactly 3 balloons
-          const verticalOffset = lives === 3 && isCenter ? 0.2 : 0;
+          const verticalOffset = lives === 3 && isCenter ? balloonScale : 0;
 
           return (
             <group
               key={index}
               position={[
                 index * balloonSpacing - ((lives - 1) * balloonSpacing) / 2,
-                -0.2 + verticalOffset,
+                -balloonsVerticalOffset + verticalOffset,
                 0,
               ]}
               rotation={[0, 0, angleOffset]}
