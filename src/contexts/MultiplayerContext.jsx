@@ -144,7 +144,7 @@ export const MultiplayerProvider = ({ children }) => {
     setLastItemUseTime(now);
 
     // Calculate position based on item type
-    const distanceBehind = 1;
+    const distanceBehind = 0.4;
     const offsetX = Math.sin(carRotation) * distanceBehind;
     const offsetZ = Math.cos(carRotation) * distanceBehind;
 
@@ -256,7 +256,7 @@ export const MultiplayerProvider = ({ children }) => {
     itemBoxes,
     fakeCubes,
     greenShells,
-      updatePlayerPosition,
+    updatePlayerPosition,
     useItem,
     hitBanana,
     hitFakeCube,

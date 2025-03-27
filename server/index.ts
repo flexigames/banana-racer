@@ -353,7 +353,7 @@ function dropGreenShell(
     },
     rotation: data.rotation,
     direction: data.rotation,
-    speed: 7.5,
+    speed: 10,
     droppedBy: playerId,
     droppedAt: Date.now(),
     bounces: 0,
@@ -468,7 +468,7 @@ function checkCollision(
 function handleCollisions(): void {
   Object.values(gameState.bananas).forEach((banana) => {
     Object.values(gameState.players).forEach((player) => {
-      if (checkCollision(player.position, banana.position, 0.9)) {
+      if (checkCollision(player.position, banana.position, 0.3)) {
         removeItem(gameState.bananas, banana.id);
         onHit(player.id);
       }
@@ -477,7 +477,7 @@ function handleCollisions(): void {
 
   Object.values(gameState.fakeCubes).forEach((fakeCube) => {
     Object.values(gameState.players).forEach((player) => {
-      if (checkCollision(player.position, fakeCube.position, 0.9)) {
+      if (checkCollision(player.position, fakeCube.position, 0.3)) {
         removeItem(gameState.fakeCubes, fakeCube.id);
         onHit(player.id);
       }
