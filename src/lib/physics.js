@@ -376,7 +376,7 @@ export const updateObjectPosition = (object, movement, delta) => {
       targetHeight = currentHeight;
     } else {
       // Can't slide in either direction, reduce speed
-      movement.speed *= 0.8;
+      movement.speed *= 0.95;
       // Set target height to current height to prevent dropping
       targetHeight = currentHeight;
     }
@@ -393,19 +393,6 @@ export const updateObjectPosition = (object, movement, delta) => {
   // Store the last valid height to prevent dropping when letting go of controls
   if (movement.lastValidHeight === undefined) {
     movement.lastValidHeight = targetHeight;
-  }
-
-  // If we're on a ramp (higher than ground level) and not moving much,
-  // maintain the current height to prevent dropping
-  if (object.position.y > 0.1 && Math.abs(movement.speed) < 0.5) {
-    targetHeight = Math.max(targetHeight, object.position.y);
-  } else {
-    // Update last valid height when moving
-    movement.lastValidHeight = targetHeight;
-  }
-
-  if (underBridge) {
-    targetHeight = 0;
   }
 
   // Apply gravity
@@ -429,14 +416,33 @@ export const updateObjectPosition = (object, movement, delta) => {
   // Calculate new height
   const newHeight = object.position.y + movement.verticalVelocity * delta;
 
+  // Check if we're going down a ramp (current height > target height)
+  if (currentHeight > targetHeight && !underBridge) {
+    // Smoothly transition down the ramp
+    const transitionSpeed = 5.0; // Adjust this value to control how quickly we follow the ramp
+    const targetY = Math.max(0, targetHeight);
+    
+    // Interpolate between current height and target height
+    object.position.y = object.position.y + (targetY - object.position.y) * Math.min(1, transitionSpeed * delta);
+    
+    // Reset vertical velocity when on a ramp to prevent bouncing
+    movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
+  } 
   // Check if we've hit the ground
-  if (newHeight <= targetHeight) {
+  else if (newHeight <= targetHeight) {
     // We've hit the ground
     object.position.y = targetHeight;
     movement.verticalVelocity = 0;
   } else {
     // We're in the air
     object.position.y = newHeight;
+  }
+
+  // Update last valid height
+  movement.lastValidHeight = targetHeight;
+
+  if (underBridge) {
+    object.position.y = 0;
   }
 };
 
