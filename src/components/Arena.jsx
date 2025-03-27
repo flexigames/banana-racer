@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { SKYBOX_TEXTURE, GROUND_TEXTURE, createWallTexture } from "../lib/textures";
-import { blocks, ramps, mapSize } from "../lib/map";
+import { blocks, ramps, bridges, mapSize } from "../lib/map";
+import Bridge from "./Bridge";
+
+console.log("bridges", bridges);
 
 const Arena = () => {
   const groundRef = useRef();
@@ -226,6 +229,16 @@ const Arena = () => {
           </mesh>
         );
       })}
+
+      {/* Bridges from map */}
+      {bridges.map((bridge, index) => (
+        <Bridge
+          key={`bridge-${index}`}
+          position={bridge.position}
+          rotation={bridge.rotation}
+          scale={bridge.scale}
+        />
+      ))}
     </group>
   );
 };

@@ -7,8 +7,8 @@ const floatingOffsets = [0.7, 0.5, 0.6];
 const balloonOpacity = 0.8;
 const floatingAmplitude = 0.0005;
 const floatingSpeed = 2;
-const balloonSpacing = 0.36;
-const balloonScale = 0.2;
+const balloonSpacing = 0.25;
+const balloonScale = 0.15;
 
 function Balloons({ color, lives }) {
   const balloonsGroup = useRef();
@@ -25,7 +25,7 @@ function Balloons({ color, lives }) {
   });
 
   return (
-    <group position={[0, 1.5, 0]}>
+    <group position={[0, 0.5, 0]}>
       <group ref={balloonsGroup}>
         {[...Array(lives)].map((_, index) => {
           // Calculate angle for outer balloons with more extreme angles
@@ -50,7 +50,7 @@ function Balloons({ color, lives }) {
               key={index}
               position={[
                 index * balloonSpacing - ((lives - 1) * balloonSpacing) / 2,
-                -0.5 + verticalOffset,
+                -0.2 + verticalOffset,
                 0,
               ]}
               rotation={[0, 0, angleOffset]}

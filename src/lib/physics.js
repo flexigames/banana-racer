@@ -1,5 +1,6 @@
-import { blocks, ramps, mapSize } from "./map";
+import { blocks, ramps, bridges, mapSize } from "./map";
 
+const carRadius = 0.2; // Approximate car collision radius
 
 /**
  * Improved arcade-style vehicle physics
@@ -97,7 +98,7 @@ export const calculateHeightAtPosition = (x, z) => {
   for (const block of blocks) {
     const blockHalfWidth = block.size.x / 2;
     const blockHalfDepth = block.size.z / 2;
-    
+
     const dx = Math.abs(x - block.position.x);
     const dz = Math.abs(z - block.position.z);
 
@@ -110,7 +111,7 @@ export const calculateHeightAtPosition = (x, z) => {
   for (const ramp of ramps) {
     // Get ramp properties
     const [rampX, rampY, rampZ] = ramp.position;
-    const rotation = Math.PI/2 - ramp.rotation;
+    const rotation = Math.PI / 2 - ramp.rotation;
     const [scaleX, scaleY, scaleZ] = ramp.scale;
 
     // Adjust to ramp's local coordinates
@@ -126,7 +127,7 @@ export const calculateHeightAtPosition = (x, z) => {
 
     // Handle different ramp orientations
     let rampWidth, rampLength;
-    
+
     // Determine orientation based on the rotation value
     if (ramp.rotation === 0 || Math.abs(ramp.rotation) === Math.PI) {
       // Horizontal ramps (< or >)
@@ -137,9 +138,14 @@ export const calculateHeightAtPosition = (x, z) => {
       rampWidth = scaleX;
       rampLength = scaleZ;
     }
-    
+
+    // Add extra width to make ramps wider in the perpendicular direction
+    const extraWidth = carRadius;
+    const effectiveRampWidth = rampWidth * (1 + extraWidth);
+
     // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
-    const normalizedX = rotatedX / rampWidth;
+    // For width dimension, use the expanded width
+    const normalizedX = rotatedX / effectiveRampWidth;
     const normalizedZ = rotatedZ / rampLength;
 
     // Check if point is within ramp bounds
@@ -153,13 +159,104 @@ export const calculateHeightAtPosition = (x, z) => {
       // The slope always goes from back to front in local coordinates
       const heightPercentage = 0.5 - normalizedZ;
       const height = heightPercentage * scaleY;
-      
+
       return height;
     }
   }
 
-  // Not on any ramp or block
+  // Check bridges
+  for (const bridge of bridges) {
+    const bridgeX = bridge.position[0];
+    const bridgeY = bridge.position[1];
+    const bridgeZ = bridge.position[2];
+    const rotation = bridge.rotation || 0;
+    const scale = bridge.scale || [1, 1, 1];
+
+    // Bridge dimensions (based on Bridge.jsx)
+    const bridgeWidth = scale[0];
+    const bridgeHeight = 0.1; // Height of the bridge walkway
+    const bridgeLength = scale[2];
+
+    // Convert to bridge's local coordinates
+    const localX = x - bridgeX;
+    const localZ = z - bridgeZ;
+
+    // Rotate to align with bridge orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+
+    // Check if point is within bridge bounds
+    // For vertical bridges (rotation ~= PI/2), swap width and length
+    const isVertical =
+      Math.abs(rotation) === Math.PI / 2 ||
+      Math.abs(rotation) === (3 * Math.PI) / 2;
+    const effectiveWidth = isVertical ? bridgeLength : bridgeWidth;
+    const effectiveLength = isVertical ? bridgeWidth : bridgeLength;
+
+    if (
+      Math.abs(rotatedX) <= effectiveWidth / 2 &&
+      Math.abs(rotatedZ) <= effectiveLength / 2
+    ) {
+      // Bridge height is at bridgeY + half the bridge height (0.95 + 0.05)
+      return bridgeY + 1;
+    }
+  }
+
+  // Not on any ramp, block, or bridge
   return 0;
+};
+
+/**
+ * Check if a position is under a bridge
+ * @param {number} x - X position to check
+ * @param {number} z - Z position to check
+ * @param {number} y - Y position to check
+ * @returns {boolean} Whether the position is under a bridge
+ */
+export const isUnderBridge = (x, z, y) => {
+  for (const bridge of bridges) {
+    const bridgeX = bridge.position[0];
+    const bridgeY = bridge.position[1];
+    const bridgeZ = bridge.position[2];
+    const rotation = bridge.rotation || 0;
+    const scale = bridge.scale || [1, 1, 1];
+
+    // Bridge dimensions
+    const bridgeWidth = scale[0];
+    const bridgeLength = scale[2];
+
+    // Convert to bridge's local coordinates
+    const localX = x - bridgeX;
+    const localZ = z - bridgeZ;
+
+    // Rotate to align with bridge orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+
+    // Check if point is within bridge bounds horizontally and below bridge vertically
+    // For vertical bridges (rotation ~= PI/2), swap width and length
+    const isVertical =
+      Math.abs(rotation) === Math.PI / 2 ||
+      Math.abs(rotation) === (3 * Math.PI) / 2;
+    const effectiveWidth = isVertical ? bridgeLength : bridgeWidth;
+    const effectiveLength = isVertical ? bridgeWidth : bridgeLength;
+
+    // Allow driving under bridge if the vertical distance is sufficient
+    const verticalClearance = 0.01; // Minimum clearance needed to drive under
+    if (
+      Math.abs(rotatedX) <= effectiveWidth / 2 &&
+      Math.abs(rotatedZ) <= effectiveLength / 2 &&
+      y < bridgeY - verticalClearance // Check if there's enough clearance
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 /**
@@ -182,15 +279,18 @@ export const updateObjectPosition = (object, movement, delta) => {
   const newX = object.position.x + moveX;
   const newZ = object.position.z + moveZ;
 
-  // Arena boundaries
-  const carRadius = 0.5; // Approximate car collision radius
+  // Check if we're under a bridge
+  const underBridge = isUnderBridge(newX, newZ, object.position.y);
 
   // Check wall collisions
-
   const highEnough = object.position.y >= 2 - 0.25;
 
-  // Check battle block collisions, but only if not driving on top
-  if (!highEnough) {
+  let collidedWithBlock = false;
+  let slideX = newX;
+  let slideZ = newZ;
+
+  // Check battle block collisions, but only if not driving on top and not under a bridge
+  if (!highEnough && !underBridge) {
     for (const block of blocks) {
       const blockHalfWidth = block.size.x / 2;
       const blockHalfDepth = block.size.z / 2;
@@ -200,29 +300,41 @@ export const updateObjectPosition = (object, movement, delta) => {
 
       // Vertical collision check - allow if we're above the block
       if (dx < blockHalfWidth + carRadius && dz < blockHalfDepth + carRadius) {
-        // Determine which side was hit and apply collision response
+        collidedWithBlock = true;
+
+        // Determine which side was hit and apply sliding collision response
         const relativeX = newX - block.position.x;
         const relativeZ = newZ - block.position.z;
-        
+
         const penetrationX = blockHalfWidth + carRadius - Math.abs(relativeX);
         const penetrationZ = blockHalfDepth + carRadius - Math.abs(relativeZ);
 
+        // Calculate slide direction - preserve momentum along the wall
         if (penetrationX < penetrationZ) {
-          // Push out along X axis
-          object.position.x = block.position.x + (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
-          object.position.z = object.position.z;
+          // Sliding along X axis (Z movement preserved)
+          slideX =
+            block.position.x +
+            (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
+          // Keep Z movement (sliding)
+          slideZ = newZ;
         } else {
-          // Push out along Z axis
-          object.position.x = object.position.x;
-          object.position.z = block.position.z + (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+          // Sliding along Z axis (X movement preserved)
+          slideZ =
+            block.position.z +
+            (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+          // Keep X movement (sliding)
+          slideX = newX;
         }
-        return;
+
+        // Apply a small speed reduction when sliding
+        movement.speed *= 0.95;
+        break;
       }
     }
   }
 
   // Calculate target height based on terrain
-  const targetHeight = calculateHeightAtPosition(newX, newZ);
+  let targetHeight = calculateHeightAtPosition(newX, newZ);
   const currentHeight = calculateHeightAtPosition(
     object.position.x,
     object.position.z
@@ -230,19 +342,75 @@ export const updateObjectPosition = (object, movement, delta) => {
 
   // Check if we're trying to go up a ramp from the side
   const heightDelta = targetHeight - currentHeight;
-  if (heightDelta > 0.3) {
-    // If we're trying to go up too steeply, prevent movement
-    return;
+  //ramp conditional
+  if (heightDelta > 0.1 && !underBridge) {
+    // If we're trying to go up too steeply, slide along the ramp edge
+    const rampSlideSpeed = 0.9; // Reduce speed when sliding along ramp
+
+    // Try to move only in X direction
+    const slideXPos = object.position.x + moveX;
+    const slideXHeight = calculateHeightAtPosition(
+      slideXPos,
+      object.position.z
+    );
+    const slideXDelta = slideXHeight - currentHeight;
+
+    // Try to move only in Z direction
+    const slideZPos = object.position.z + moveZ;
+    const slideZHeight = calculateHeightAtPosition(
+      object.position.x,
+      slideZPos
+    );
+    const slideZDelta = slideZHeight - currentHeight;
+
+    // Choose the direction with less height change
+    if (slideXDelta < 0.1) {
+      object.position.x = slideXPos;
+      movement.speed *= rampSlideSpeed;
+      // Set target height to current height to prevent dropping
+      targetHeight = currentHeight;
+    } else if (slideZDelta < 0.1) {
+      object.position.z = slideZPos;
+      movement.speed *= rampSlideSpeed;
+      // Set target height to current height to prevent dropping
+      targetHeight = currentHeight;
+    } else {
+      // Can't slide in either direction, reduce speed
+      movement.speed *= 0.8;
+      // Set target height to current height to prevent dropping
+      targetHeight = currentHeight;
+    }
+  } else if (collidedWithBlock) {
+    // Apply sliding motion along walls
+    object.position.x = slideX;
+    object.position.z = slideZ;
+  } else {
+    // Normal movement
+    object.position.x = newX;
+    object.position.z = newZ;
   }
 
-  // Apply movement if no collision
-  object.position.x = newX;
-  object.position.z = newZ;
+  // Store the last valid height to prevent dropping when letting go of controls
+  if (movement.lastValidHeight === undefined) {
+    movement.lastValidHeight = targetHeight;
+  }
+
+  // If we're on a ramp (higher than ground level) and not moving much,
+  // maintain the current height to prevent dropping
+  if (object.position.y > 0.1 && Math.abs(movement.speed) < 0.5) {
+    targetHeight = Math.max(targetHeight, object.position.y);
+  } else {
+    // Update last valid height when moving
+    movement.lastValidHeight = targetHeight;
+  }
+
+  if (underBridge) {
+    targetHeight = 0;
+  }
 
   // Apply gravity
   const gravity = 9.8; // Gravity acceleration in m/s²
   const terminalVelocity = 20; // Maximum falling speed
-  const groundFriction = 0.8; // Friction when hitting the ground
 
   // Initialize vertical velocity if not exists
   if (movement.verticalVelocity === undefined) {

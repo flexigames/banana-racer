@@ -188,7 +188,7 @@ const Player = forwardRef((props, ref) => {
       <Car
         vehicleType={effectiveVehicle}
         color={carColor}
-        scale={[1.0, 1.0, 1.0]}
+        scale={[0.5, 0.5, 0.5]}
         rotation={[0, Math.PI, 0]}
         boosting={isBoosted}
         lives={lives}

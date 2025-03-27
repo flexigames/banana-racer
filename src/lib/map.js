@@ -21,18 +21,17 @@ x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
-x__________________________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
+x_______________=__________________________________________x
 x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
 x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
 x_____gggggggggggggggggggg_______rrrrrrrrrrrrrrrrrrr_______x
@@ -40,7 +39,7 @@ x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
+x_____^^gggggggggggggggggg=======rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
@@ -66,6 +65,7 @@ export function loadMap() {
 
     const blocks = [];
     const ramps = [];
+    const bridges = [];
     const mapSize = {
       width: mapRows[0]?.length || 0,
       height: mapRows.length || 0,
@@ -181,20 +181,71 @@ export function loadMap() {
               rotation: direction,
               scale: [width, 2, length],
             });
+          } else if (mapCell === "=") {
+            // Handle bridge symbols (both horizontal and vertical)
+            // For horizontal bridges
+            let width = 1;
+            while (
+              columnIndex + width < mapRow.length &&
+              mapRow[columnIndex + width] === mapCell &&
+              !visited.has(`${rowIndex},${columnIndex + width}`)
+            ) {
+              visited.add(`${rowIndex},${columnIndex + width}`);
+              width++;
+            }
+
+            // For vertical bridges
+            let height = 1;
+            while (
+              rowIndex + height < mapRows.length &&
+              mapRows[rowIndex + height][columnIndex] === mapCell &&
+              !visited.has(`${rowIndex + height},${columnIndex}`)
+            ) {
+              visited.add(`${rowIndex + height},${columnIndex}`);
+              height++;
+            }
+
+            visited.add(`${rowIndex},${columnIndex}`);
+
+            // If it's a horizontal bridge (width > 1)
+            if (width > 1) {
+              bridges.push({
+                position: [
+                  columnIndex - halfWidth + width / 2 - 0.5,
+                  1,
+                  rowIndex - halfHeight + 0.5,
+                ],
+                rotation: 0,
+                scale: [width, 1, 1],
+              });
+            }
+            // If it's a vertical bridge (height > 1)
+            else if (height > 1) {
+              bridges.push({
+                position: [
+                  columnIndex - halfWidth + 0.5,
+                  1,
+                  rowIndex - halfHeight + height / 2 - 0.5,
+                ],
+                rotation: Math.PI / 2, // Rotate 90 degrees for vertical bridges
+                scale: [1, 1, height],
+              });
+            }
           }
         }
       });
     });
 
-    return { blocks, ramps, mapSize };
+    return { blocks, ramps, bridges, mapSize };
   } catch (error) {
     console.error("Error loading map:", error);
-    return { blocks: [], ramps: [], mapSize: { width: 0, height: 0 } };
+    return { blocks: [], ramps: [], bridges: [], mapSize: { width: 0, height: 0 } };
   }
 }
 
-const { blocks, ramps, mapSize } = loadMap();
+const { blocks, ramps, bridges, mapSize } = loadMap();
 
 console.log("ramps", ramps);
+console.log("bridges", bridges);
 
-export { blocks, ramps, mapSize };
+export { blocks, ramps, bridges, mapSize };
