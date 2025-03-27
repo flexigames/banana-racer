@@ -51,8 +51,8 @@ x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
 x_____^^gggggggggggggggggg_______rrrrrrrrrrrrrrrrr^^_______x
-x_______>>>>>>>>>>>>>>>ggg________rrr<<<<<<<<<<<<<<<_______x
-x_______>>>>>>>>>>>>>>>ggg________rrr<<<<<<<<<<<<<<<_______x
+x_______>>>>>>>>>>>>>>>ggg_______rrrr<<<<<<<<<<<<<_________x
+x_______>>>>>>>>>>>>>>>ggg_______rrrr<<<<<<<<<<<<<_________x
 x__________________________________________________________x
 x__________________________________________________________x
 x__________________________________________________________x
@@ -120,7 +120,13 @@ export function loadMap(): MapData {
     mapRows.forEach((mapRow, rowIndex) => {
       Array.from(mapRow).forEach((mapCell, columnIndex) => {
         if (!visited.has(`${rowIndex},${columnIndex}`)) {
-          if (mapCell === "x" || mapCell === "r" || mapCell === "g" || mapCell === "b" || mapCell === "y") {
+          if (
+            mapCell === "x" ||
+            mapCell === "r" ||
+            mapCell === "g" ||
+            mapCell === "b" ||
+            mapCell === "y"
+          ) {
             let width = 0;
             while (
               columnIndex + width < mapRow.length &&
@@ -167,10 +173,16 @@ export function loadMap(): MapData {
                   y: 2,
                   z: height,
                 },
-                color: mapCell === "x" ? "gray" : 
-                       mapCell === "r" ? "red" : 
-                       mapCell === "g" ? "green" : 
-                       mapCell === "b" ? "blue" : "yellow"
+                color:
+                  mapCell === "x"
+                    ? "gray"
+                    : mapCell === "r"
+                    ? "red"
+                    : mapCell === "g"
+                    ? "green"
+                    : mapCell === "b"
+                    ? "blue"
+                    : "yellow",
               });
             }
           } else if (
@@ -285,7 +297,12 @@ export function loadMap(): MapData {
     return { blocks, ramps, bridges, mapSize };
   } catch (error) {
     console.error("Error loading map:", error);
-    return { blocks: [], ramps: [], bridges: [], mapSize: { width: 0, height: 0 } };
+    return {
+      blocks: [],
+      ramps: [],
+      bridges: [],
+      mapSize: { width: 0, height: 0 },
+    };
   }
 }
 
