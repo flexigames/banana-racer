@@ -276,28 +276,88 @@ const CarGame = () => {
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+      {isGameOver && <GameOver />}
       <Canvas>
+        {/* Always use follow camera */}
         <FollowCamera target={carRef} />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <Arena />
-        <Player ref={carRef} />
+
+        {/* Player position updater */}
         <PlayerUpdater carRef={carRef} />
+
+        {/* Basic lighting */}
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[10, 10, 5]} intensity={1} />
+
+        {/* Arena with walls and ground */}
+        <Arena />
+
+        {/* Player car */}
+        <Player
+          ref={carRef}
+          color={players[playerId]?.color}
+          vehicle={players[playerId]?.vehicle}
+        />
+
+        {/* Remote players */}
         {remotePlayers.map((player) => (
-          <RemotePlayer key={player.id} player={player} />
+          <RemotePlayer
+            key={player.id}
+            playerId={player.id}
+            position={player.position}
+            rotation={player.rotation}
+            speed={player.speed || 0}
+            color={player.color}
+            vehicle={player.vehicle}
+            lives={player.lives}
+          />
         ))}
+
+        {/* Bananas */}
         {bananas.map((banana) => (
-          <Banana key={banana.id} banana={banana} />
+          <Banana
+            key={banana.id}
+            position={banana.position}
+            rotation={banana.rotation}
+          />
         ))}
-        {fakeCubes.map((cube) => (
-          <FakeCube key={cube.id} cube={cube} />
+
+        {/* Fake Cubes */}
+        {fakeCubes.map((fakeCube) => (
+          <FakeCube
+            key={fakeCube.id}
+            position={[
+              fakeCube.position.x,
+              fakeCube.position.y,
+              fakeCube.position.z,
+            ]}
+            rotation={fakeCube.rotation}
+          />
         ))}
+
+        {/* Green Shells */}
         {greenShells.map((shell) => (
-          <GreenShell key={shell.id} shell={shell} />
+          <GreenShell
+            key={shell.id}
+            position={[
+              shell.position.x,
+              shell.position.y,
+              shell.position.z,
+            ]}
+            rotation={shell.rotation}
+          />
         ))}
-        {itemBoxes.map((box) => (
-          <ItemBox key={box.id} box={box} />
-        ))}
+
+        {/* Add item boxes */}
+        {itemBoxes.length > 0 ? (
+          itemBoxes.map((box) => (
+            <ItemBox key={box.id} position={box.position} />
+          ))
+        ) : (
+          <mesh position={[0, 5, 0]}>
+            <sphereGeometry args={[0.5, 16, 16]} />
+            <meshStandardMaterial color="red" />
+          </mesh>
+        )}
       </Canvas>
       <JoystickControl onMove={(x, y) => {
         if (carRef.current) {
@@ -305,7 +365,6 @@ const CarGame = () => {
           carRef.current.movement.turn = -x;
         }
       }} />
-      {isGameOver && <GameOver />}
 
       {/* Item instructions */}
       <div
