@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo } from "react";
 import { useModelWithMaterials } from "../lib/loaders";
 import Balloons from "./Balloons";
+import WebcamTexture from "./WebcamTexture";
+
 const Car = ({
   vehicleType = "vehicle-racer",
   color = null,
@@ -77,6 +79,7 @@ const Car = ({
     <group>
       <primitive object={clonedModel} scale={scale} rotation={rotation} />
       <Balloons color={color} lives={lives} />
+      <WebcamTexture />
 
       {/* Show boost visual effect when boosting */}
       {boosting && (
