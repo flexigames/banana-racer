@@ -26,8 +26,9 @@ const FollowCamera = ({ target }) => {
     const isSpinningOut = target.current.isSpinningOut?.();
 
     if (!isSpinningOut) {
-      // Only update camera position if the car is not spinning out
-
+      // Get car's current speed for adaptive camera behavior
+      const carSpeed = target.current.speed || 0;
+      
       // Update target position from the car
       targetPosition.current.set(
         target.current.position.x,
@@ -36,24 +37,37 @@ const FollowCamera = ({ target }) => {
       );
 
       // Calculate camera position: behind and above the car
-      // Get car's forward direction (negative Z axis rotated by car's Y rotation)
       const carRotation = target.current.rotation.y;
-      const distance = 1;
-      const height = 0.7;
+      
+      // Adaptive distance and height based on speed
+      const baseDistance = 1;
+      const baseHeight = 0.7;
+      const speedFactor = Math.min(Math.abs(carSpeed) / 10, 1); // Normalize speed to 0-1
+      const distance = baseDistance * (1 + speedFactor * 0.5); // Increase distance at high speeds
+      const height = baseHeight * (1 + speedFactor * 0.3); // Increase height at high speeds
 
       // Calculate position behind the car based on its rotation
       const offsetX = Math.sin(carRotation) * distance;
       const offsetZ = Math.cos(carRotation) * distance;
 
-      // Position camera behind and above the car
+      // Add predictive positioning based on speed
+      const predictionFactor = Math.min(Math.abs(carSpeed) / 20, 0.3); // Max 30% prediction
+      const forwardX = Math.sin(carRotation);
+      const forwardZ = Math.cos(carRotation);
+      
+      // Position camera behind and above the car with prediction
       position.current.set(
-        targetPosition.current.x - offsetX,
+        targetPosition.current.x - offsetX + (forwardX * predictionFactor),
         targetPosition.current.y + height,
-        targetPosition.current.z - offsetZ
+        targetPosition.current.z - offsetZ + (forwardZ * predictionFactor)
       );
 
-      // Update camera position with smooth interpolation
-      cameraRef.current.position.lerp(position.current, 0.15);
+      // Adaptive smoothing based on speed
+      const baseLerpFactor = 0.15;
+      const speedLerpFactor = Math.max(baseLerpFactor, Math.min(carSpeed / 20, 0.3));
+      
+      // Update camera position with adaptive smoothing
+      cameraRef.current.position.lerp(position.current, speedLerpFactor);
 
       // Store the last valid camera position (before any spinout)
       lastValidPosition.current.copy(cameraRef.current.position);

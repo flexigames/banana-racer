@@ -21,23 +21,31 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
   const deceleration = 0.1; // Adjusted from 0.15
 
   // Base turn speed and speed-dependent factors
-  const baseTurnSpeed = 0.08; // Higher base turn speed
-  const minTurnSpeed = 0.04; // Minimum turn speed at max velocity
+  const baseTurnSpeed = 0.06; // Reduced from 0.08 for smoother turning
+  const minTurnSpeed = 0.03; // Reduced from 0.04 for smoother high-speed turns
+  
+  // Add movement smoothing
+  if (!movement.smoothedSpeed) movement.smoothedSpeed = movement.speed;
+  if (!movement.smoothedTurn) movement.smoothedTurn = movement.turn;
+  
+  // Smoothly interpolate speed and turn values
+  const speedSmoothFactor = 0.2;
+  const turnSmoothFactor = 0.15;
+  movement.smoothedSpeed = movement.smoothedSpeed + (movement.speed - movement.smoothedSpeed) * speedSmoothFactor;
+  movement.smoothedTurn = movement.smoothedTurn + (movement.turn - movement.smoothedTurn) * turnSmoothFactor;
 
   // Update speed based on input
   if (movement.forward > 0) {
-    // Accelerating forward
-    movement.speed += movement.forward * acceleration;
+    // Accelerating forward with smoothing
+    movement.speed += movement.forward * acceleration * (1 + 0.2 * Math.abs(movement.smoothedTurn));
   } else if (movement.forward < 0) {
     if (movement.speed > 0.5) {
-      // Reduced threshold from 1
       // Only allow braking if not boosting
       if (boostFactor === 1.0) {
-        movement.speed -= braking;
+        movement.speed -= braking * (1 - 0.3 * Math.abs(movement.smoothedTurn));
       }
     } else if (boostFactor === 1.0) {
       // Only allow reverse if not boosting
-      // Accelerating in reverse
       movement.speed += movement.forward * acceleration * 0.7;
     }
   } else {
@@ -45,7 +53,7 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
     if (boostFactor === 1.0) {
       if (movement.speed > 0) {
         // Apply stronger deceleration when not accelerating
-        movement.speed -= deceleration;
+        movement.speed -= deceleration * (1 - 0.2 * Math.abs(movement.smoothedTurn));
       } else if (movement.speed < 0) {
         movement.speed += deceleration;
       }
@@ -62,26 +70,23 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
     movement.speed = Math.max(movement.speed, minBoostSpeed);
   }
 
-  // Clamp speed
+  // Clamp speed with smoothing
   movement.speed = Math.max(
     Math.min(movement.speed, maxSpeed),
     -maxReverseSpeed
   );
 
-  // Update rotation based on speed and turning input
-  if (Math.abs(movement.speed) > 0.1) {
-    // Calculate speed ratio (0 to 1)
-    const speedRatio = Math.abs(movement.speed) / maxSpeed;
+  // Update rotation based on speed and turning input with improved smoothing
+  if (Math.abs(movement.smoothedSpeed) > 0.1) {
+    // Calculate speed ratio (0 to 1) with smoothing
+    const speedRatio = Math.abs(movement.smoothedSpeed) / maxSpeed;
 
-    // Calculate turn speed based on current speed
-    // - At low speeds: use baseTurnSpeed for tight turning
-    // - At high speeds: reduce to minTurnSpeed for stability
-    const currentTurnSpeed =
-      baseTurnSpeed - speedRatio * (baseTurnSpeed - minTurnSpeed);
+    // Calculate turn speed based on current speed with improved curve
+    const turnSpeedCurve = Math.pow(1 - speedRatio, 1.5); // More gradual reduction at high speeds
+    const currentTurnSpeed = baseTurnSpeed * turnSpeedCurve + minTurnSpeed;
 
-    // Apply turning with speed-dependent turn rate
-    movement.rotation +=
-      movement.turn * currentTurnSpeed * Math.sign(movement.speed);
+    // Apply turning with smoothed values
+    movement.rotation += movement.smoothedTurn * currentTurnSpeed * Math.sign(movement.smoothedSpeed);
   }
 
   return movement;
