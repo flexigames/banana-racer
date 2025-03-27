@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { SKYBOX_TEXTURE, GROUND_TEXTURE, createWallTexture } from "../lib/textures";
+import {
+  SKYBOX_TEXTURE,
+  GROUND_TEXTURE,
+  createWallTexture,
+  createBlockFloorTexture,
+} from "../lib/textures";
 import { blocks, ramps, bridges, mapSize } from "../lib/map";
 import Bridge from "./Bridge";
 
@@ -27,12 +32,36 @@ const Arena = () => {
       if (blockRefs.current[index]) {
         // Create an array of materials for each face
         const materials = [
-          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // right
-          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // left
-          new THREE.MeshStandardMaterial({ color: "#808080", roughness: 0.7, metalness: 0.2 }), // top
-          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // bottom
-          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // front
-          new THREE.MeshStandardMaterial({ map: createWallTexture(block.color).clone(), roughness: 0.7, metalness: 0.2 }), // back
+          new THREE.MeshStandardMaterial({
+            map: createWallTexture(block.color).clone(),
+            roughness: 0.7,
+            metalness: 0.2,
+          }), // right
+          new THREE.MeshStandardMaterial({
+            map: createWallTexture(block.color).clone(),
+            roughness: 0.7,
+            metalness: 0.2,
+          }), // left
+          new THREE.MeshStandardMaterial({
+            map: createBlockFloorTexture().clone(),
+            roughness: 1,
+            metalness: 0,
+          }), // top
+          new THREE.MeshStandardMaterial({
+            map: createWallTexture(block.color).clone(),
+            roughness: 0.7,
+            metalness: 0.2,
+          }), // bottom
+          new THREE.MeshStandardMaterial({
+            map: createWallTexture(block.color).clone(),
+            roughness: 0.7,
+            metalness: 0.2,
+          }), // front
+          new THREE.MeshStandardMaterial({
+            map: createWallTexture(block.color).clone(),
+            roughness: 0.7,
+            metalness: 0.2,
+          }), // back
         ];
 
         // Calculate repeats based on block dimensions divided by standard texture size
@@ -48,7 +77,7 @@ const Arena = () => {
         materials[5].map.repeat.set(xRepeats, yRepeats); // back
 
         // Enable texture wrapping
-        materials.forEach(material => {
+        materials.forEach((material) => {
           if (material.map) {
             material.map.wrapS = THREE.RepeatWrapping;
             material.map.wrapT = THREE.RepeatWrapping;
@@ -86,7 +115,11 @@ const Arena = () => {
         <mesh
           key={index}
           ref={(el) => (blockRefs.current[index] = el)}
-          position={[block.position.x, block.position.y + block.size.y / 2, block.position.z]}
+          position={[
+            block.position.x,
+            block.position.y + block.size.y / 2,
+            block.position.z,
+          ]}
           scale={[block.size.x, block.size.y, block.size.z]}
         >
           <boxGeometry />

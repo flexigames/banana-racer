@@ -16,6 +16,24 @@ export function getBlockMaterial(color) {
   return blockMaterials[color] || blockMaterials.gray;
 }
 
+
+export function createBlockFloorTexture() {
+  const cacheKey = `block_floor`;
+  if (textureCache.has(cacheKey)) {
+    return textureCache.get(cacheKey);
+  }
+
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load("/banana-racer/textures/block_floor.png");
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(8, 8);
+  texture.encoding = THREE.sRGBEncoding;
+  texture.colorSpace = "srgb";
+  textureCache.set(cacheKey, texture);
+  return texture;
+}
+
 export function createWallTexture(color) {
   const cacheKey = `wall_${color}`;
   if (textureCache.has(cacheKey)) {
