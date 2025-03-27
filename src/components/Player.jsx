@@ -112,7 +112,11 @@ const Player = forwardRef((props, ref) => {
       movement.current.speed *= 0.9;
     } else {
       spinProgress.current = 0;
-      updateVehiclePhysics(movement.current, delta, isBoosted ? 3.0 : 1.0);
+      try {
+        updateVehiclePhysics(movement.current, delta, isBoosted ? 2.5 : 1.0);
+      } catch (error) {
+        console.error("Error updating vehicle physics:", error);
+      }
       updateObjectPosition(car.current, movement.current, delta);
     }
 

@@ -23,21 +23,28 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
   // Base turn speed and speed-dependent factors
   const baseTurnSpeed = 0.06; // Reduced from 0.08 for smoother turning
   const minTurnSpeed = 0.03; // Reduced from 0.04 for smoother high-speed turns
-  
+
   // Add movement smoothing
   if (!movement.smoothedSpeed) movement.smoothedSpeed = movement.speed;
   if (!movement.smoothedTurn) movement.smoothedTurn = movement.turn;
-  
+
   // Smoothly interpolate speed and turn values
   const speedSmoothFactor = 0.2;
   const turnSmoothFactor = 0.15;
-  movement.smoothedSpeed = movement.smoothedSpeed + (movement.speed - movement.smoothedSpeed) * speedSmoothFactor;
-  movement.smoothedTurn = movement.smoothedTurn + (movement.turn - movement.smoothedTurn) * turnSmoothFactor;
+  movement.smoothedSpeed =
+    movement.smoothedSpeed +
+    (movement.speed - movement.smoothedSpeed) * speedSmoothFactor;
+  movement.smoothedTurn =
+    movement.smoothedTurn +
+    (movement.turn - movement.smoothedTurn) * turnSmoothFactor;
 
   // Update speed based on input
   if (movement.forward > 0) {
     // Accelerating forward with smoothing
-    movement.speed += movement.forward * acceleration * (1 + 0.2 * Math.abs(movement.smoothedTurn));
+    movement.speed +=
+      movement.forward *
+      acceleration *
+      (1 + 0.2 * Math.abs(movement.smoothedTurn));
   } else if (movement.forward < 0) {
     if (movement.speed > 0.5) {
       // Only allow braking if not boosting
@@ -53,7 +60,8 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
     if (boostFactor === 1.0) {
       if (movement.speed > 0) {
         // Apply stronger deceleration when not accelerating
-        movement.speed -= deceleration * (1 - 0.2 * Math.abs(movement.smoothedTurn));
+        movement.speed -=
+          deceleration * (1 - 0.2 * Math.abs(movement.smoothedTurn));
       } else if (movement.speed < 0) {
         movement.speed += deceleration;
       }
@@ -65,9 +73,13 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
     }
   }
 
-  // Enforce minimum speed when boosting
+  // Handle boost transition
   if (boostFactor > 1.0) {
+    // When boosting, ensure minimum speed
     movement.speed = Math.max(movement.speed, minBoostSpeed);
+  } else if (boostFactor === 1.0 && movement.speed > maxSpeed) {
+    // When boost ends, smoothly reduce speed to normal max
+    movement.speed = Math.max(movement.speed - deceleration, maxSpeed);
   }
 
   // Clamp speed with smoothing
@@ -78,15 +90,21 @@ export const updateVehiclePhysics = (movement, delta, boostFactor = 1.0) => {
 
   // Update rotation based on speed and turning input with improved smoothing
   if (Math.abs(movement.smoothedSpeed) > 0.1) {
-    // Calculate speed ratio (0 to 1) with smoothing
-    const speedRatio = Math.abs(movement.smoothedSpeed) / maxSpeed;
+    // Calculate speed ratio (0 to 1) with smoothing and ensure it's not negative
+    const speedRatio = Math.max(
+      0,
+      Math.min(1, Math.abs(movement.smoothedSpeed) / maxSpeed)
+    );
 
     // Calculate turn speed based on current speed with improved curve
     const turnSpeedCurve = Math.pow(1 - speedRatio, 1.5); // More gradual reduction at high speeds
     const currentTurnSpeed = baseTurnSpeed * turnSpeedCurve + minTurnSpeed;
 
     // Apply turning with smoothed values
-    movement.rotation += movement.smoothedTurn * currentTurnSpeed * Math.sign(movement.smoothedSpeed);
+    movement.rotation +=
+      movement.smoothedTurn *
+      currentTurnSpeed *
+      Math.sign(movement.smoothedSpeed);
   }
 
   return movement;
@@ -426,13 +444,15 @@ export const updateObjectPosition = (object, movement, delta) => {
     // Smoothly transition down the ramp
     const transitionSpeed = 5.0; // Adjust this value to control how quickly we follow the ramp
     const targetY = Math.max(0, targetHeight);
-    
+
     // Interpolate between current height and target height
-    object.position.y = object.position.y + (targetY - object.position.y) * Math.min(1, transitionSpeed * delta);
-    
+    object.position.y =
+      object.position.y +
+      (targetY - object.position.y) * Math.min(1, transitionSpeed * delta);
+
     // Reset vertical velocity when on a ramp to prevent bouncing
     movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
-  } 
+  }
   // Check if we've hit the ground
   else if (newHeight <= targetHeight) {
     // We've hit the ground
@@ -450,10 +470,10 @@ export const updateObjectPosition = (object, movement, delta) => {
   if (underBridge) {
     // Ensure we stay at ground level when under a bridge
     object.position.y = 0;
-    
+
     // Prevent any upward movement when under a bridge
     movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
-    
+
     // Check if we're colliding with blocks while under a bridge
     for (const block of blocks) {
       const blockHalfWidth = block.size.x / 2;
@@ -471,11 +491,15 @@ export const updateObjectPosition = (object, movement, delta) => {
         const penetrationZ = blockHalfDepth + carRadius - Math.abs(relativeZ);
 
         if (penetrationX < penetrationZ) {
-          object.position.x = block.position.x + (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
+          object.position.x =
+            block.position.x +
+            (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
         } else {
-          object.position.z = block.position.z + (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+          object.position.z =
+            block.position.z +
+            (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
         }
-        
+
         // Reduce speed when hitting walls under bridge
         movement.speed *= 0.9;
         break;
