@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
-import { blocks, ramps, mapSize } from "./map";
+import { blocks, ramps, bridges, mapSize } from "./map";
 
 const PORT = process.env.PORT || 8080;
 const httpServer = createServer();
@@ -167,8 +167,14 @@ function calculateHeightAtPosition(x: number, z: number): number {
       rampLength = scaleZ;
     }
 
+    // Add extra width to make ramps wider in the perpendicular direction
+    const carRadius = 0.2;
+    const extraWidth = carRadius;
+    const effectiveRampWidth = rampWidth * (1 + extraWidth);
+
     // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
-    const normalizedX = rotatedX / rampWidth;
+    // For width dimension, use the expanded width
+    const normalizedX = rotatedX / effectiveRampWidth;
     const normalizedZ = rotatedZ / rampLength;
 
     // Check if point is within ramp bounds
@@ -181,14 +187,105 @@ function calculateHeightAtPosition(x: number, z: number): number {
       // Calculate height based on position on ramp
       // The slope always goes from back to front in local coordinates
       const heightPercentage = 0.5 - normalizedZ;
-      const height = 0 + heightPercentage * scaleY;
+      const height = heightPercentage * scaleY;
 
       return height;
     }
   }
 
-  // Not on any ramp or block
+  // Check bridges
+  for (const bridge of bridges) {
+    const bridgeX = bridge.position[0];
+    const bridgeY = bridge.position[1];
+    const bridgeZ = bridge.position[2];
+    const rotation = bridge.rotation || 0;
+    const scale = bridge.scale || [1, 1, 1];
+
+    // Bridge dimensions
+    const bridgeWidth = scale[0];
+    const bridgeHeight = 0.1; // Height of the bridge walkway
+    const bridgeLength = scale[2];
+
+    // Convert to bridge's local coordinates
+    const localX = x - bridgeX;
+    const localZ = z - bridgeZ;
+
+    // Rotate to align with bridge orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+
+    // Check if point is within bridge bounds
+    // For vertical bridges (rotation ~= PI/2), swap width and length
+    const isVertical =
+      Math.abs(rotation) === Math.PI / 2 ||
+      Math.abs(rotation) === (3 * Math.PI) / 2;
+    const effectiveWidth = isVertical ? bridgeLength : bridgeWidth;
+    const effectiveLength = isVertical ? bridgeWidth : bridgeLength;
+
+    if (
+      Math.abs(rotatedX) <= effectiveWidth / 2 &&
+      Math.abs(rotatedZ) <= effectiveLength / 2
+    ) {
+      // Bridge height is at bridgeY + 1
+      return bridgeY + 1;
+    }
+  }
+
+  // Not on any ramp, block, or bridge
   return 0;
+}
+
+/**
+ * Check if a position is under a bridge
+ * @param x - X position to check
+ * @param z - Z position to check
+ * @param y - Y position to check
+ * @returns Whether the position is under a bridge
+ */
+function isUnderBridge(x: number, z: number, y: number): boolean {
+  for (const bridge of bridges) {
+    const bridgeX = bridge.position[0];
+    const bridgeY = bridge.position[1];
+    const bridgeZ = bridge.position[2];
+    const rotation = bridge.rotation || 0;
+    const scale = bridge.scale || [1, 1, 1];
+
+    // Bridge dimensions
+    const bridgeWidth = scale[0];
+    const bridgeLength = scale[2];
+
+    // Convert to bridge's local coordinates
+    const localX = x - bridgeX;
+    const localZ = z - bridgeZ;
+
+    // Rotate to align with bridge orientation
+    const cosRot = Math.cos(-rotation);
+    const sinRot = Math.sin(-rotation);
+    const rotatedX = localX * cosRot - localZ * sinRot;
+    const rotatedZ = localX * sinRot + localZ * cosRot;
+
+    // Check if point is within bridge bounds horizontally and below bridge vertically
+    // For vertical bridges (rotation ~= PI/2), swap width and length
+    const isVertical =
+      Math.abs(rotation) === Math.PI / 2 ||
+      Math.abs(rotation) === (3 * Math.PI) / 2;
+    const effectiveWidth = isVertical ? bridgeLength : bridgeWidth;
+    const effectiveLength = isVertical ? bridgeWidth : bridgeLength;
+
+    // Allow driving under bridge if the vertical distance is sufficient
+    const verticalClearance = 0.01; // Minimum clearance needed to drive under
+    if (
+      Math.abs(rotatedX) <= effectiveWidth / 2 &&
+      Math.abs(rotatedZ) <= effectiveLength / 2 &&
+      y < bridgeY - verticalClearance // Check if there's enough clearance
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function updatePlayerPosition(
@@ -252,6 +349,7 @@ function dropGreenShell(
     droppedBy: playerId,
     droppedAt: Date.now(),
     bounces: 0,
+    verticalVelocity: 0,
   };
 
   gameState.greenShells[shellId] = shell;
@@ -410,6 +508,7 @@ function updateGreenShells(): void {
   const MAX_SHELL_AGE = 10000; // 10 seconds
   const gravity = 9.8; // Gravity acceleration in m/s²
   const terminalVelocity = 20; // Maximum falling speed
+  const carRadius = 0.2; // Approximate car collision radius
 
   // For each green shell
   Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
@@ -449,10 +548,12 @@ function updateGreenShells(): void {
 
     let bounced = false;
 
+    // Check if we're under a bridge
+    const underBridge = isUnderBridge(newPosition.x, newPosition.z, shell.position.y);
     const isHighEnough = shell.position.y > 2 - 0.25;
 
     // Check battle block collisions
-    if (!isHighEnough) {
+    if (!isHighEnough && !underBridge) {
       for (const block of blocks) {
         const blockHalfWidth = block.size.x / 2;
         const blockHalfDepth = block.size.z / 2;
@@ -492,7 +593,12 @@ function updateGreenShells(): void {
 
     // Calculate target height based on terrain
     const nextHeight = calculateHeightAtPosition(newPosition.x, newPosition.z);
-    if (newHeightBasedOnGravity <= nextHeight) {
+    
+    if (underBridge) {
+      // If under a bridge, keep the shell at ground level
+      newPosition.y = 0;
+      shell.verticalVelocity = 0;
+    } else if (newHeightBasedOnGravity <= nextHeight) {
       const delta = nextHeight - newHeightBasedOnGravity;
       if (delta < 0.2) {
         newPosition.y = nextHeight;
