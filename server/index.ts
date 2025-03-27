@@ -310,11 +310,15 @@ function dropItem(
 ): void {
   const itemId =
     itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
+
+  const underBridge = isUnderBridge(data.position.x, data.position.z, data.position.y);
+  const heightAtPosition = calculateHeightAtPosition(data.position.x, data.position.z);
+  
   const item = {
     id: itemId,
     position: {
       ...data.position,
-      y: calculateHeightAtPosition(data.position.x, data.position.z),
+      y: underBridge ? data.position.y : heightAtPosition,
     },
     rotation: data.rotation || 0,
     droppedBy: playerId,
@@ -337,11 +341,15 @@ function dropGreenShell(
   data: { position: Position; rotation: number }
 ): void {
   const shellId = generateGreenShellId();
+
+  const underBridge = isUnderBridge(data.position.x, data.position.z, data.position.y);
+  const heightAtPosition = calculateHeightAtPosition(data.position.x, data.position.z);
+
   const shell = {
     id: shellId,
     position: {
       ...data.position,
-      y: calculateHeightAtPosition(data.position.x, data.position.z),
+      y: underBridge ? data.position.y : heightAtPosition,
     },
     rotation: data.rotation,
     direction: data.rotation,
@@ -452,8 +460,9 @@ function checkCollision(
   radius: number
 ): boolean {
   const dx = pos1.x - pos2.x;
+  const dy = pos1.y - pos2.y;
   const dz = pos1.z - pos2.z;
-  return Math.sqrt(dx * dx + dz * dz) < radius;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz) < radius;
 }
 
 function handleCollisions(): void {
@@ -523,6 +532,20 @@ function updateGreenShells(): void {
     // Check if shell is too old
     if (now - shell.droppedAt > MAX_SHELL_AGE) {
       greenShellsToRemove.push(shellId);
+      return;
+    }
+
+    // Check collisions with bananas
+    Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
+      if (checkCollision(shell.position, banana.position, 0.9)) {
+        greenShellsToRemove.push(shellId);
+        removeItem(gameState.bananas, bananaId);
+        return;
+      }
+    });
+
+    // If shell was destroyed by banana, skip the rest
+    if (greenShellsToRemove.includes(shellId)) {
       return;
     }
 
