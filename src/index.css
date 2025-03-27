@@ -62,3 +62,15 @@ body {
 }
 
 /* Remove the collision toggle styles that are no longer needed */
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}

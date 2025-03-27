@@ -256,7 +256,7 @@ export const MultiplayerProvider = ({ children }) => {
     itemBoxes,
     fakeCubes,
     greenShells,
-    updatePlayerPosition,
+      updatePlayerPosition,
     useItem,
     hitBanana,
     hitFakeCube,

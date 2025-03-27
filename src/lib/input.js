@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
- * Hook to handle keyboard input for vehicle control
+ * Hook to handle keyboard and joystick input for vehicle control
  * @param {Object} movementRef - Reference to movement state
  */
 export const useVehicleControls = (movementRef) => {
+  const joystickInput = useRef({ x: 0, y: 0 });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       switch (e.key) {
@@ -71,4 +73,13 @@ export const useVehicleControls = (movementRef) => {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [movementRef]);
+
+  // Function to update movement based on joystick input
+  const updateJoystickInput = (x, y) => {
+    joystickInput.current = { x, y };
+    movementRef.current.forward = y;
+    movementRef.current.turn = x;
+  };
+
+  return { updateJoystickInput };
 }; 
