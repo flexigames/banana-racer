@@ -1,25 +1,27 @@
 import * as THREE from "three";
 
-function adjustColor(color, amount) {
-  const hex = color.replace("#", "");
-  const r = Math.max(
-    0,
-    Math.min(255, parseInt(hex.substring(0, 2), 16) + amount)
-  );
-  const g = Math.max(
-    0,
-    Math.min(255, parseInt(hex.substring(2, 4), 16) + amount)
-  );
-  const b = Math.max(
-    0,
-    Math.min(255, parseInt(hex.substring(4, 6), 16) + amount)
-  );
-  return `#${r.toString(16).padStart(2, "0")}${g
-    .toString(16)
-    .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+// Simple colored materials for blocks
+const blockMaterials = {
+  gray: new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.7, metalness: 0.2 }),
+  red: new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.7, metalness: 0.2 }),
+  green: new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.7, metalness: 0.2 }),
+  blue: new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.7, metalness: 0.2 }),
+  yellow: new THREE.MeshStandardMaterial({ color: 0xffff00, roughness: 0.7, metalness: 0.2 })
+};
+
+// Cache for loaded textures
+const textureCache = new Map();
+
+export function getBlockMaterial(color) {
+  return blockMaterials[color] || blockMaterials.gray;
 }
 
 export function createWallTexture(color) {
+  const cacheKey = `wall_${color}`;
+  if (textureCache.has(cacheKey)) {
+    return textureCache.get(cacheKey);
+  }
+
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load(color ? `/banana-racer/textures/wall_${color}.png` : `/banana-racer/textures/wall.png`);
   texture.wrapS = THREE.RepeatWrapping;
@@ -27,6 +29,8 @@ export function createWallTexture(color) {
   texture.repeat.set(2, 2);
   texture.encoding = THREE.sRGBEncoding;
   texture.colorSpace = "srgb";
+  
+  textureCache.set(cacheKey, texture);
   return texture;
 }
 
@@ -114,10 +118,14 @@ export const BLOCK_COLORS = [
   "#FF1493", // Deep Pink
 ];
 
-
 // Create and export constant textures
 export const SKYBOX_TEXTURE = createSkyboxTexture();
 export const GROUND_TEXTURE = createGroundTexture();
 
-// Export functions for dynamic texture creation
-export { adjustColor };
+// Preload textures in the background
+export function preloadTextures() {
+  const colors = ['red', 'green', 'blue', 'yellow', 'gray'];
+  colors.forEach(color => {
+    createWallTexture(color);
+  });
+}

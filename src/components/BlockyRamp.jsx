@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import * as THREE from "three";
-import { BLOCK_TEXTURES } from "../lib/textures";
-import { BLOCK_COLORS } from "../lib/textures";
+import { getBlockMaterial } from "../lib/textures";
 
 function BlockyRamp({ position = [0, 0, 0], rotation = 0, scale = [4, 2, 8] }) {
   // Create a simple blocky ramp shape using a custom geometry
@@ -93,14 +92,7 @@ function BlockyRamp({ position = [0, 0, 0], rotation = 0, scale = [4, 2, 8] }) {
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh geometry={rampGeometry} scale={scale}>
-        <meshStandardMaterial
-          color={BLOCK_COLORS[2]}
-          roughness={0.5}
-          metalness={0.3}
-          emissive={BLOCK_COLORS[2]}
-          emissiveIntensity={0.2}
-          map={BLOCK_TEXTURES[2]}
-        />
+        <primitive object={getBlockMaterial('gray')} />
       </mesh>
     </group>
   );
