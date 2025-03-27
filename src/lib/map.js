@@ -142,8 +142,8 @@ export function loadMap() {
             mapCell === "^"
           ) {
             // Check for consecutive ramp symbols
-            let width = 1;
-            let length = 1;
+            let width = 0;
+            let height = 0;
 
             // Check horizontal consecutive symbols
             while (
@@ -151,37 +151,44 @@ export function loadMap() {
               mapRow[columnIndex + width] === mapCell &&
               !visited.has(`${rowIndex},${columnIndex + width}`)
             ) {
-              visited.add(`${rowIndex},${columnIndex + width}`);
               width++;
             }
 
             // Check vertical consecutive symbols
             while (
-              rowIndex + length < mapRows.length &&
-              mapRows[rowIndex + length][columnIndex] === mapCell &&
-              !visited.has(`${rowIndex + length},${columnIndex}`)
+              rowIndex + height < mapRows.length &&
+              rowIndex + height < mapRows.length &&
+              mapRows[rowIndex + height][columnIndex] === mapCell &&
+              !visited.has(`${rowIndex + height},${columnIndex}`)
             ) {
-              visited.add(`${rowIndex + length},${columnIndex}`);
-              length++;
+              height++;
             }
 
-            visited.add(`${rowIndex},${columnIndex}`);
+            // Mark all cells in the ramp as visited
+            for (let h = 0; h < height; h++) {
+              for (let w = 0; w < width; w++) {
+                visited.add(`${rowIndex + h},${columnIndex + w}`);
+              }
+            }
 
-            let direction = 0;
-            if (mapCell === ">") direction = 0;
-            else if (mapCell === "<") direction = Math.PI;
-            else if (mapCell === "v") direction = -Math.PI / 2;
-            else if (mapCell === "^") direction = Math.PI / 2;
+            // Only create a ramp if we have valid dimensions
+            if (width > 0 && height > 0) {
+              let direction = 0;
+              if (mapCell === ">") direction = 0;
+              else if (mapCell === "<") direction = Math.PI;
+              else if (mapCell === "v") direction = -Math.PI / 2;
+              else if (mapCell === "^") direction = Math.PI / 2;
 
-            ramps.push({
-              position: [
-                columnIndex - halfWidth + width / 2 - 0.5,
-                0,
-                rowIndex - halfHeight + length / 2 - 0.5,
-              ],
-              rotation: direction,
-              scale: [width, 2, length],
-            });
+              ramps.push({
+                position: [
+                  columnIndex - halfWidth + width / 2 - 0.5,
+                  0,
+                  rowIndex - halfHeight + height / 2 - 0.5,
+                ],
+                rotation: direction,
+                scale: [width, 2, height],
+              });
+            }
           } else if (mapCell === "=") {
             // Handle bridge symbols (both horizontal and vertical)
             // For horizontal bridges
