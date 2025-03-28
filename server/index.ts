@@ -26,6 +26,14 @@ const VEHICLE_MODELS = [
   "vehicle-speedster",
 ];
 
+const ITEM_PROBABILITIES = {
+  [ITEM_TYPES.BANANA]: 10,
+  [ITEM_TYPES.BOOST]: 2,
+  [ITEM_TYPES.FAKE_CUBE]: 2,
+  [ITEM_TYPES.GREEN_SHELL]: 10,
+  [ITEM_TYPES.STAR]: 1,
+};
+
 const gameState: GameState = {
   players: {},
   bananas: {},
@@ -522,25 +530,17 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
 
   setTimeout(() => {
     if (gameState.players[playerId]) {
-      const random = Math.random();
-      let itemType: string;
+      const totalProbability = Object.values(ITEM_PROBABILITIES).reduce((a, b) => a + b, 0);
+      let random = Math.random() * totalProbability;
+      let itemType = ITEM_TYPES.BANANA; // Default to banana if something goes wrong
       let quantity = 1;
 
-      if (random < 0.3) {
-        itemType = ITEM_TYPES.BANANA;
-        quantity = 1; // Bananas are always x1
-      } else if (random < 0.5) {
-        itemType = ITEM_TYPES.BOOST;
-        quantity = 1;
-      } else if (random < 0.7) {
-        itemType = ITEM_TYPES.FAKE_CUBE;
-        quantity = 1; // Fake cubes are always x1
-      } else if (random < 0.9) {
-        itemType = ITEM_TYPES.GREEN_SHELL;
-        quantity = 1;
-      } else {
-        itemType = ITEM_TYPES.STAR;
-        quantity = 1;
+      for (const [type, probability] of Object.entries(ITEM_PROBABILITIES)) {
+        if (random < probability) {
+          itemType = type;
+          break;
+        }
+        random -= probability;
       }
 
       gameState.players[playerId].item = {
