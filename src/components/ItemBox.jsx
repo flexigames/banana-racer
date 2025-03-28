@@ -9,8 +9,8 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
 
   // Load the item box model
   const itemBoxModel = useModelWithMaterials(
-    "/banana-racer/assets/item-box.obj",
-    "/banana-racer/assets/item-box.mtl"
+    "/assets/item-box.obj",
+    "/assets/item-box.mtl"
   );
 
   // Create rainbow shader material

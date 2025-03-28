@@ -8,7 +8,7 @@ import React, {
 import { io } from "socket.io-client";
 
 const LOCAL_SERVER_URL = "http://localhost:8080";
-const REMOTE_SERVER_URL = "https://banana-racer.onrender.com";
+const REMOTE_SERVER_URL = "https:/.onrender.com";
 
 // Create the context
 const MultiplayerContext = createContext({

@@ -40,8 +40,8 @@ const Car = ({
 
   // Load the vehicle model based on the vehicle type
   const vehicleModel = useModelWithMaterials(
-    `/banana-racer/assets/${modelName}.obj`,
-    `/banana-racer/assets/${modelName}.mtl`
+    `/assets/${modelName}.obj`,
+    `/assets/${modelName}.mtl`
   );
 
   // Create star shader material

@@ -10,11 +10,11 @@ const Banana = ({ position, rotation, onExpire }) => {
   // Load the banana model
   const materials = useLoader(
     MTLLoader,
-    "/banana-racer/assets/item-banana.mtl"
+    "/assets/item-banana.mtl"
   );
   const bananaModel = useLoader(
     OBJLoader,
-    "/banana-racer/assets/item-banana.obj",
+    "/assets/item-banana.obj",
     (loader) => {
       materials.preload();
       loader.setMaterials(materials);

@@ -181,13 +181,13 @@ const CarGame = () => {
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const spinSpeed = 50;
   const possibleItems = [
-    "/banana-racer/icons/icon-banana.png",
-    "/banana-racer/icons/icon-boost.png",
-    "/banana-racer/icons/icon-cube.png",
-    "/banana-racer/icons/icon-shell.png",
-    "/banana-racer/icons/icon-star.png",
-    "/banana-racer/icons/icon-bananas.png",
-    "/banana-racer/icons/icon-shells.png",
+    "/icons/icon-banana.png",
+    "/icons/icon-boost.png",
+    "/icons/icon-cube.png",
+    "/icons/icon-shell.png",
+    "/icons/icon-star.png",
+    "/icons/icon-bananas.png",
+    "/icons/icon-shells.png",
   ];
 
   // Get remote players (all players except current player)
@@ -254,7 +254,7 @@ const CarGame = () => {
       case "banana":
         return (
           <img
-            src="/banana-racer/icons/icon-banana.png"
+            src="/icons/icon-banana.png"
             alt="banana"
             style={{ width: "240px", height: "240px" }}
           />
@@ -262,7 +262,7 @@ const CarGame = () => {
       case "boost":
         return (
           <img
-            src="/banana-racer/icons/icon-boost.png"
+            src="/icons/icon-boost.png"
             alt="boost"
             style={{ width: "240px", height: "240px" }}
           />
@@ -270,7 +270,7 @@ const CarGame = () => {
       case "fake_cube":
         return (
           <img
-            src="/banana-racer/icons/icon-cube.png"
+            src="/icons/icon-cube.png"
             alt="cube"
             style={{ width: "240px", height: "240px" }}
           />
@@ -278,7 +278,7 @@ const CarGame = () => {
       case "green_shell":
         return (
           <img
-            src="/banana-racer/icons/icon-shell.png"
+            src="/icons/icon-shell.png"
             alt="shell"
             style={{ width: "240px", height: "240px" }}
           />
@@ -286,7 +286,7 @@ const CarGame = () => {
       case "star":
         return (
           <img
-            src="/banana-racer/icons/icon-star.png"
+            src="/icons/icon-star.png"
             alt="star"
             style={{ width: "240px", height: "240px" }}
           />
@@ -294,7 +294,7 @@ const CarGame = () => {
       case "three_bananas":
         return (
           <img
-            src="/banana-racer/icons/icon-bananas.png"
+            src="/icons/icon-bananas.png"
             alt="three bananas"
             style={{ width: "240px", height: "240px" }}
           />
@@ -302,7 +302,7 @@ const CarGame = () => {
       case "three_green_shells":
         return (
           <img
-            src="/banana-racer/icons/icon-shells.png"
+            src="/icons/icon-shells.png"
             alt="three green shells"
             style={{ width: "240px", height: "240px" }}
           />

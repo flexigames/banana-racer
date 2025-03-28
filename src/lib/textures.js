@@ -24,7 +24,7 @@ export function createBlockFloorTexture() {
   }
 
   const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load("/banana-racer/textures/block_floor.png");
+  const texture = textureLoader.load("/textures/block_floor.png");
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(8, 8);
@@ -41,7 +41,7 @@ export function createWallTexture(color) {
   }
 
   const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load(color ? `/banana-racer/textures/wall_${color}.png` : `/banana-racer/textures/wall.png`);
+  const texture = textureLoader.load(color ? `/textures/wall_${color}.png` : `/textures/wall.png`);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(2, 2);
@@ -120,7 +120,7 @@ function createSkyboxTexture() {
 
 function createGroundTexture() {
   const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load("/banana-racer/textures/floor.png");
+  const texture = textureLoader.load("/textures/floor.png");
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.encoding = THREE.sRGBEncoding;
