@@ -465,11 +465,16 @@ function useItem(
       // Activate star power-up
       player.isStarred = true;
       const starDuration = 8000;
-      // Star power-up lasts for 10 seconds
+      // Star power-up lasts for 8 seconds
       setTimeout(() => {
         if (gameState.players[playerId]) {
-          gameState.players[playerId].isStarred = false;
-          // Reset spinning state when star wears off
+          const player = gameState.players[playerId];
+          player.isStarred = false;
+          // Ensure player is not in a spinning state when star wears off
+          player.isSpinning = false;
+          player.isItemSpinning = false;
+          // Reset any active items
+          player.activeItem = undefined;
         }
       }, starDuration);
     } else {

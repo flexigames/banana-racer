@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { starVertexShader, starFragmentShader } from "../shaders/star";
 
 const floatingOffsets = [0.7, 0.5, 0.6];
 
@@ -11,11 +12,32 @@ const balloonSpacing = 0.14;
 const balloonScale = 0.075;
 const balloonsVerticalOffset = 0.3;
 
-function Balloons({ color, lives }) {
+function Balloons({ color, lives, isStarred = false }) {
   const balloonsGroup = useRef();
+  const startTime = useRef(Date.now());
+
+  // Create star shader material
+  const starMaterial = useMemo(() => {
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        texture1: { value: new THREE.Texture() }, // Empty texture since we don't need it for balloons
+      },
+      vertexShader: starVertexShader,
+      fragmentShader: starFragmentShader,
+      transparent: false,
+    });
+    return material;
+  }, []);
 
   useFrame((state) => {
     if (!balloonsGroup.current) return;
+
+    // Update shader time if starred
+    if (isStarred && starMaterial) {
+      const elapsed = Date.now() - startTime.current;
+      starMaterial.uniforms.time.value = elapsed / 1000;
+    }
 
     balloonsGroup.current.children.forEach((balloon, i) => {
       // Add gentle floating motion
@@ -59,15 +81,19 @@ function Balloons({ color, lives }) {
               {/* Balloon body */}
               <mesh scale={[balloonScale, balloonScale * 1.2, balloonScale]}>
                 <sphereGeometry args={[1, 24, 24]} />
-                <meshStandardMaterial
-                  color={color}
-                  metalness={0.1}
-                  roughness={0.2}
-                  emissive={color}
-                  emissiveIntensity={0.2}
-                  transparent
-                  opacity={balloonOpacity}
-                />
+                {isStarred ? (
+                  <primitive object={starMaterial} />
+                ) : (
+                  <meshStandardMaterial
+                    color={color}
+                    metalness={0.1}
+                    roughness={0.2}
+                    emissive={color}
+                    emissiveIntensity={0.2}
+                    transparent
+                    opacity={balloonOpacity}
+                  />
+                )}
               </mesh>
 
               {/* Balloon knot */}
@@ -82,13 +108,17 @@ function Balloons({ color, lives }) {
                 <cylinderGeometry
                   args={[0.2, 0.5, 1, 8, 1, true, 0, Math.PI * 2]}
                 />
-                <meshStandardMaterial
-                  color={color}
-                  metalness={0.3}
-                  roughness={0.6}
-                  transparent
-                  opacity={balloonOpacity}
-                />
+                {isStarred ? (
+                  <primitive object={starMaterial} />
+                ) : (
+                  <meshStandardMaterial
+                    color={color}
+                    metalness={0.3}
+                    roughness={0.6}
+                    transparent
+                    opacity={balloonOpacity}
+                  />
+                )}
               </mesh>
             </group>
           );
