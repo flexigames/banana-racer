@@ -387,9 +387,17 @@ function dropGreenShell(
     droppedAt: Date.now(),
     bounces: 0,
     verticalVelocity: 0,
+    canHitOwner: false
   };
 
   gameState.greenShells[shellId] = shell;
+
+  // Allow self-hits after 200ms
+  setTimeout(() => {
+    if (gameState.greenShells[shellId]) {
+      gameState.greenShells[shellId].canHitOwner = true;
+    }
+  }, 200);
 
   setTimeout(() => {
     if (gameState.greenShells[shellId]) {
@@ -558,7 +566,7 @@ function handleCollisions(): void {
   Object.values(gameState.greenShells).forEach((shell) => {
     Object.values(gameState.players).forEach((player) => {
       if (
-        player.id !== shell.droppedBy &&
+        (player.id !== shell.droppedBy || shell.canHitOwner) &&
         checkCollision(player.position, shell.position, 0.9)
       ) {
         removeItem(gameState.greenShells, shell.id);

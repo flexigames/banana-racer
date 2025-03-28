@@ -41,6 +41,7 @@ export type GreenShell = {
   droppedAt: number;
   bounces: number;
   verticalVelocity?: number;
+  canHitOwner: boolean;
 };
 
 export type Player = {
