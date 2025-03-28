@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import { useFrame } from "@react-three/fiber";
-import { updateVehiclePhysics, updateObjectPosition } from "../lib/physics";
+import { updateVehiclePhysics, updateObjectPosition, runFixedStepPhysics } from "../lib/physics";
 import { useVehicleControls } from "../lib/input";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
@@ -113,11 +113,10 @@ const Player = forwardRef((props, ref) => {
     } else {
       spinProgress.current = 0;
       try {
-        updateVehiclePhysics(movement.current, delta, isBoosted ? 2.5 : 1.0);
+        runFixedStepPhysics(movement.current, car.current, delta, isBoosted ? 2.5 : 1.0);
       } catch (error) {
         console.error("Error updating vehicle physics:", error);
       }
-      updateObjectPosition(car.current, movement.current, delta);
     }
 
     if (state.clock.elapsedTime - lastUpdateTime.current > 0.1) {

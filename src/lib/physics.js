@@ -1,6 +1,14 @@
 import { blocks, ramps, bridges, mapSize } from "./map";
 
 const carRadius = 0.2; // Approximate car collision radius
+const FIXED_TIMESTEP = 1/60; // Fixed physics timestep (60 Hz)
+const MAX_STEPS = 3; // Maximum number of physics steps per frame to prevent spiral of death
+const MAX_FRAME_DELTA = 1/30; // Cap frame delta at 30fps to prevent physics spikes
+
+// Physics state
+let physicsTimeAccumulator = 0;
+let lastPhysicsTime = 0;
+let lastPhysicsState = null;
 
 /**
  * Improved arcade-style vehicle physics
@@ -523,4 +531,55 @@ export const shouldCreateTireEffect = (movement) => {
     movement.handbrake || // Handbraking
     (movement.forward < -0.7 && movement.speed > 5) // Hard braking
   );
+};
+
+/**
+ * Run physics with fixed timestep and interpolation
+ * @param {Object} movement - Reference to movement state
+ * @param {Object} object - Reference to the object to move
+ * @param {number} delta - Time delta from useFrame
+ * @param {number} boostFactor - Optional boost multiplier (default: 1.0)
+ * @returns {Object} Updated movement state
+ */
+export const runFixedStepPhysics = (movement, object, delta, boostFactor = 1.0) => {
+  const currentTime = performance.now();
+  let frameDelta = (currentTime - lastPhysicsTime) / 1000; // Convert to seconds
+  
+  // Cap frame delta to prevent physics spikes
+  frameDelta = Math.min(frameDelta, MAX_FRAME_DELTA);
+  
+  lastPhysicsTime = currentTime;
+
+  // Accumulate time
+  physicsTimeAccumulator += frameDelta;
+
+  // Store previous state for interpolation
+  if (lastPhysicsState) {
+    object.position.copy(lastPhysicsState.position);
+    object.rotation.copy(lastPhysicsState.rotation);
+  }
+
+  // Run physics steps
+  let steps = 0;
+  while (physicsTimeAccumulator >= FIXED_TIMESTEP && steps < MAX_STEPS) {
+    updateVehiclePhysics(movement, FIXED_TIMESTEP, boostFactor);
+    updateObjectPosition(object, movement, FIXED_TIMESTEP);
+    physicsTimeAccumulator -= FIXED_TIMESTEP;
+    steps++;
+  }
+
+  // If we still have remaining time, do one final update with the remaining delta
+  if (physicsTimeAccumulator > 0 && steps < MAX_STEPS) {
+    updateVehiclePhysics(movement, physicsTimeAccumulator, boostFactor);
+    updateObjectPosition(object, movement, physicsTimeAccumulator);
+    physicsTimeAccumulator = 0;
+  }
+
+  // Store current state for next frame's interpolation
+  lastPhysicsState = {
+    position: object.position.clone(),
+    rotation: object.rotation.clone()
+  };
+
+  return movement;
 };

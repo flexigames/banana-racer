@@ -19,14 +19,24 @@ const FollowCamera = ({ target }) => {
   const position = useRef(new THREE.Vector3(0, 3.5, 5));
   const targetPosition = useRef(new THREE.Vector3(0, 0, 0));
   const lastValidPosition = useRef(new THREE.Vector3(0, 3.5, 5));
+  const lastUpdateTime = useRef(0);
+  const MAX_FRAME_DELTA = 1/30; // Cap frame delta at 30fps to prevent camera jumps
 
-  useFrame(() => {
+  useFrame((state) => {
     if (!cameraRef.current || !target.current) return;
 
     // Check if car is spinning out - don't move camera if it is
     const isSpinningOut = target.current.isSpinningOut?.();
 
     if (!isSpinningOut) {
+      const currentTime = performance.now();
+      let frameDelta = (currentTime - lastUpdateTime.current) / 1000; // Convert to seconds
+      
+      // Cap frame delta to prevent camera jumps
+      frameDelta = Math.min(frameDelta, MAX_FRAME_DELTA);
+      
+      lastUpdateTime.current = currentTime;
+
       // Get car's current speed for adaptive camera behavior
       const carSpeed = target.current.speed || 0;
 
@@ -70,8 +80,9 @@ const FollowCamera = ({ target }) => {
         Math.min(carSpeed / 20, 0.3)
       );
 
-      // Update camera position with adaptive smoothing
-      cameraRef.current.position.lerp(position.current, speedLerpFactor);
+      // Update camera position with fixed timestep
+      const lerpAmount = Math.min(1, speedLerpFactor * frameDelta * 60); // Scale by 60 to match physics timestep
+      cameraRef.current.position.lerp(position.current, lerpAmount);
 
       // Store the last valid camera position (before any spinout)
       lastValidPosition.current.copy(cameraRef.current.position);
