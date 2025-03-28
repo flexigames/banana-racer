@@ -1,6 +1,9 @@
-import React, { useEffect, useMemo } from "react";
-import { useModelWithMaterials } from "../lib/loaders";
+import React, { useRef, useEffect, useMemo } from "react";
+import { useModelWithMaterials, prepareModel } from "../lib/loaders";
+import { rainbowVertexShader, rainbowFragmentShader } from "../shaders/rainbow";
+import * as THREE from "three";
 import Balloons from "./Balloons";
+
 const Car = ({
   vehicleType = "vehicle-racer",
   color = null,
@@ -8,7 +11,12 @@ const Car = ({
   scale = [0.5, 0.5, 0.5],
   rotation = [0, Math.PI, 0],
   boosting = false,
+  isStarred = false,
 }) => {
+  const carRef = useRef();
+  const shaderRef = useRef();
+  const originalMaterials = useRef(new Map());
+
   // Ensure vehicle type is valid, fallback to racer if not
   const modelName = useMemo(() => {
     const validModels = [
@@ -31,6 +39,36 @@ const Car = ({
     `/banana-racer/assets/${modelName}.mtl`
   );
 
+  // Create rainbow shader material
+  const rainbowMaterial = useMemo(() => {
+    if (!vehicleModel) return null;
+
+    // Find the first texture from the model
+    let texture = null;
+    vehicleModel.traverse((child) => {
+      if (child.isMesh && child.material && child.material.map && !texture) {
+        texture = child.material.map;
+      }
+    });
+
+    if (!texture) {
+      return null;
+    }
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        texture1: { value: texture },
+      },
+      vertexShader: rainbowVertexShader,
+      fragmentShader: rainbowFragmentShader,
+      transparent: true,
+      opacity: 0.8,
+    });
+
+    return material;
+  }, [vehicleModel]);
+
   // Create a cloned model to avoid sharing materials
   const clonedModel = useMemo(() => {
     if (!vehicleModel) return null;
@@ -51,30 +89,102 @@ const Car = ({
     return clone;
   }, [vehicleModel]);
 
-  // Apply color when specified
+  // Store original materials when model is first loaded
   useEffect(() => {
-    if (!clonedModel || !color) return;
-
-    // Apply the color to all materials in the model
+    if (!clonedModel) return;
+    
+    originalMaterials.current.clear();
     clonedModel.traverse((child) => {
       if (child.isMesh && child.material) {
         if (Array.isArray(child.material)) {
-          child.material.forEach((mat) => {
-            mat.color.set(color);
-          });
+          originalMaterials.current.set(
+            child.uuid,
+            child.material.map((m) => m.clone())
+          );
         } else {
-          child.material.color.set(color);
+          originalMaterials.current.set(
+            child.uuid,
+            child.material.clone()
+          );
         }
       }
     });
-  }, [clonedModel, color]);
+  }, [clonedModel]);
+
+  // Apply rainbow shader or color
+  useEffect(() => {
+    if (!clonedModel) return;
+
+    if (isStarred && rainbowMaterial) {
+      // Apply rainbow shader to all meshes
+      clonedModel.traverse((child) => {
+        if (child.isMesh) {
+          child.material = rainbowMaterial;
+        }
+      });
+    } else {
+      // Restore original materials and apply color if needed
+      clonedModel.traverse((child) => {
+        if (child.isMesh) {
+          // Restore original material
+          const originalMaterial = originalMaterials.current.get(child.uuid);
+          if (originalMaterial) {
+            if (Array.isArray(originalMaterial)) {
+              child.material = originalMaterial.map(m => m.clone());
+            } else {
+              child.material = originalMaterial.clone();
+            }
+          }
+
+          // Apply color if provided
+          if (color) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => {
+                mat.color.set(color);
+              });
+            } else {
+              child.material.color.set(color);
+            }
+          }
+        }
+      });
+    }
+  }, [clonedModel, color, isStarred, rainbowMaterial]);
+
+  // Prepare the model
+  useEffect(() => {
+    if (clonedModel) {
+      prepareModel(clonedModel);
+    }
+  }, [clonedModel]);
+
+  // Update shader time and add star animation
+  useEffect(() => {
+    if (!carRef.current || !isStarred || !rainbowMaterial) return;
+
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      
+      // Update shader time uniform
+      if (rainbowMaterial) {
+        rainbowMaterial.uniforms.time.value = elapsed / 1000;
+      }
+
+      requestAnimationFrame(animate);
+    };
+
+    const animationId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationId);
+  }, [isStarred, rainbowMaterial]);
 
   if (!clonedModel) {
     return null;
   }
 
   return (
-    <group>
+    <group ref={carRef}>
       <primitive object={clonedModel} scale={scale} rotation={rotation} />
       <Balloons color={color} lives={lives} />
 

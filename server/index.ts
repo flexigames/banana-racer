@@ -6,6 +6,7 @@ import { blocks, ramps, bridges, itemBoxes, mapSize } from "./map";
 
 const PORT = process.env.PORT || 8080;
 const carRadius = 0.2;
+const itemCollisionRadius = 1.5 * carRadius;
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
@@ -89,12 +90,14 @@ function initializePlayer(playerId: string): void {
   player.isSpinning = false;
   player.isBoosted = false;
   player.isItemSpinning = false;
+  player.isStarred = false;
   player.activeItem = undefined;
 }
 
 function onHit(playerId: string, duration: number = 3000): void {
   const player = gameState.players[playerId];
-  if (!player || player.lives <= 0 || player.isSpinning) return;
+  if (!player || player.lives <= 0 || player.isSpinning || player.isStarred)
+    return;
 
   player.lives--;
   player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
@@ -387,7 +390,7 @@ function dropGreenShell(
     droppedAt: Date.now(),
     bounces: 0,
     verticalVelocity: 0,
-    canHitOwner: false
+    canHitOwner: false,
   };
 
   gameState.greenShells[shellId] = shell;
@@ -450,6 +453,17 @@ function useItem(
           gameState.players[playerId].isBoosted = false;
         }
       }, 1000);
+    } else if (itemType === ITEM_TYPES.STAR) {
+      // Activate star power-up
+      player.isStarred = true;
+      const starDuration = 4000;
+      // Star power-up lasts for 10 seconds
+      setTimeout(() => {
+        if (gameState.players[playerId]) {
+          gameState.players[playerId].isStarred = false;
+          // Reset spinning state when star wears off
+        }
+      }, starDuration);
     } else {
       const distanceBehind = trailingItemDistanceBehind;
       const offsetX = -Math.sin(player.rotation) * distanceBehind;
@@ -485,9 +499,9 @@ function removeItem(collection: Record<string, any>, itemId: string): void {
 
 function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
   const player = gameState.players[playerId];
+  if (!player) return;
 
   const collectedBox = gameState.itemBoxes.find((box) => box.id === itemBoxId);
-
   if (!collectedBox) return;
 
   gameState.itemBoxes = gameState.itemBoxes.filter(
@@ -508,13 +522,30 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
 
   setTimeout(() => {
     if (gameState.players[playerId]) {
-      const itemTypes = Object.values(ITEM_TYPES);
-      const randomItemType =
-        itemTypes[Math.floor(Math.random() * itemTypes.length)];
+      const random = Math.random();
+      let itemType: string;
+      let quantity = 1;
+
+      if (random < 0.3) {
+        itemType = ITEM_TYPES.BANANA;
+        quantity = 1; // Bananas are always x1
+      } else if (random < 0.5) {
+        itemType = ITEM_TYPES.BOOST;
+        quantity = 1;
+      } else if (random < 0.7) {
+        itemType = ITEM_TYPES.FAKE_CUBE;
+        quantity = 1; // Fake cubes are always x1
+      } else if (random < 0.9) {
+        itemType = ITEM_TYPES.GREEN_SHELL;
+        quantity = 1;
+      } else {
+        itemType = ITEM_TYPES.STAR;
+        quantity = 1;
+      }
 
       gameState.players[playerId].item = {
-        type: randomItemType,
-        quantity: 1,
+        type: itemType,
+        quantity,
       };
       gameState.players[playerId].isItemSpinning = false;
     }
@@ -545,76 +576,103 @@ function checkCollision(
 }
 
 function handleCollisions(): void {
-  Object.values(gameState.bananas).forEach((banana) => {
-    Object.values(gameState.players).forEach((player) => {
-      if (checkCollision(player.position, banana.position, 0.3)) {
-        removeItem(gameState.bananas, banana.id);
-        onHit(player.id);
-      }
-    });
-  });
+  // Check player collisions with items and other players
+  Object.values(gameState.players).forEach((player) => {
+    // Skip if player is dead
+    if (player.lives <= 0) return;
 
-  Object.values(gameState.fakeCubes).forEach((fakeCube) => {
-    Object.values(gameState.players).forEach((player) => {
-      if (checkCollision(player.position, fakeCube.position, 0.3)) {
-        removeItem(gameState.fakeCubes, fakeCube.id);
-        onHit(player.id);
-      }
-    });
-  });
-
-  Object.values(gameState.greenShells).forEach((shell) => {
-    Object.values(gameState.players).forEach((player) => {
-      if (
-        (player.id !== shell.droppedBy || shell.canHitOwner) &&
-        checkCollision(player.position, shell.position, 0.9)
-      ) {
-        removeItem(gameState.greenShells, shell.id);
-        onHit(player.id);
-      }
-
-      // Check shell collisions with trailing items
-      if (player.trailingItem && shell.droppedBy !== player.id) {
-        if (checkCollision(shell.position, player.trailingItem.position, 0.9)) {
-          removeItem(gameState.greenShells, shell.id);
-          player.trailingItem = undefined;
+    // If player is starred, they can destroy items and damage other players
+    if (player.isStarred) {
+      // Check collision with bananas
+      Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
+        if (
+          checkCollision(player.position, banana.position, itemCollisionRadius)
+        ) {
+          removeItem(gameState.bananas, bananaId);
         }
-      }
-    });
-  });
+      });
 
-  Object.values(gameState.players).forEach((player1) => {
-    Object.values(gameState.players).forEach((player2) => {
-      // Check boost collisions
+      // Check collision with fake cubes
+      Object.entries(gameState.fakeCubes).forEach(([cubeId, cube]) => {
+        if (
+          checkCollision(player.position, cube.position, itemCollisionRadius)
+        ) {
+          removeItem(gameState.fakeCubes, cubeId);
+        }
+      });
+
+      // Check collision with green shells
+      Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
+        if (
+          checkCollision(player.position, shell.position, itemCollisionRadius)
+        ) {
+          removeItem(gameState.greenShells, shellId);
+        }
+      });
+
+      // Check collision with other players
+      Object.values(gameState.players).forEach((otherPlayer) => {
+        if (
+          otherPlayer.id !== player.id &&
+          otherPlayer.lives > 0 &&
+          !otherPlayer.isStarred &&
+          checkCollision(
+            player.position,
+            otherPlayer.position,
+            itemCollisionRadius
+          )
+        ) {
+          onHit(otherPlayer.id);
+        }
+      });
+    } else {
+      // Normal collision handling for non-starred players
+      // Check collision with bananas
+      Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
+        if (
+          checkCollision(player.position, banana.position, itemCollisionRadius)
+        ) {
+          onHit(player.id);
+          removeItem(gameState.bananas, bananaId);
+        }
+      });
+
+      // Check collision with fake cubes
+      Object.entries(gameState.fakeCubes).forEach(([cubeId, cube]) => {
+        if (
+          checkCollision(player.position, cube.position, itemCollisionRadius)
+        ) {
+          onHit(player.id);
+          removeItem(gameState.fakeCubes, cubeId);
+        }
+      });
+
+      // Check collision with green shells
+      Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
+        if (
+          checkCollision(
+            player.position,
+            shell.position,
+            itemCollisionRadius
+          ) &&
+          (shell.canHitOwner || shell.droppedBy !== player.id)
+        ) {
+          onHit(player.id);
+          removeItem(gameState.greenShells, shellId);
+        }
+      });
+    }
+
+    // Check collision with item boxes (works for both starred and non-starred players)
+    gameState.itemBoxes.forEach((box) => {
       if (
-        player1.id !== player2.id &&
-        player2.isBoosted &&
-        checkCollision(player1.position, player2.position, 1.2)
+        checkCollision(
+          player.position,
+          { x: box.position[0], y: 0, z: box.position[2] },
+          itemCollisionRadius
+        )
       ) {
-        onHit(player1.id);
-      }
-
-      // Check trailing item collisions
-      if (
-        player1.id !== player2.id &&
-        player2.trailingItem &&
-        checkCollision(player1.position, player2.trailingItem.position, 0.9)
-      ) {
-        player2.trailingItem = undefined;
-        onHit(player1.id);
-      }
-    });
-  });
-
-  gameState.itemBoxes.forEach((itemBox) => {
-    Object.values(gameState.players).forEach((player) => {
-      const itemBoxPosition = {
-        x: itemBox.position[0],
-        y: itemBox.position[1],
-        z: itemBox.position[2],
-      };
-      if (checkCollision(player.position, itemBoxPosition, 0.9)) {
-        handleItemBoxCollection(player.id, itemBox.id);
+        handleItemBoxCollection(player.id, box.id);
       }
     });
   });

@@ -12,6 +12,7 @@ export const ITEM_TYPES = {
   BOOST: "boost",
   FAKE_CUBE: "fake_cube",
   GREEN_SHELL: "green_shell",
+  STAR: "star",
 };
 
 export type Color = {
@@ -58,6 +59,7 @@ export type Player = {
   isSpinning?: boolean;
   isBoosted?: boolean;
   isItemSpinning?: boolean;
+  isStarred?: boolean;
   activeItem?: Item;
   trailingItem?: {
     type: string;

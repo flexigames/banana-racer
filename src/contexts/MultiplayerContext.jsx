@@ -208,10 +208,6 @@ export const MultiplayerProvider = ({ children }) => {
 
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
-    if (isItemSpinning) {
-      return possibleItems[spinningItemIndex];
-    }
-
     if (!item || item.quantity <= 0) return "";
 
     // Format based on item type
@@ -240,6 +236,12 @@ export const MultiplayerProvider = ({ children }) => {
             🐢<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
+      case "star":
+        return (
+          <>
+            ⭐<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
       default:
         return `${item.type}: ${item.quantity}`;
     }
@@ -249,6 +251,8 @@ export const MultiplayerProvider = ({ children }) => {
   const contextValue = {
     connected,
     playerId,
+    playerColor,
+    playerVehicle,
     players,
     bananas,
     itemBoxes,
@@ -261,6 +265,7 @@ export const MultiplayerProvider = ({ children }) => {
     collectItemBox,
     respawn,
     changeServerUrl,
+    getItemDisplayText,
   };
 
   return (

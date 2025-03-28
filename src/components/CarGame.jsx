@@ -181,7 +181,7 @@ const CarGame = () => {
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const spinSpeed = 50;
-  const possibleItems = ["🍌", "🚀", "🎲", "🐢"];
+  const possibleItems = ["🍌", "🚀", "🎲", "🐢", "⭐"];
 
   // Get remote players (all players except current player)
   const remotePlayers = Object.values(players).filter(
@@ -309,6 +309,13 @@ const CarGame = () => {
             🐢<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
           </>
         );
+      case "star":
+        // Add star display
+        return (
+          <>
+            ⭐<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
+          </>
+        );
       default:
         return `${item.type}: ${item.quantity}`;
     }
@@ -397,6 +404,7 @@ const CarGame = () => {
               color={player.color}
               vehicle={player.vehicle}
               lives={player.lives}
+              isStarred={player.isStarred}
             />
             {player.trailingItem &&
               (console.log(

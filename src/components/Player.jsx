@@ -12,6 +12,7 @@ import { useVehicleControls } from "../lib/input";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
 import Car from "./Car";
+import { Star } from "./Star";
 
 const Player = forwardRef((props, ref) => {
   const { color: colorProp, vehicle: vehicleProp } = props;
@@ -32,6 +33,7 @@ const Player = forwardRef((props, ref) => {
   } = useMultiplayer();
 
   const lives = players[playerId]?.lives;
+  const isStarred = players[playerId]?.isStarred || false;
 
   useImperativeHandle(ref, () => car.current);
 
@@ -148,14 +150,17 @@ const Player = forwardRef((props, ref) => {
 
   return (
     <group ref={car} position={[0, 0, 0]}>
-      <Car
-        vehicleType={effectiveVehicle}
-        color={carColor}
-        scale={[0.5, 0.5, 0.5]}
-        rotation={[0, Math.PI, 0]}
-        boosting={isBoosted}
-        lives={lives}
-      />
+      <Star isActive={isStarred} color={[1, 1, 0]}>
+        <Car
+          vehicleType={effectiveVehicle}
+          color={carColor}
+          scale={[0.5, 0.5, 0.5]}
+          rotation={[0, Math.PI, 0]}
+          boosting={isBoosted}
+          lives={lives}
+          isStarred={isStarred}
+        />
+      </Star>
     </group>
   );
 });

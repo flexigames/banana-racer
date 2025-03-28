@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import Car from "./Car";
+import { Star } from "./Star";
 
 const RemotePlayer = ({
   playerId,
@@ -11,6 +12,7 @@ const RemotePlayer = ({
   color,
   lives,
   vehicle = "vehicle-racer",
+  isStarred = false,
 }) => {
   const car = useRef();
   const targetPosition = useRef(
@@ -149,14 +151,17 @@ const RemotePlayer = ({
       position={[position.x, position.y, position.z]}
       rotation={[0, rotation, 0]}
     >
-      <Car
-        vehicleType={vehicle}
-        color={playerColor}
-        scale={[0.5, 0.5, 0.5]}
-        rotation={[0, Math.PI, 0]}
-        boosting={boosting}
-        lives={lives}
-      />
+      <Star isActive={isStarred} color={[1, 1, 0]}>
+        <Car
+          vehicleType={vehicle}
+          color={playerColor}
+          scale={[0.5, 0.5, 0.5]}
+          rotation={[0, Math.PI, 0]}
+          boosting={boosting}
+          lives={lives}
+          isStarred={isStarred}
+        />
+      </Star>
     </group>
   );
 };
