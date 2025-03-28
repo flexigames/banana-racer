@@ -82,25 +82,30 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false }) => {
 
       // Add animation
       const startTime = Date.now();
+      let animationFrameId;
       const animate = () => {
+        if (!itemBox.current || !itemBox.current.rotation) return;
+        
         const elapsed = Date.now() - startTime;
-        // Gentle floating motion
         const floatHeight = Math.sin(elapsed / 600) * 0.15;
 
         itemBox.current.rotation.y = elapsed / 1000;
         itemBox.current.position.y = position[1] + 0.3 + floatHeight;
 
-        // Update shader time uniform
-        if (rainbowMaterial) {
+        if (rainbowMaterial?.uniforms?.time) {
           rainbowMaterial.uniforms.time.value = elapsed / 1000;
         }
 
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
       };
 
-      const animationId = requestAnimationFrame(animate);
+      animate();
 
-      return () => cancelAnimationFrame(animationId);
+      return () => {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+      };
     }
   }, [position.x, position.y, position.z, rainbowMaterial]);
 

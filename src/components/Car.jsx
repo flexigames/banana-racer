@@ -74,13 +74,17 @@ const Car = ({
 
     const clone = vehicleModel.clone();
 
-    // Ensure all materials are cloned
+    // Store original materials and ensure all materials are cloned
     clone.traverse((child) => {
       if (child.isMesh && child.material) {
         if (Array.isArray(child.material)) {
-          child.material = child.material.map((m) => m.clone());
+          const clonedMaterials = child.material.map((m) => m.clone());
+          child.material = clonedMaterials;
+          originalMaterials.current.set(child.uuid, child.material);
         } else {
-          child.material = child.material.clone();
+          const clonedMaterial = child.material.clone();
+          child.material = clonedMaterial;
+          originalMaterials.current.set(child.uuid, child.material);
         }
       }
     });
@@ -93,18 +97,15 @@ const Car = ({
     if (!clonedModel) return;
 
     if (isStarred && starMaterial) {
-      // Apply star shader to all meshes
       clonedModel.traverse((child) => {
         if (child.isMesh) {
           child.material = starMaterial;
         }
       });
     } else {
-      // Restore original materials and apply color if needed
       clonedModel.traverse((child) => {
         if (child.isMesh) {
-          // Restore original material
-          const originalMaterial = originalMaterials.current.get(child.uuid);
+          const originalMaterial = originalMaterials.current?.get(child.uuid);
           if (originalMaterial) {
             if (Array.isArray(originalMaterial)) {
               child.material = originalMaterial.map(m => m.clone());
@@ -113,13 +114,15 @@ const Car = ({
             }
           }
 
-          // Apply color if provided
-          if (color) {
+          // Apply color if provided and material exists
+          if (color && child.material) {
             if (Array.isArray(child.material)) {
               child.material.forEach((mat) => {
-                mat.color.set(color);
+                if (mat && mat.color) {
+                  mat.color.set(color);
+                }
               });
-            } else {
+            } else if (child.material.color) {
               child.material.color.set(color);
             }
           }
