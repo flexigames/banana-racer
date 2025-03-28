@@ -33,6 +33,8 @@ const gameState: GameState = {
   itemBoxes: [],
 };
 
+const trailingItemDistanceBehind = 0.5;
+
 function generateRandomColor(): Color {
   return {
     h: Math.random(),
@@ -83,6 +85,11 @@ function initializePlayer(playerId: string): void {
   player.speed = 0;
   player.lives = 3;
   player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
+  player.trailingItem = undefined;
+  player.isSpinning = false;
+  player.isBoosted = false;
+  player.isItemSpinning = false;
+  player.activeItem = undefined;
 }
 
 function onHit(playerId: string, duration: number = 3000): void {
@@ -278,13 +285,37 @@ function updatePlayerPosition(
 ): void {
   if (!gameState.players[playerId]) return;
 
-  // Update the player position
-  gameState.players[playerId].position = data.position;
-  gameState.players[playerId].rotation = data.rotation;
+  const player = gameState.players[playerId];
+
+  player.position = data.position;
+  player.rotation = data.rotation;
   if (data.speed !== undefined) {
-    gameState.players[playerId].speed = data.speed;
+    player.speed = data.speed;
   }
-  gameState.players[playerId].lastUpdate = Date.now();
+  player.lastUpdate = Date.now();
+
+  if (player.trailingItem) {
+    const distanceBehind = trailingItemDistanceBehind;
+    const offsetX = -Math.sin(player.rotation) * distanceBehind;
+    const offsetZ = -Math.cos(player.rotation) * distanceBehind;
+
+    const underBridge = isUnderBridge(
+      player.position.x + offsetX,
+      player.position.z + offsetZ,
+      player.position.y
+    );
+    const heightAtPosition = calculateHeightAtPosition(
+      player.position.x + offsetX,
+      player.position.z + offsetZ
+    );
+
+    player.trailingItem.position = {
+      x: player.position.x + offsetX,
+      y: underBridge ? player.position.y : heightAtPosition,
+      z: player.position.z + offsetZ,
+    };
+    player.trailingItem.rotation = player.rotation;
+  }
 }
 
 function dropItem(
@@ -372,28 +403,70 @@ function useItem(
   data: { position: Position; rotation: number }
 ): void {
   const player = gameState.players[playerId];
-  if (!player?.item?.quantity) return;
+  if (!player) return;
 
-  player.item.quantity--;
+  // Handle trailing item first
+  if (player.trailingItem) {
+    const { type, position } = player.trailingItem;
+    console.log("Using trailing item:", type);
+    const dropData = {
+      position,
+      rotation: player.rotation,
+    };
+    player.trailingItem = undefined;
 
-  switch (player.item.type) {
-    case ITEM_TYPES.BANANA:
-      dropItem(playerId, data, ITEM_TYPES.BANANA);
-      break;
-    case ITEM_TYPES.BOOST:
+    switch (type) {
+      case ITEM_TYPES.BANANA:
+        dropItem(playerId, dropData, ITEM_TYPES.BANANA);
+        break;
+      case ITEM_TYPES.FAKE_CUBE:
+        dropItem(playerId, dropData, ITEM_TYPES.FAKE_CUBE);
+        break;
+      case ITEM_TYPES.GREEN_SHELL:
+        dropGreenShell(playerId, dropData);
+        break;
+    }
+    return;
+  }
+
+  // Handle item in slot
+  if (player.item?.quantity > 0) {
+    const itemType = player.item.type;
+    console.log("Activating item:", itemType);
+    player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
+
+    if (itemType === ITEM_TYPES.BOOST) {
       player.isBoosted = true;
       setTimeout(() => {
         if (gameState.players[playerId]) {
           gameState.players[playerId].isBoosted = false;
         }
-      }, 5000);
-      break;
-    case ITEM_TYPES.FAKE_CUBE:
-      dropItem(playerId, data, ITEM_TYPES.FAKE_CUBE);
-      break;
-    case ITEM_TYPES.GREEN_SHELL:
-      dropGreenShell(playerId, data);
-      break;
+      }, 1000);
+    } else {
+      const distanceBehind = trailingItemDistanceBehind;
+      const offsetX = -Math.sin(player.rotation) * distanceBehind;
+      const offsetZ = -Math.cos(player.rotation) * distanceBehind;
+
+      const underBridge = isUnderBridge(
+        player.position.x + offsetX,
+        player.position.z + offsetZ,
+        player.position.y
+      );
+      const heightAtPosition = calculateHeightAtPosition(
+        player.position.x + offsetX,
+        player.position.z + offsetZ
+      );
+
+      player.trailingItem = {
+        type: itemType,
+        position: {
+          x: player.position.x + offsetX,
+          y: underBridge ? player.position.y : heightAtPosition,
+          z: player.position.z + offsetZ,
+        },
+        rotation: player.rotation,
+      };
+    }
   }
 }
 
@@ -491,16 +564,35 @@ function handleCollisions(): void {
         removeItem(gameState.greenShells, shell.id);
         onHit(player.id);
       }
+
+      // Check shell collisions with trailing items
+      if (player.trailingItem && shell.droppedBy !== player.id) {
+        if (checkCollision(shell.position, player.trailingItem.position, 0.9)) {
+          removeItem(gameState.greenShells, shell.id);
+          player.trailingItem = undefined;
+        }
+      }
     });
   });
 
   Object.values(gameState.players).forEach((player1) => {
     Object.values(gameState.players).forEach((player2) => {
+      // Check boost collisions
       if (
         player1.id !== player2.id &&
         player2.isBoosted &&
         checkCollision(player1.position, player2.position, 1.2)
       ) {
+        onHit(player1.id);
+      }
+
+      // Check trailing item collisions
+      if (
+        player1.id !== player2.id &&
+        player2.trailingItem &&
+        checkCollision(player1.position, player2.trailingItem.position, 0.9)
+      ) {
+        player2.trailingItem = undefined;
         onHit(player1.id);
       }
     });

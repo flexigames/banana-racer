@@ -57,6 +57,12 @@ export type Player = {
   isSpinning?: boolean;
   isBoosted?: boolean;
   isItemSpinning?: boolean;
+  activeItem?: Item;
+  trailingItem?: {
+    type: string;
+    position: Position;
+    rotation: number;
+  };
 };
 
 export type Banana = {

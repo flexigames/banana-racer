@@ -139,19 +139,17 @@ export const MultiplayerProvider = ({ children }) => {
     if (!playerId) return false;
 
     const playerData = players[playerId];
-    if (!playerData?.item?.quantity) return false;
+    if (!playerData) return false;
+    
+    // Allow using item if we have either a trailing item or an item in slot
+    if (!playerData.trailingItem && !playerData.item?.quantity) return false;
 
     setLastItemUseTime(now);
 
-    // Calculate position based on item type
-    const distanceBehind = 0.4;
-    const offsetX = Math.sin(carRotation) * distanceBehind;
-    const offsetZ = Math.cos(carRotation) * distanceBehind;
-
     const itemPosition = {
-      x: carPosition.x - offsetX,
+      x: carPosition.x,
       y: 0.1,
-      z: carPosition.z - offsetZ,
+      z: carPosition.z,
     };
 
     socket.current.emit("useItem", {

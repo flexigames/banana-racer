@@ -8,7 +8,7 @@ const GreenShell = ({ position = [0, 0, 0], rotation = 0, scale = 0.5 }) => {
 
   useFrame((state, delta) => {
     if (shell.current) {
-      shell.current.rotation.y += delta * rotationSpeed;
+      shell.current.rotation.z += delta * rotationSpeed;
     }
   });
 

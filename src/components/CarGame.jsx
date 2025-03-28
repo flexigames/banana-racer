@@ -11,6 +11,7 @@ import ItemBox from "./ItemBox";
 import GameOver from "./GameOver";
 import Arena from "./Arena";
 import JoystickControl from "./JoystickControl";
+import { ITEM_TYPES } from "../../server/types";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -216,6 +217,49 @@ const CarGame = () => {
     }
   }, [currentItem?.quantity, prevQuantity]);
 
+  // Add TrailingItem component
+  function TrailingItem({ type, position, rotation }) {
+    if (!position || rotation === undefined) return null;
+
+    console.log("Rendering TrailingItem:", {
+      type,
+      position,
+      rotation,
+    });
+
+    switch (type) {
+      case ITEM_TYPES.BANANA:
+        return (
+          <Banana position={position} rotation={rotation} scale={[1, 1, 1]} />
+        );
+      case ITEM_TYPES.FAKE_CUBE:
+        return (
+          <ItemBox
+            position={[position.x, position.y, position.z]}
+            rotation={rotation}
+            scale={[1, 1, 1]}
+            isFakeCube={true}
+          />
+        );
+      case ITEM_TYPES.GREEN_SHELL:
+        const shellPosition = [position.x, position.y, position.z];
+        console.log("Green shell props:", {
+          position: shellPosition,
+          rotation,
+        });
+        return (
+          <GreenShell
+            position={shellPosition}
+            rotation={rotation}
+            scale={0.5}
+          />
+        );
+      default:
+        console.log("Unknown item type:", type);
+        return null;
+    }
+  }
+
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
     if (isItemSpinning) {
@@ -261,11 +305,19 @@ const CarGame = () => {
 
   // Helper to get animation style
   const getItemDisplayStyle = () => {
+    const currentPlayer = players[playerId];
     if (isItemSpinning) {
       return {
         animation: "spin 0.5s infinite linear",
         fontSize: "2.5rem",
         transform: "scale(1.2)",
+      };
+    }
+
+    if (currentPlayer?.activeItem) {
+      return {
+        animation: "pulse 0.5s infinite ease-in-out",
+        background: "rgba(156, 103, 204, 0.4)",
       };
     }
 
@@ -314,18 +366,39 @@ const CarGame = () => {
           vehicle={players[playerId]?.vehicle}
         />
 
-        {/* Remote players */}
-        {remotePlayers.map((player) => (
-          <RemotePlayer
-            key={player.id}
-            playerId={player.id}
-            position={player.position}
-            rotation={player.rotation}
-            speed={player.speed || 0}
-            color={player.color}
-            vehicle={player.vehicle}
-            lives={player.lives}
+        {/* Current player's trailing item */}
+        {players[playerId]?.trailingItem && (
+          <TrailingItem
+            type={players[playerId].trailingItem.type}
+            position={players[playerId].trailingItem.position}
+            rotation={players[playerId].trailingItem.rotation}
           />
+        )}
+
+        {/* Remote players and their trailing items */}
+        {remotePlayers.map((player) => (
+          <group key={player.id}>
+            <RemotePlayer
+              playerId={player.id}
+              position={player.position}
+              rotation={player.rotation}
+              speed={player.speed || 0}
+              color={player.color}
+              vehicle={player.vehicle}
+              lives={player.lives}
+            />
+            {player.trailingItem &&
+              (console.log(
+                "Remote player trailing item:",
+                player.trailingItem
+              ) || (
+                <TrailingItem
+                  type={player.trailingItem.type}
+                  position={player.trailingItem.position}
+                  rotation={player.trailingItem.rotation}
+                />
+              ))}
+          </group>
         ))}
 
         {/* Bananas */}

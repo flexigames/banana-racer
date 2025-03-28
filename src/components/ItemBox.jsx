@@ -50,7 +50,6 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false }) => {
   // Clone the model with shader material
   const model = useMemo(() => {
     if (!itemBoxModel || !rainbowMaterial) {
-      console.log("No model or material available");
       return null;
     }
 
@@ -60,7 +59,6 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false }) => {
     clone.traverse((child) => {
       if (child.isMesh) {
         child.material = rainbowMaterial;
-        console.log("Applied material to mesh:", child);
       }
     });
 
