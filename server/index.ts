@@ -29,13 +29,13 @@ const VEHICLE_MODELS = [
 ];
 
 const ITEM_PROBABILITIES = {
-  [ITEM_TYPES.BANANA]: 10,
+  [ITEM_TYPES.BANANA]: 5,
   [ITEM_TYPES.BOOST]: 2,
   [ITEM_TYPES.FAKE_CUBE]: 2,
-  [ITEM_TYPES.GREEN_SHELL]: 10,
+  [ITEM_TYPES.GREEN_SHELL]: 5,
   [ITEM_TYPES.STAR]: 1,
   [ITEM_TYPES.THREE_BANANAS]: 5,
-  [ITEM_TYPES.THREE_GREEN_SHELLS]: 500000,
+  [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
 };
 
 const gameState: GameState = {
@@ -511,7 +511,11 @@ function useItem(playerId: string): void {
           z: player.position.z + offsetZ,
         },
         rotation: player.rotation,
-        quantity: itemType === ITEM_TYPES.THREE_BANANAS || itemType === ITEM_TYPES.THREE_GREEN_SHELLS ? 3 : 1,
+        quantity:
+          itemType === ITEM_TYPES.THREE_BANANAS ||
+          itemType === ITEM_TYPES.THREE_GREEN_SHELLS
+            ? 3
+            : 1,
       };
     }
   }
@@ -558,7 +562,10 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
       for (const [type, probability] of Object.entries(ITEM_PROBABILITIES)) {
         if (random < probability) {
           itemType = type;
-          if (type === ITEM_TYPES.THREE_BANANAS || type === ITEM_TYPES.THREE_GREEN_SHELLS) {
+          if (
+            type === ITEM_TYPES.THREE_BANANAS ||
+            type === ITEM_TYPES.THREE_GREEN_SHELLS
+          ) {
             quantity = 3;
           }
           break;
