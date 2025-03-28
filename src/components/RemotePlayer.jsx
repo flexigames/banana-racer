@@ -13,6 +13,7 @@ const RemotePlayer = ({
   lives,
   vehicle = "vehicle-racer",
   isStarred = false,
+  trailingItem = null,
 }) => {
   const car = useRef();
   const targetPosition = useRef(
@@ -160,6 +161,7 @@ const RemotePlayer = ({
           boosting={boosting}
           lives={lives}
           isStarred={isStarred}
+          trailingItem={trailingItem}
         />
       </Star>
     </group>

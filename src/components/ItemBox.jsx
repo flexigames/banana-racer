@@ -3,9 +3,8 @@ import { useModelWithMaterials, prepareModel } from "../lib/loaders";
 import { rainbowVertexShader, rainbowFragmentShader } from "../shaders/rainbow";
 import * as THREE from "three";
 
-const ItemBox = ({ position = [0, 0, 0], isFakeCube = false }) => {
+const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
   const itemBox = useRef();
-  const scale = 1;
   const shaderRef = useRef();
 
   // Load the item box model

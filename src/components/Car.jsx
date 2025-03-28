@@ -3,6 +3,10 @@ import { useModelWithMaterials, prepareModel } from "../lib/loaders";
 import { starVertexShader, starFragmentShader } from "../shaders/star";
 import * as THREE from "three";
 import Balloons from "./Balloons";
+import Banana from "./Banana";
+import GreenShell from "./GreenShell";
+import ItemBox from "./ItemBox";
+import { ITEM_TYPES } from "../../server/types";
 
 const Car = ({
   vehicleType = "vehicle-racer",
@@ -12,6 +16,7 @@ const Car = ({
   rotation = [0, Math.PI, 0],
   boosting = false,
   isStarred = false,
+  trailingItem = null,
 }) => {
   const carRef = useRef();
   const shaderRef = useRef();
@@ -108,7 +113,7 @@ const Car = ({
           const originalMaterial = originalMaterials.current?.get(child.uuid);
           if (originalMaterial) {
             if (Array.isArray(originalMaterial)) {
-              child.material = originalMaterial.map(m => m.clone());
+              child.material = originalMaterial.map((m) => m.clone());
             } else {
               child.material = originalMaterial.clone();
             }
@@ -145,7 +150,7 @@ const Car = ({
     const startTime = Date.now();
     const animate = () => {
       const elapsed = Date.now() - startTime;
-      
+
       // Update shader time uniform
       if (starMaterial) {
         starMaterial.uniforms.time.value = elapsed / 1000;
@@ -167,6 +172,15 @@ const Car = ({
     <group ref={carRef}>
       <primitive object={clonedModel} scale={scale} rotation={rotation} />
       <Balloons color={color} lives={lives} isStarred={isStarred} />
+
+      {/* Show trailing item if present */}
+      {trailingItem && (
+        <TrailingItem
+          type={trailingItem.type}
+          position={{ x: 0, y: 0, z: -0.5 }}
+          rotation={trailingItem.rotation}
+        />
+      )}
 
       {/* Show boost visual effect when boosting */}
       {boosting && (
@@ -195,3 +209,33 @@ const Car = ({
 };
 
 export default Car;
+
+function TrailingItem({ type, position, rotation }) {
+  if (!position || rotation === undefined) return null;
+
+  switch (type) {
+    case ITEM_TYPES.BANANA:
+      return (
+        <Banana position={position} rotation={rotation} scale={[1, 1, 1]} />
+      );
+    case ITEM_TYPES.FAKE_CUBE:
+      return (
+        <ItemBox
+          position={[position.x, position.y - 0.25, position.z]}
+          rotation={rotation}
+          scale={0.5}
+          isFakeCube
+        />
+      );
+    case ITEM_TYPES.GREEN_SHELL:
+      return (
+        <GreenShell
+          position={[position.x, position.y, position.z]}
+          rotation={rotation}
+          scale={0.5}
+        />
+      );
+    default:
+      return null;
+  }
+}

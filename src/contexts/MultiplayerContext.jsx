@@ -21,9 +21,6 @@ const MultiplayerContext = createContext({
   greenShells: [],
   updatePlayerPosition: () => {},
   useItem: () => {},
-  hitBanana: () => {},
-  hitFakeCube: () => {},
-  collectItemBox: () => {},
   respawn: () => {},
 });
 
@@ -160,20 +157,6 @@ export const MultiplayerProvider = ({ children }) => {
     return true;
   };
 
-  const hitBanana = (bananaId) => {
-    if (!connected || !socket.current) return;
-    socket.current.emit("hitBanana", { bananaId });
-  };
-
-  const hitFakeCube = (fakeCubeId) => {
-    if (!connected || !socket.current) return;
-    socket.current.emit("hitFakeCube", { fakeCubeId });
-  };
-
-  const collectItemBox = (itemBoxId) => {
-    if (!connected || !socket.current) return;
-    socket.current.emit("collectItemBox", { itemBoxId });
-  };
 
   // Respawn function
   const respawn = () => {
@@ -260,9 +243,6 @@ export const MultiplayerProvider = ({ children }) => {
     greenShells,
     updatePlayerPosition,
     useItem,
-    hitBanana,
-    hitFakeCube,
-    collectItemBox,
     respawn,
     changeServerUrl,
     getItemDisplayText,

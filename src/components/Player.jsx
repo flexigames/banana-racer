@@ -15,7 +15,7 @@ import Car from "./Car";
 import { Star } from "./Star";
 
 const Player = forwardRef((props, ref) => {
-  const { color: colorProp, vehicle: vehicleProp } = props;
+  const { color: colorProp, vehicle: vehicleProp, trailingItem } = props;
   const car = useRef();
   const lastUpdateTime = useRef(0);
   const [spinningOut, setSpinningOut] = useState(false);
@@ -159,6 +159,7 @@ const Player = forwardRef((props, ref) => {
           boosting={isBoosted}
           lives={lives}
           isStarred={isStarred}
+          trailingItem={trailingItem}
         />
       </Star>
     </group>

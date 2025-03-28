@@ -137,7 +137,6 @@ const CarGame = () => {
     fakeCubes,
     greenShells,
     useItem,
-    collectItemBox,
   } = useMultiplayer();
 
   // Handle key press events
@@ -233,49 +232,6 @@ const CarGame = () => {
       return () => clearTimeout(timer);
     }
   }, [currentItem?.quantity, prevQuantity]);
-
-  // Add TrailingItem component
-  function TrailingItem({ type, position, rotation }) {
-    if (!position || rotation === undefined) return null;
-
-    console.log("Rendering TrailingItem:", {
-      type,
-      position,
-      rotation,
-    });
-
-    switch (type) {
-      case ITEM_TYPES.BANANA:
-        return (
-          <Banana position={position} rotation={rotation} scale={[1, 1, 1]} />
-        );
-      case ITEM_TYPES.FAKE_CUBE:
-        return (
-          <ItemBox
-            position={[position.x, position.y, position.z]}
-            rotation={rotation}
-            scale={[1, 1, 1]}
-            isFakeCube={true}
-          />
-        );
-      case ITEM_TYPES.GREEN_SHELL:
-        const shellPosition = [position.x, position.y, position.z];
-        console.log("Green shell props:", {
-          position: shellPosition,
-          rotation,
-        });
-        return (
-          <GreenShell
-            position={shellPosition}
-            rotation={rotation}
-            scale={0.5}
-          />
-        );
-      default:
-        console.log("Unknown item type:", type);
-        return null;
-    }
-  }
 
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
@@ -399,18 +355,10 @@ const CarGame = () => {
           ref={carRef}
           color={players[playerId]?.color}
           vehicle={players[playerId]?.vehicle}
+          trailingItem={players[playerId]?.trailingItem}
         />
 
-        {/* Current player's trailing item */}
-        {players[playerId]?.trailingItem && (
-          <TrailingItem
-            type={players[playerId].trailingItem.type}
-            position={players[playerId].trailingItem.position}
-            rotation={players[playerId].trailingItem.rotation}
-          />
-        )}
-
-        {/* Remote players and their trailing items */}
+        {/* Remote players */}
         {remotePlayers.map((player) => (
           <group key={player.id}>
             <RemotePlayer
@@ -422,18 +370,8 @@ const CarGame = () => {
               vehicle={player.vehicle}
               lives={player.lives}
               isStarred={player.isStarred}
+              trailingItem={player.trailingItem}
             />
-            {player.trailingItem &&
-              (console.log(
-                "Remote player trailing item:",
-                player.trailingItem
-              ) || (
-                <TrailingItem
-                  type={player.trailingItem.type}
-                  position={player.trailingItem.position}
-                  rotation={player.trailingItem.rotation}
-                />
-              ))}
           </group>
         ))}
 

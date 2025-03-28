@@ -6,7 +6,9 @@ import { blocks, ramps, bridges, itemBoxes, mapSize } from "./map";
 
 const PORT = process.env.PORT || 8080;
 const carRadius = 0.2;
-const itemCollisionRadius = 1.5 * carRadius;
+const bananaRadius = 0.1;
+const cubeRadius = 0.2;
+const shellRadius = 0.2;
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
@@ -393,7 +395,7 @@ function dropGreenShell(
     },
     rotation: data.rotation,
     direction: data.rotation,
-    speed: 10,
+    speed: 8,
     droppedBy: playerId,
     droppedAt: Date.now(),
     bounces: 0,
@@ -535,7 +537,10 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
 
   setTimeout(() => {
     if (gameState.players[playerId]) {
-      const totalProbability = Object.values(ITEM_PROBABILITIES).reduce((a, b) => a + b, 0);
+      const totalProbability = Object.values(ITEM_PROBABILITIES).reduce(
+        (a, b) => a + b,
+        0
+      );
       let random = Math.random() * totalProbability;
       let itemType = ITEM_TYPES.BANANA; // Default to banana if something goes wrong
       let quantity = 1;
@@ -582,105 +587,87 @@ function checkCollision(
 
 function handleCollisions(): void {
   // Check player collisions with items and other players
-  Object.values(gameState.players).forEach((player) => {
+  for (const player of Object.values(gameState.players)) {
     // Skip if player is dead
-    if (player.lives <= 0) return;
+    if (player.lives <= 0) continue;
 
-    // If player is starred, they can destroy items and damage other players
-    if (player.isStarred) {
-      // Check collision with bananas
-      Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
-        if (
-          checkCollision(player.position, banana.position, itemCollisionRadius)
-        ) {
+    // Check collision with bananas
+    for (const [bananaId, banana] of Object.entries(gameState.bananas)) {
+      if (
+        checkCollision(
+          player.position,
+          banana.position,
+          bananaRadius + carRadius
+        )
+      ) {
+        if (player.isStarred) {
+          removeItem(gameState.bananas, bananaId);
+        } else {
+          onHit(player.id);
           removeItem(gameState.bananas, bananaId);
         }
-      });
+      }
+    }
 
-      // Check collision with fake cubes
-      Object.entries(gameState.fakeCubes).forEach(([cubeId, cube]) => {
-        if (
-          checkCollision(player.position, cube.position, itemCollisionRadius)
-        ) {
+    // Check collision with fake cubes
+    for (const [cubeId, cube] of Object.entries(gameState.fakeCubes)) {
+      if (
+        checkCollision(player.position, cube.position, cubeRadius + carRadius)
+      ) {
+        if (player.isStarred) {
+          removeItem(gameState.fakeCubes, cubeId);
+        } else {
+          onHit(player.id);
           removeItem(gameState.fakeCubes, cubeId);
         }
-      });
+      }
+    }
 
-      // Check collision with green shells
-      Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
-        if (
-          checkCollision(player.position, shell.position, itemCollisionRadius)
-        ) {
+    // Check collision with green shells
+    for (const [shellId, shell] of Object.entries(gameState.greenShells)) {
+      if (
+        checkCollision(
+          player.position,
+          shell.position,
+          shellRadius + carRadius + 0.05
+        ) &&
+        (player.isStarred || shell.canHitOwner || shell.droppedBy !== player.id)
+      ) {
+        if (player.isStarred) {
+          removeItem(gameState.greenShells, shellId);
+        } else {
+          onHit(player.id);
           removeItem(gameState.greenShells, shellId);
         }
-      });
+      }
+    }
 
-      // Check collision with other players
-      Object.values(gameState.players).forEach((otherPlayer) => {
-        if (
-          otherPlayer.id !== player.id &&
-          otherPlayer.lives > 0 &&
-          !otherPlayer.isStarred &&
-          checkCollision(
-            player.position,
-            otherPlayer.position,
-            itemCollisionRadius
-          )
-        ) {
+    // Check collision with other players
+    for (const otherPlayer of Object.values(gameState.players)) {
+      if (
+        otherPlayer.id !== player.id &&
+        otherPlayer.lives > 0 &&
+        checkCollision(player.position, otherPlayer.position, 2 * carRadius)
+      ) {
+        if (player.isStarred && !otherPlayer.isStarred) {
           onHit(otherPlayer.id);
         }
-      });
-    } else {
-      // Normal collision handling for non-starred players
-      // Check collision with bananas
-      Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
-        if (
-          checkCollision(player.position, banana.position, itemCollisionRadius)
-        ) {
-          onHit(player.id);
-          removeItem(gameState.bananas, bananaId);
-        }
-      });
-
-      // Check collision with fake cubes
-      Object.entries(gameState.fakeCubes).forEach(([cubeId, cube]) => {
-        if (
-          checkCollision(player.position, cube.position, itemCollisionRadius)
-        ) {
-          onHit(player.id);
-          removeItem(gameState.fakeCubes, cubeId);
-        }
-      });
-
-      // Check collision with green shells
-      Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
-        if (
-          checkCollision(
-            player.position,
-            shell.position,
-            itemCollisionRadius
-          ) &&
-          (shell.canHitOwner || shell.droppedBy !== player.id)
-        ) {
-          onHit(player.id);
-          removeItem(gameState.greenShells, shellId);
-        }
-      });
+      }
     }
 
     // Check collision with item boxes (works for both starred and non-starred players)
-    gameState.itemBoxes.forEach((box) => {
+    for (const box of gameState.itemBoxes) {
       if (
         checkCollision(
           player.position,
           { x: box.position[0], y: 0, z: box.position[2] },
-          itemCollisionRadius
+          cubeRadius + carRadius
         )
       ) {
         handleItemBoxCollection(player.id, box.id);
       }
-    });
-  });
+    }
+  }
 }
 
 function updateGreenShells(): void {
@@ -689,7 +676,6 @@ function updateGreenShells(): void {
   const MAX_SHELL_AGE = 10000; // 10 seconds
   const gravity = 9.8; // Gravity acceleration in m/s²
   const terminalVelocity = 20; // Maximum falling speed
-  const carRadius = 0.2; // Approximate car collision radius
 
   // For each green shell
   Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
@@ -701,7 +687,7 @@ function updateGreenShells(): void {
 
     // Check collisions with bananas
     Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
-      if (checkCollision(shell.position, banana.position, 0.9)) {
+      if (checkCollision(shell.position, banana.position, shellRadius)) {
         greenShellsToRemove.push(shellId);
         removeItem(gameState.bananas, bananaId);
         return;
@@ -764,25 +750,30 @@ function updateGreenShells(): void {
           continue;
         }
 
-        if (dx < blockHalfWidth + 0.5 && dz < blockHalfDepth + 0.5) {
+        if (
+          dx < blockHalfWidth + shellRadius &&
+          dz < blockHalfDepth + shellRadius
+        ) {
           const relativeX = newPosition.x - block.position.x;
           const relativeZ = newPosition.z - block.position.z;
 
-          const penetrationX = blockHalfWidth + 0.5 - Math.abs(relativeX);
-          const penetrationZ = blockHalfDepth + 0.5 - Math.abs(relativeZ);
+          const penetrationX =
+            blockHalfWidth + shellRadius - Math.abs(relativeX);
+          const penetrationZ =
+            blockHalfDepth + shellRadius - Math.abs(relativeZ);
 
           if (penetrationX < penetrationZ) {
             shell.rotation = -shell.rotation;
             newPosition.x =
               block.position.x +
-              (relativeX > 0 ? 1 : -1) * (blockHalfWidth + 0.5);
+              (relativeX > 0 ? 1 : -1) * (blockHalfWidth + shellRadius);
             newPosition.z = newPosition.z;
           } else {
             shell.rotation = Math.PI - shell.rotation;
             newPosition.x = newPosition.x;
             newPosition.z =
               block.position.z +
-              (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + 0.5);
+              (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + shellRadius);
           }
           bounced = true;
           break;
@@ -847,15 +838,6 @@ io.on("connection", (socket: Socket) => {
 
   socket.on("update", (data) => updatePlayerPosition(playerId, data));
   socket.on("useItem", (data) => useItem(playerId, data));
-  socket.on("hitBanana", (data) =>
-    removeItem(gameState.bananas, data.bananaId)
-  );
-  socket.on("hitFakeCube", (data) =>
-    removeItem(gameState.fakeCubes, data.fakeCubeId)
-  );
-  socket.on("collectItemBox", (data) =>
-    handleItemBoxCollection(playerId, data.itemBoxId)
-  );
   socket.on("respawn", () => {
     initializePlayer(playerId);
   });
