@@ -15,7 +15,6 @@ const Car = ({
 }) => {
   const carRef = useRef();
   const shaderRef = useRef();
-  const originalMaterials = useRef(new Map());
 
   // Ensure vehicle type is valid, fallback to racer if not
   const modelName = useMemo(() => {
@@ -41,7 +40,7 @@ const Car = ({
 
   // Create rainbow shader material
   const rainbowMaterial = useMemo(() => {
-    if (!vehicleModel) return null;
+    if (!vehicleModel || !isStarred) return null;
 
     // Find the first texture from the model
     let texture = null;
@@ -67,7 +66,7 @@ const Car = ({
     });
 
     return material;
-  }, [vehicleModel]);
+  }, [vehicleModel, isStarred]);
 
   // Create a cloned model to avoid sharing materials
   const clonedModel = useMemo(() => {
@@ -89,28 +88,6 @@ const Car = ({
     return clone;
   }, [vehicleModel]);
 
-  // Store original materials when model is first loaded
-  useEffect(() => {
-    if (!clonedModel) return;
-    
-    originalMaterials.current.clear();
-    clonedModel.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (Array.isArray(child.material)) {
-          originalMaterials.current.set(
-            child.uuid,
-            child.material.map((m) => m.clone())
-          );
-        } else {
-          originalMaterials.current.set(
-            child.uuid,
-            child.material.clone()
-          );
-        }
-      }
-    });
-  }, [clonedModel]);
-
   // Apply rainbow shader or color
   useEffect(() => {
     if (!clonedModel) return;
@@ -122,29 +99,16 @@ const Car = ({
           child.material = rainbowMaterial;
         }
       });
-    } else {
-      // Restore original materials and apply color if needed
+    } else if (color) {
+      // Apply the color to all materials in the model
       clonedModel.traverse((child) => {
-        if (child.isMesh) {
-          // Restore original material
-          const originalMaterial = originalMaterials.current.get(child.uuid);
-          if (originalMaterial) {
-            if (Array.isArray(originalMaterial)) {
-              child.material = originalMaterial.map(m => m.clone());
-            } else {
-              child.material = originalMaterial.clone();
-            }
-          }
-
-          // Apply color if provided
-          if (color) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach((mat) => {
-                mat.color.set(color);
-              });
-            } else {
-              child.material.color.set(color);
-            }
+        if (child.isMesh && child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((mat) => {
+              mat.color.set(color);
+            });
+          } else {
+            child.material.color.set(color);
           }
         }
       });

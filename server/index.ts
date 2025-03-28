@@ -456,7 +456,7 @@ function useItem(
     } else if (itemType === ITEM_TYPES.STAR) {
       // Activate star power-up
       player.isStarred = true;
-      const starDuration = 4000;
+      const starDuration = 8000;
       // Star power-up lasts for 10 seconds
       setTimeout(() => {
         if (gameState.players[playerId]) {
