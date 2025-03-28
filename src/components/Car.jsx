@@ -245,6 +245,20 @@ function TrailingItem({ type, position, rotation, quantity }) {
           isFakeCube
         />
       );
+    case ITEM_TYPES.THREE_GREEN_SHELLS:
+      return (
+        <>
+          {Array.from({ length: quantity || 3 }).map((_, index) => (
+            <GreenShell
+              key={index}
+              position={[position.x, position.y, position.z - index * 0.3]}
+              rotation={rotation}
+              scale={0.5}
+            />
+          ))}
+        </>
+      );
+
     case ITEM_TYPES.GREEN_SHELL:
       return (
         <GreenShell

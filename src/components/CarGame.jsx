@@ -186,6 +186,8 @@ const CarGame = () => {
     "/banana-racer/icons/icon-cube.png",
     "/banana-racer/icons/icon-shell.png",
     "/banana-racer/icons/icon-star.png",
+    "/banana-racer/icons/icon-bananas.png",
+    "/banana-racer/icons/icon-shells.png",
   ];
 
   // Get remote players (all players except current player)
@@ -294,6 +296,14 @@ const CarGame = () => {
           <img
             src="/banana-racer/icons/icon-bananas.png"
             alt="three bananas"
+            style={{ width: "240px", height: "240px" }}
+          />
+        );
+      case "three_green_shells":
+        return (
+          <img
+            src="/banana-racer/icons/icon-shells.png"
+            alt="three green shells"
             style={{ width: "240px", height: "240px" }}
           />
         );

@@ -14,6 +14,7 @@ export const ITEM_TYPES = {
   GREEN_SHELL: "green_shell",
   STAR: "star",
   THREE_BANANAS: "three_bananas",
+  THREE_GREEN_SHELLS: "three_green_shells",
 };
 
 export type Color = {

@@ -34,7 +34,8 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 10,
   [ITEM_TYPES.STAR]: 1,
-  [ITEM_TYPES.THREE_BANANAS]: 500000,
+  [ITEM_TYPES.THREE_BANANAS]: 5,
+  [ITEM_TYPES.THREE_GREEN_SHELLS]: 500000,
 };
 
 const gameState: GameState = {
@@ -442,6 +443,9 @@ function useItem(playerId: string): void {
       case ITEM_TYPES.THREE_BANANAS:
         dropItem(playerId, dropData, ITEM_TYPES.BANANA);
         break;
+      case ITEM_TYPES.THREE_GREEN_SHELLS:
+        dropGreenShell(playerId, dropData);
+        break;
       case ITEM_TYPES.BANANA:
         dropItem(playerId, dropData, ITEM_TYPES.BANANA);
         break;
@@ -507,7 +511,7 @@ function useItem(playerId: string): void {
           z: player.position.z + offsetZ,
         },
         rotation: player.rotation,
-        quantity: itemType === ITEM_TYPES.THREE_BANANAS ? 3 : 1,
+        quantity: itemType === ITEM_TYPES.THREE_BANANAS || itemType === ITEM_TYPES.THREE_GREEN_SHELLS ? 3 : 1,
       };
     }
   }
@@ -554,7 +558,7 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
       for (const [type, probability] of Object.entries(ITEM_PROBABILITIES)) {
         if (random < probability) {
           itemType = type;
-          if (type === ITEM_TYPES.THREE_BANANAS) {
+          if (type === ITEM_TYPES.THREE_BANANAS || type === ITEM_TYPES.THREE_GREEN_SHELLS) {
             quantity = 3;
           }
           break;
@@ -846,7 +850,7 @@ io.on("connection", (socket: Socket) => {
   initializePlayer(playerId);
 
   socket.on("update", (data) => updatePlayerPosition(playerId, data));
-  socket.on("useItem", (data) => useItem(playerId, data));
+  socket.on("useItem", (data) => useItem(playerId));
   socket.on("respawn", () => {
     initializePlayer(playerId);
   });
