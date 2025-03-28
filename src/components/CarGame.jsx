@@ -20,7 +20,7 @@ const FollowCamera = ({ target }) => {
   const targetPosition = useRef(new THREE.Vector3(0, 0, 0));
   const lastValidPosition = useRef(new THREE.Vector3(0, 3.5, 5));
   const lastUpdateTime = useRef(0);
-  const MAX_FRAME_DELTA = 1/30; // Cap frame delta at 30fps to prevent camera jumps
+  const MAX_FRAME_DELTA = 1 / 30; // Cap frame delta at 30fps to prevent camera jumps
 
   useFrame((state) => {
     if (!cameraRef.current || !target.current) return;
@@ -31,10 +31,10 @@ const FollowCamera = ({ target }) => {
     if (!isSpinningOut) {
       const currentTime = performance.now();
       let frameDelta = (currentTime - lastUpdateTime.current) / 1000; // Convert to seconds
-      
+
       // Cap frame delta to prevent camera jumps
       frameDelta = Math.min(frameDelta, MAX_FRAME_DELTA);
-      
+
       lastUpdateTime.current = currentTime;
 
       // Get car's current speed for adaptive camera behavior
@@ -181,7 +181,13 @@ const CarGame = () => {
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
   const spinSpeed = 50;
-  const possibleItems = ["🍌", "🚀", "🎲", "🐢", "⭐"];
+  const possibleItems = [
+    "/banana-racer/icons/icon-banana.png",
+    "/banana-racer/icons/icon-boost.png",
+    "/banana-racer/icons/icon-cube.png",
+    "/banana-racer/icons/icon-shell.png",
+    "/banana-racer/icons/icon-star.png",
+  ];
 
   // Get remote players (all players except current player)
   const remotePlayers = Object.values(players).filter(
@@ -274,7 +280,13 @@ const CarGame = () => {
   // Helper function to format item display text
   const getItemDisplayText = (item) => {
     if (isItemSpinning) {
-      return possibleItems[spinningItemIndex];
+      return (
+        <img
+          src={possibleItems[spinningItemIndex]}
+          alt="spinning item"
+          style={{ width: "240px", height: "240px" }}
+        />
+      );
     }
 
     if (!item || item.quantity <= 0) return "";
@@ -282,42 +294,47 @@ const CarGame = () => {
     // Format based on item type
     switch (item.type) {
       case "banana":
-        // Always use the number format to prevent overflow
         return (
-          <>
-            🍌<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
+          <img
+            src="/banana-racer/icons/icon-banana.png"
+            alt="banana"
+            style={{ width: "240px", height: "240px" }}
+          />
         );
       case "boost":
-        // Always use the number format to prevent overflow
         return (
-          <>
-            🚀<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
+          <img
+            src="/banana-racer/icons/icon-boost.png"
+            alt="boost"
+            style={{ width: "240px", height: "240px" }}
+          />
         );
       case "fake_cube":
-        // Add fake cube display
         return (
-          <>
-            🎲<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
+          <img
+            src="/banana-racer/icons/icon-cube.png"
+            alt="cube"
+            style={{ width: "240px", height: "240px" }}
+          />
         );
       case "green_shell":
-        // Add green shell display
         return (
-          <>
-            🐢<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
+          <img
+            src="/banana-racer/icons/icon-shell.png"
+            alt="shell"
+            style={{ width: "240px", height: "240px" }}
+          />
         );
       case "star":
-        // Add star display
         return (
-          <>
-            ⭐<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
+          <img
+            src="/banana-racer/icons/icon-star.png"
+            alt="star"
+            style={{ width: "240px", height: "240px" }}
+          />
         );
       default:
-        return `${item.type}: ${item.quantity}`;
+        return `${item.type}`;
     }
   };
 
@@ -350,7 +367,7 @@ const CarGame = () => {
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       {isGameOver && <GameOver />}
       <Canvas
-        dpr={[0.33, 0.33]}
+        dpr={[0.4, 0.4]}
         gl={{
           antialias: false,
           powerPreference: "high-performance",
@@ -509,8 +526,8 @@ const CarGame = () => {
       <style>
         {`
           @keyframes spin {
-            0% { transform: scale(1.2) rotate(0deg); }
-            100% { transform: scale(1.2) rotate(360deg); }
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1) rotate(360deg); }
           }
           
           @keyframes pulse {
@@ -532,14 +549,28 @@ const CarGame = () => {
           .item-display {
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 15px 25px;
-            border-radius: 50px;
+            padding: 35px 45px;
+            border-radius: 200px;
             font-size: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 80px;
-            min-height: 80px;
+            min-width: 200px;
+            min-height: 200px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3),
+              0 0 20px rgba(255, 255, 255, 0.1) inset;
+            border: 3px solid #9c67cc;
+          }
+
+          .item-display img {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+            width: 240px !important;
+            height: 240px !important;
+            transform: scale(1.2);
+            transform-origin: center;
           }
         `}
       </style>

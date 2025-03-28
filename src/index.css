@@ -43,6 +43,12 @@ body {
   position: relative;
 }
 
+.item-display img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .item-display:empty::after {
   opacity: 0.6;
   font-size: 18px;
