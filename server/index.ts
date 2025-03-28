@@ -34,6 +34,7 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 10,
   [ITEM_TYPES.STAR]: 1,
+  [ITEM_TYPES.THREE_BANANAS]: 500000,
 };
 
 const gameState: GameState = {
@@ -419,10 +420,7 @@ function dropGreenShell(
   }, 10000);
 }
 
-function useItem(
-  playerId: string,
-  data: { position: Position; rotation: number }
-): void {
+function useItem(playerId: string): void {
   const player = gameState.players[playerId];
   if (!player) return;
 
@@ -434,9 +432,16 @@ function useItem(
       position,
       rotation: player.rotation,
     };
-    player.trailingItem = undefined;
+    if (player.trailingItem.quantity > 1) {
+      player.trailingItem.quantity--;
+    } else {
+      player.trailingItem = undefined;
+    }
 
     switch (type) {
+      case ITEM_TYPES.THREE_BANANAS:
+        dropItem(playerId, dropData, ITEM_TYPES.BANANA);
+        break;
       case ITEM_TYPES.BANANA:
         dropItem(playerId, dropData, ITEM_TYPES.BANANA);
         break;
@@ -502,6 +507,7 @@ function useItem(
           z: player.position.z + offsetZ,
         },
         rotation: player.rotation,
+        quantity: itemType === ITEM_TYPES.THREE_BANANAS ? 3 : 1,
       };
     }
   }
@@ -548,6 +554,9 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
       for (const [type, probability] of Object.entries(ITEM_PROBABILITIES)) {
         if (random < probability) {
           itemType = type;
+          if (type === ITEM_TYPES.THREE_BANANAS) {
+            quantity = 3;
+          }
           break;
         }
         random -= probability;

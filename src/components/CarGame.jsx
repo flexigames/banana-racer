@@ -289,6 +289,14 @@ const CarGame = () => {
             style={{ width: "240px", height: "240px" }}
           />
         );
+      case "three_bananas":
+        return (
+          <img
+            src="/banana-racer/icons/icon-bananas.png"
+            alt="three bananas"
+            style={{ width: "240px", height: "240px" }}
+          />
+        );
       default:
         return `${item.type}`;
     }

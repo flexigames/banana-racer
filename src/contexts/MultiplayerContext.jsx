@@ -189,47 +189,6 @@ export const MultiplayerProvider = ({ children }) => {
     return newUrl;
   };
 
-  // Helper function to format item display text
-  const getItemDisplayText = (item) => {
-    if (!item || item.quantity <= 0) return "";
-
-    // Format based on item type
-    switch (item.type) {
-      case "banana":
-        return (
-          <>
-            🍌<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
-        );
-      case "boost":
-        return (
-          <>
-            🚀<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
-        );
-      case "fake_cube":
-        return (
-          <>
-            🎲<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
-        );
-      case "green_shell":
-        return (
-          <>
-            🐢<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
-        );
-      case "star":
-        return (
-          <>
-            ⭐<span style={{ fontSize: "20px" }}>×{item.quantity}</span>
-          </>
-        );
-      default:
-        return `${item.type}: ${item.quantity}`;
-    }
-  };
-
   // Provide context value
   const contextValue = {
     connected,
@@ -245,7 +204,6 @@ export const MultiplayerProvider = ({ children }) => {
     useItem,
     respawn,
     changeServerUrl,
-    getItemDisplayText,
   };
 
   return (

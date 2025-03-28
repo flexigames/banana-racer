@@ -13,6 +13,7 @@ export const ITEM_TYPES = {
   FAKE_CUBE: "fake_cube",
   GREEN_SHELL: "green_shell",
   STAR: "star",
+  THREE_BANANAS: "three_bananas",
 };
 
 export type Color = {
@@ -65,6 +66,7 @@ export type Player = {
     type: string;
     position: Position;
     rotation: number;
+    quantity: number;
   };
 };
 
@@ -87,6 +89,10 @@ export type FakeCube = {
 export type ItemBox = {
   id: number;
   position: number[];
+};
+
+export type ItemBoxItem = {
+  type: string;
 };
 
 export type GameState = {

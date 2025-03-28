@@ -179,6 +179,7 @@ const Car = ({
           type={trailingItem.type}
           position={{ x: 0, y: 0, z: -0.5 }}
           rotation={trailingItem.rotation}
+          quantity={trailingItem.quantity}
         />
       )}
 
@@ -210,10 +211,27 @@ const Car = ({
 
 export default Car;
 
-function TrailingItem({ type, position, rotation }) {
+function TrailingItem({ type, position, rotation, quantity }) {
   if (!position || rotation === undefined) return null;
 
   switch (type) {
+    case ITEM_TYPES.THREE_BANANAS:
+      return (
+        <>
+          {Array.from({ length: quantity || 3 }).map((_, index) => (
+            <Banana
+              key={index}
+              position={{
+                x: position.x,
+                y: position.y,
+                z: position.z - index * 0.3,
+              }}
+              rotation={rotation}
+              scale={[1, 1, 1]}
+            />
+          ))}
+        </>
+      );
     case ITEM_TYPES.BANANA:
       return (
         <Banana position={position} rotation={rotation} scale={[1, 1, 1]} />
