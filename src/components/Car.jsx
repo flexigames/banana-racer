@@ -21,7 +21,6 @@ const Car = ({
   const shaderRef = useRef();
   const originalMaterials = useRef(new Map());
 
-
   const modelName = "kart";
 
   // Adjust scale and rotation for kart
@@ -196,7 +195,6 @@ const Car = ({
         <TrailingItem
           type={trailingItem.type}
           position={{ x: 0, y: 0, z: -0.5 }}
-          rotation={trailingItem.rotation}
           quantity={trailingItem.quantity}
         />
       )}
@@ -229,8 +227,9 @@ const Car = ({
 
 export default Car;
 
-function TrailingItem({ type, position, rotation, quantity }) {
-  if (!position || rotation === undefined) return null;
+function TrailingItem({ type, position, quantity }) {
+  console.log(type, position, quantity);
+  if (!position) return null;
 
   switch (type) {
     case ITEM_TYPES.THREE_BANANAS:
@@ -239,26 +238,24 @@ function TrailingItem({ type, position, rotation, quantity }) {
           {Array.from({ length: quantity || 3 }).map((_, index) => (
             <Banana
               key={index}
+              rotation={0}
               position={{
                 x: position.x,
                 y: position.y,
                 z: position.z - index * 0.3,
               }}
-              rotation={rotation}
               scale={[1, 1, 1]}
             />
           ))}
         </>
       );
     case ITEM_TYPES.BANANA:
-      return (
-        <Banana position={position} rotation={rotation} scale={[1, 1, 1]} />
-      );
+      return <Banana position={position} rotation={0} scale={[1, 1, 1]} />;
     case ITEM_TYPES.FAKE_CUBE:
       return (
         <ItemBox
           position={[position.x, position.y - 0.25, position.z]}
-          rotation={rotation}
+          rotation={0}
           scale={0.5}
           isFakeCube
         />
@@ -270,7 +267,7 @@ function TrailingItem({ type, position, rotation, quantity }) {
             <GreenShell
               key={index}
               position={[position.x, position.y, position.z - index * 0.3]}
-              rotation={rotation}
+              rotation={0}
               scale={0.5}
             />
           ))}
@@ -281,7 +278,7 @@ function TrailingItem({ type, position, rotation, quantity }) {
       return (
         <GreenShell
           position={[position.x, position.y, position.z]}
-          rotation={rotation}
+          rotation={0}
           scale={0.5}
         />
       );

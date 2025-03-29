@@ -26,7 +26,7 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 5,
   [ITEM_TYPES.STAR]: 1,
-  [ITEM_TYPES.THREE_BANANAS]: 500,
+  [ITEM_TYPES.THREE_BANANAS]: 5,
   [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
 };
 
@@ -128,24 +128,41 @@ function updatePlayerPosition(
 
 function dropItem(
   playerId: string,
-  data: { position: Position; rotation?: number },
+  quantityBeforeDrop: number,
   itemType: string
 ): void {
+  const player = gameState.players[playerId];
+  if (!player) return;
+
   const itemId =
     itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
 
+  // Calculate positions based on the same logic used for trailing items
+  const positions = calculateTrailingItemPositions(player, quantityBeforeDrop);
+
+  const dropPosition = positions[quantityBeforeDrop - 1] || {
+    x:
+      player.position.x -
+      Math.sin(player.rotation) * trailingItemDistanceBehind,
+    y: player.position.y,
+    z:
+      player.position.z -
+      Math.cos(player.rotation) * trailingItemDistanceBehind,
+  };
+
   const { height: heightAtPosition } = calculateHeightAtPosition(
-    data.position.x,
-    data.position.z,
-    data.position.y
+    dropPosition.x,
+    dropPosition.z,
+    dropPosition.y
   );
+
   const item = {
     id: itemId,
     position: {
-      ...data.position,
+      ...dropPosition,
       y: heightAtPosition,
     },
-    rotation: data.rotation || 0,
+    rotation: player.rotation,
     droppedBy: playerId,
     droppedAt: Date.now(),
   };
@@ -161,17 +178,16 @@ function dropItem(
   }, 120000);
 }
 
-function dropGreenShell(
-  playerId: string,
-  data: { position: Position; rotation: number }
-): void {
+function dropGreenShell(playerId: string): void {
   const shellId = generateGreenShellId();
+
+  const player = gameState.players[playerId];
 
   const shell = {
     id: shellId,
-    position: gameState.players[playerId].position,
-    rotation: data.rotation,
-    direction: data.rotation,
+    position: player.position,
+    rotation: player.rotation,
+    direction: player.rotation,
     speed: 16,
     droppedBy: playerId,
     droppedAt: Date.now(),
@@ -201,12 +217,11 @@ function useItem(playerId: string): void {
 
   // Handle trailing item first
   if (player.trailingItem) {
-    const { type, position } = player.trailingItem;
+    const { type } = player.trailingItem;
     console.log("Using trailing item:", type);
-    const dropData = {
-      position,
-      rotation: player.rotation,
-    };
+
+    const quantityAtDropItem = player.trailingItem.quantity ?? 0;
+
     if (player.trailingItem.quantity > 1) {
       player.trailingItem.quantity--;
     } else {
@@ -215,19 +230,19 @@ function useItem(playerId: string): void {
 
     switch (type) {
       case ITEM_TYPES.THREE_BANANAS:
-        dropItem(playerId, dropData, ITEM_TYPES.BANANA);
+        dropItem(playerId, quantityAtDropItem, ITEM_TYPES.BANANA);
         break;
       case ITEM_TYPES.THREE_GREEN_SHELLS:
-        dropGreenShell(playerId, dropData);
+        dropGreenShell(playerId);
         break;
       case ITEM_TYPES.BANANA:
-        dropItem(playerId, dropData, ITEM_TYPES.BANANA);
+        dropItem(playerId, quantityAtDropItem, ITEM_TYPES.BANANA);
         break;
       case ITEM_TYPES.FAKE_CUBE:
-        dropItem(playerId, dropData, ITEM_TYPES.FAKE_CUBE);
+        dropItem(playerId, quantityAtDropItem, ITEM_TYPES.FAKE_CUBE);
         break;
       case ITEM_TYPES.GREEN_SHELL:
-        dropGreenShell(playerId, dropData);
+        dropGreenShell(playerId);
         break;
     }
     return;
@@ -263,24 +278,8 @@ function useItem(playerId: string): void {
         }
       }, starDuration);
     } else {
-      const distanceBehind = trailingItemDistanceBehind;
-      const offsetX = -Math.sin(player.rotation) * distanceBehind;
-      const offsetZ = -Math.cos(player.rotation) * distanceBehind;
-
-      const { height: heightAtPosition } = calculateHeightAtPosition(
-        player.position.x + offsetX,
-        player.position.z + offsetZ,
-        player.position.y
-      );
-
       player.trailingItem = {
         type: itemType,
-        position: {
-          x: player.position.x + offsetX,
-          y: heightAtPosition,
-          z: player.position.z + offsetZ,
-        },
-        rotation: player.rotation,
         quantity:
           itemType === ITEM_TYPES.THREE_BANANAS ||
           itemType === ITEM_TYPES.THREE_GREEN_SHELLS
@@ -375,13 +374,19 @@ function checkCollision(
   return Math.sqrt(dx * dx + dy * dy + dz * dz) < radius;
 }
 
-function calculateTrailingItemPositions(player: Player): Position[] {
+function calculateTrailingItemPositions(
+  player: Player,
+  overrideQuantity?: number
+): Position[] {
   if (!player.trailingItem) return [];
 
   const positions: Position[] = [];
   const angle = player.rotation;
   const itemSpacing = 0.3;
-  const quantity = player.trailingItem.quantity || 1;
+  const quantity =
+    overrideQuantity !== undefined
+      ? overrideQuantity
+      : player.trailingItem.quantity || 1;
 
   for (let i = 0; i < quantity; i++) {
     const distanceBehind = trailingItemDistanceBehind + i * itemSpacing;
