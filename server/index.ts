@@ -2,15 +2,22 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { calculateHeightAtPosition } from "./calculate-height";
-import { bridges, itemBoxes } from "./map";
-import { Color, GameState, ITEM_TYPES, Position, Player } from "./types";
+import { itemBoxes } from "./map";
+import { Color, GameState, ITEM_TYPES, Player, Position } from "./types";
 
 const PORT = process.env.PORT || 8080;
 export const carRadius = 0.26;
 const bananaRadius = 0.1;
 const cubeRadius = 0.2;
 const shellRadius = 0.2;
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    status: 'ok',
+    message: 'Kart Racing Game Server is running',
+    players: Object.keys(gameState.players).length
+  }));
+});
 const io = new Server(httpServer, {
   cors: {
     origin: "*",
