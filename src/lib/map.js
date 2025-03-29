@@ -10,44 +10,44 @@ x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbBBBBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbBBBBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYY←←←←←←←←←yyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyYY←←←←←←←←←yyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbb↑↑BBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbbBBBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbbBBBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbbBBBBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyYYY←←←←←←←←yyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyYYY←←←←←←←←yyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy========bbbb↑↑BBBBBBBBBbbbvv_____x
 x_____yyyyyyyyyyyyyyyyyyyy========bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
-x______________________=____________=______________________x
-x______________________=____________=______________________x
-x______________________=___?__?_____=______________________x
-x______________________=____________=______________________x
-x______________________=____________=______________________x
-x______________________=___?__?_____=______________________x
-x______________________=____________=______________________x
-x______________________=____________=______________________x
+x_____________________==____________==_____________________x
+x_____________________==____________==_____________________x
+x_____________________==___?__?_____==_____________________x
+x_____________________==____________==_____________________x
+x_____________________==____________==_____________________x
+x_____________________==___?__?_____==_____________________x
+x_____________________==____________==_____________________x
+x_____________________==____________==_____________________x
 x_____gggggggggggggggggggg________rrrrrrrrrrrrrrrrrrr______x
 x_____gggggggggggggggggggg________rrrrrrrrrrrrrrrrrrr______x
 x_____gggggggggggggggggggg========rrrrrrrrrrrrrrrrrrr______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrr→→→→→→→→→RRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrr→→→→→→→→→RRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGG↓↓ggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGGGGggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGGGGggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg========rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrr→→→→→→→→RRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrr→→→→→→→→RRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGGGGgggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGGGGgggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggGGGGGGGGGGGgggg________rrrRRRRRRRRRRRrrr^^______x
 x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
 x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
 x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
@@ -248,54 +248,58 @@ export function loadMap() {
             }
           } else if (mapCell === "=") {
             // Handle bridge symbols (both horizontal and vertical)
-            // For horizontal bridges
+            // Check for rectangular bridges
             let width = 1;
+            let height = 1;
+
+            // First check horizontal extent
             while (
               columnIndex + width < mapRow.length &&
               mapRow[columnIndex + width] === mapCell &&
               !visited.has(`${rowIndex},${columnIndex + width}`)
             ) {
-              visited.add(`${rowIndex},${columnIndex + width}`);
               width++;
             }
 
-            // For vertical bridges
-            let height = 1;
+            // Then check vertical extent
             while (
               rowIndex + height < mapRows.length &&
               mapRows[rowIndex + height][columnIndex] === mapCell &&
               !visited.has(`${rowIndex + height},${columnIndex}`)
             ) {
-              visited.add(`${rowIndex + height},${columnIndex}`);
+              // Check if the entire row has bridge symbols
+              let isFullRow = true;
+              for (let w = 0; w < width; w++) {
+                if (
+                  columnIndex + w >= mapRow.length ||
+                  mapRows[rowIndex + height][columnIndex + w] !== mapCell ||
+                  visited.has(`${rowIndex + height},${columnIndex + w}`)
+                ) {
+                  isFullRow = false;
+                  break;
+                }
+              }
+              if (!isFullRow) break;
               height++;
             }
 
-            visited.add(`${rowIndex},${columnIndex}`);
+            // Mark all cells in the bridge as visited
+            for (let h = 0; h < height; h++) {
+              for (let w = 0; w < width; w++) {
+                visited.add(`${rowIndex + h},${columnIndex + w}`);
+              }
+            }
 
-            // If it's a horizontal bridge (width > 1)
-            if (width > 1) {
-              bridges.push({
-                position: [
-                  columnIndex - halfWidth + width / 2 - 0.5,
-                  1,
-                  rowIndex - halfHeight + 0.5,
-                ],
-                rotation: 0,
-                scale: [width, 1, 1],
-              });
-            }
-            // If it's a vertical bridge (height > 1)
-            else if (height > 1) {
-              bridges.push({
-                position: [
-                  columnIndex - halfWidth + 0.5,
-                  1,
-                  rowIndex - halfHeight + height / 2 - 0.5,
-                ],
-                rotation: Math.PI / 2, // Rotate 90 degrees for vertical bridges
-                scale: [1, 1, height],
-              });
-            }
+            // Create a bridge with the correct dimensions
+            bridges.push({
+              position: [
+                columnIndex - halfWidth + width / 2 - 0.5,
+                1,
+                rowIndex - halfHeight + height / 2 - 0.5,
+              ],
+              rotation: 0,
+              scale: [width, 1, height],
+            });
           }
         }
       });
