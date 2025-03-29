@@ -5,7 +5,7 @@ import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
 import { blocks, ramps, bridges, itemBoxes, mapSize } from "./map";
 
 const PORT = process.env.PORT || 8080;
-const carRadius = 0.2;
+const carRadius = 0.26;
 const bananaRadius = 0.1;
 const cubeRadius = 0.2;
 const shellRadius = 0.2;
@@ -18,15 +18,6 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
-
-const VEHICLE_MODELS = [
-  "vehicle-racer",
-  "vehicle-truck",
-  "vehicle-suv",
-  "vehicle-monster-truck",
-  "vehicle-racer-low",
-  "vehicle-speedster",
-];
 
 const ITEM_PROBABILITIES = {
   [ITEM_TYPES.BANANA]: 5,
@@ -54,10 +45,6 @@ function generateRandomColor(): Color {
     s: 0.65,
     l: 0.55,
   };
-}
-
-function selectRandomVehicle(): string {
-  return VEHICLE_MODELS[Math.floor(Math.random() * VEHICLE_MODELS.length)];
 }
 
 function generateId(prefix: string): string {
@@ -841,7 +828,6 @@ io.on("connection", (socket: Socket) => {
     rotation: 0,
     speed: 0,
     color: generateRandomColor(),
-    vehicle: selectRandomVehicle(),
     lastUpdate: Date.now(),
     item: { type: ITEM_TYPES.BANANA, quantity: 0 },
     lives: 3,

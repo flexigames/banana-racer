@@ -27,7 +27,6 @@ const Player = forwardRef((props, ref) => {
     connected,
     playerId,
     playerColor,
-    playerVehicle,
     players,
     updatePlayerPosition,
   } = useMultiplayer();
@@ -38,7 +37,6 @@ const Player = forwardRef((props, ref) => {
   useImperativeHandle(ref, () => car.current);
 
   const effectiveColor = colorProp || playerColor;
-  const effectiveVehicle = vehicleProp || playerVehicle;
 
   const isBoosted = players[playerId]?.isBoosted || false;
   const isDead = players[playerId]?.lives <= 0;
@@ -152,7 +150,6 @@ const Player = forwardRef((props, ref) => {
     <group ref={car} position={[0, 0, 0]}>
       <Star isActive={isStarred} color={[1, 1, 0]}>
         <Car
-          vehicleType={effectiveVehicle}
           color={carColor}
           scale={[0.5, 0.5, 0.5]}
           rotation={[0, Math.PI, 0]}

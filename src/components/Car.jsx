@@ -9,7 +9,6 @@ import ItemBox from "./ItemBox";
 import { ITEM_TYPES } from "../../server/types";
 
 const Car = ({
-  vehicleType = "vehicle-racer",
   color = null,
   lives,
   scale = [0.5, 0.5, 0.5],
@@ -22,43 +21,21 @@ const Car = ({
   const shaderRef = useRef();
   const originalMaterials = useRef(new Map());
 
-  // Ensure vehicle type is valid, fallback to racer if not
-  // const modelName = useMemo(() => {
-  //   const validModels = [
-  //     "vehicle-racer",
-  //     "vehicle-truck",
-  //     "vehicle-suv",
-  //     "vehicle-monster-truck",
-  //     "vehicle-vintage-racer",
-  //     "vehicle-racer-low",
-  //     "vehicle-speedster",
-  //     "vehicle-drag-racer",
-  //     "kart"
-  //   ];
-
-  //   return validModels.includes(vehicleType) ? vehicleType : "vehicle-racer";
-  // }, [vehicleType]);
 
   const modelName = "kart";
 
-  // Adjust scale and rotation based on model type
+  // Adjust scale and rotation for kart
   const modelConfig = useMemo(() => {
-    if (modelName === "kart") {
-      return {
-        scale: [0.3, 0.3, 0.3],
-        rotation: [0, 0, 0]
-      };
-    }
     return {
-      scale,
-      rotation
+      scale: [0.3, 0.3, 0.3],
+      rotation: [0, 0, 0],
     };
-  }, [modelName, scale, rotation]);
+  }, []);
 
   // Load the vehicle model based on the vehicle type
   const vehicleModel = useModelWithMaterials(
-    `/assets/${modelName}.obj`,
-    `/assets/${modelName}.mtl`
+    `/assets/kart.obj`,
+    `/assets/kart.mtl`
   );
 
   // Create star shader material
@@ -72,6 +49,11 @@ const Car = ({
         texture = child.material.map;
       }
     });
+
+    // For kart model, ensure we have a texture for the star shader
+    if (!texture && modelName === "kart") {
+      texture = new THREE.TextureLoader().load("/assets/kart.png");
+    }
 
     if (!texture) {
       return null;
@@ -88,7 +70,7 @@ const Car = ({
     });
 
     return material;
-  }, [vehicleModel]);
+  }, [vehicleModel, modelName]);
 
   // Create a cloned model to avoid sharing materials
   const clonedModel = useMemo(() => {
@@ -103,9 +85,9 @@ const Car = ({
         if (modelName === "kart") {
           if (!child.material || !child.material.map) {
             const material = new THREE.MeshStandardMaterial({
-              map: new THREE.TextureLoader().load('/assets/kart.png'),
+              map: new THREE.TextureLoader().load("/assets/kart.png"),
               metalness: 0.5,
-              roughness: 0.5
+              roughness: 0.5,
             });
             child.material = material;
           }
@@ -135,6 +117,7 @@ const Car = ({
     if (isStarred && starMaterial) {
       clonedModel.traverse((child) => {
         if (child.isMesh) {
+          // Apply star material to all meshes when starred
           child.material = starMaterial;
         }
       });
@@ -201,7 +184,11 @@ const Car = ({
 
   return (
     <group ref={carRef}>
-      <primitive object={clonedModel} scale={modelConfig.scale} rotation={modelConfig.rotation} />
+      <primitive
+        object={clonedModel}
+        scale={modelConfig.scale}
+        rotation={modelConfig.rotation}
+      />
       <Balloons color={color} lives={lives} isStarred={isStarred} />
 
       {/* Show trailing item if present */}

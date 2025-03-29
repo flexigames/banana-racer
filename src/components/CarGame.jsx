@@ -372,7 +372,6 @@ const CarGame = () => {
         <Player
           ref={carRef}
           color={players[playerId]?.color}
-          vehicle={players[playerId]?.vehicle}
           trailingItem={players[playerId]?.trailingItem}
         />
 
@@ -385,7 +384,6 @@ const CarGame = () => {
               rotation={player.rotation}
               speed={player.speed || 0}
               color={player.color}
-              vehicle={player.vehicle}
               lives={player.lives}
               isStarred={player.isStarred}
               trailingItem={player.trailingItem}

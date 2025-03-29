@@ -11,7 +11,6 @@ const RemotePlayer = ({
   speed = 0,
   color,
   lives,
-  vehicle = "vehicle-racer",
   isStarred = false,
   trailingItem = null,
 }) => {
@@ -154,7 +153,6 @@ const RemotePlayer = ({
     >
       <Star isActive={isStarred} color={[1, 1, 0]}>
         <Car
-          vehicleType={vehicle}
           color={playerColor}
           scale={[0.5, 0.5, 0.5]}
           rotation={[0, Math.PI, 0]}

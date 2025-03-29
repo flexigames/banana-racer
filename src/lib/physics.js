@@ -1,6 +1,6 @@
 import { blocks, ramps, bridges, mapSize } from "./map";
 
-const carRadius = 0.2; // Approximate car collision radius
+const carRadius = 0.26; // Approximate car collision radius
 const FIXED_TIMESTEP = 1/60; // Fixed physics timestep (60 Hz)
 const MAX_STEPS = 3; // Maximum number of physics steps per frame to prevent spiral of death
 const MAX_FRAME_DELTA = 1/30; // Cap frame delta at 30fps to prevent physics spikes

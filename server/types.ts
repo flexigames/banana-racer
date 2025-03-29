@@ -54,7 +54,6 @@ export type Player = {
   rotation: number;
   speed: number;
   color: Color;
-  vehicle: string;
   lastUpdate: number;
   item: Item;
   lives: number;

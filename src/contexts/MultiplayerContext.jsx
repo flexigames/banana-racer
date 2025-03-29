@@ -38,7 +38,6 @@ export const MultiplayerProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(null);
   const [playerColor, setPlayerColor] = useState(null);
-  const [playerVehicle, setPlayerVehicle] = useState("vehicle-racer");
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
   const [fakeCubes, setFakeCubes] = useState([]);
@@ -86,7 +85,6 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.on("init", (data) => {
           setPlayerId(data.id);
           setPlayerColor(data.color);
-          setPlayerVehicle(data.vehicle || "vehicle-racer");
         });
 
         socket.current.on("error", (error) => {
@@ -194,7 +192,6 @@ export const MultiplayerProvider = ({ children }) => {
     connected,
     playerId,
     playerColor,
-    playerVehicle,
     players,
     bananas,
     itemBoxes,
