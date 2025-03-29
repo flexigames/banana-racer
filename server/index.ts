@@ -1,11 +1,12 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
-import { GameState, ItemBox, Position, ITEM_TYPES, Color } from "./types";
-import { blocks, ramps, bridges, itemBoxes, mapSize } from "./map";
+import { calculateHeightAtPosition } from "./calculate-height";
+import { bridges, itemBoxes } from "./map";
+import { Color, GameState, ITEM_TYPES, Position } from "./types";
 
 const PORT = process.env.PORT || 8080;
-const carRadius = 0.26;
+export const carRadius = 0.26;
 const bananaRadius = 0.1;
 const cubeRadius = 0.2;
 const shellRadius = 0.2;
@@ -25,8 +26,8 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 5,
   [ITEM_TYPES.STAR]: 1,
-  [ITEM_TYPES.THREE_BANANAS]: 500,
-  [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
+  [ITEM_TYPES.THREE_BANANAS]: 5,
+  [ITEM_TYPES.THREE_GREEN_SHELLS]: 500,
 };
 
 const gameState: GameState = {
@@ -109,178 +110,6 @@ function onHit(playerId: string, duration: number = 3000): void {
   }, duration);
 }
 
-/**
- * Check if a position is on a ramp and calculate height
- * @param x - X position to check
- * @param z - Z position to check
- * @returns Height at that position
- */
-export const calculateHeightAtPosition = (x: number, z: number) => {
-  // Check each ramp
-  for (const ramp of ramps) {
-    // Get ramp properties
-    const [rampX, rampY, rampZ] = ramp.position;
-    const rotation = Math.PI / 2 - ramp.rotation;
-    const [scaleX, scaleY, scaleZ] = ramp.scale;
-
-    // Adjust to ramp's local coordinates
-    // First, shift to center of ramp
-    const localX = x - rampX;
-    const localZ = z - rampZ;
-
-    // Then rotate around Y axis to align with ramp's orientation
-    const cosRot = Math.cos(-rotation);
-    const sinRot = Math.sin(-rotation);
-    const rotatedX = localX * cosRot - localZ * sinRot;
-    const rotatedZ = localX * sinRot + localZ * cosRot;
-
-    // Handle different ramp orientations
-    let rampWidth, rampLength;
-
-    // Determine orientation based on the rotation value
-    if (ramp.rotation === 0 || Math.abs(ramp.rotation) === Math.PI) {
-      // Horizontal ramps (< or >)
-      rampWidth = scaleZ;
-      rampLength = scaleX;
-    } else {
-      // Vertical ramps (^ or v)
-      rampWidth = scaleX;
-      rampLength = scaleZ;
-    }
-
-    // Add extra width to make ramps wider in the perpendicular direction
-    const extraWidth = carRadius;
-    const effectiveRampWidth = rampWidth * (1 + extraWidth);
-
-    // Scale to normalized ramp size (-0.5 to 0.5 in each dimension)
-    // For width dimension, use the expanded width
-    const normalizedX = rotatedX / effectiveRampWidth;
-    const normalizedZ = rotatedZ / rampLength;
-
-    // Check if point is within ramp bounds
-    if (
-      normalizedX >= -0.5 &&
-      normalizedX <= 0.5 &&
-      normalizedZ >= -0.5 &&
-      normalizedZ <= 0.5
-    ) {
-      // Calculate height based on position on ramp
-      // The slope always goes from back to front in local coordinates
-      const heightPercentage = 0.5 - normalizedZ;
-      const height = heightPercentage * scaleY;
-
-      return rampY + height;
-    }
-  }
-
-  // Check bridges
-  for (const bridge of bridges) {
-    const bridgeX = bridge.position[0];
-    const bridgeY = bridge.position[1];
-    const bridgeZ = bridge.position[2];
-    const rotation = bridge.rotation || 0;
-    const scale = bridge.scale || [1, 1, 1];
-
-    // Bridge dimensions (based on Bridge.jsx)
-    const bridgeWidth = scale[0];
-    const bridgeHeight = 0.1; // Height of the bridge walkway
-    const bridgeLength = scale[2];
-
-    // Convert to bridge's local coordinates
-    const localX = x - bridgeX;
-    const localZ = z - bridgeZ;
-
-    // Rotate to align with bridge orientation
-    const cosRot = Math.cos(-rotation);
-    const sinRot = Math.sin(-rotation);
-    const rotatedX = localX * cosRot - localZ * sinRot;
-    const rotatedZ = localX * sinRot + localZ * cosRot;
-
-    // Check if point is within bridge bounds
-    // For vertical bridges (rotation ~= PI/2), swap width and length
-    const isVertical =
-      Math.abs(rotation) === Math.PI / 2 ||
-      Math.abs(rotation) === (3 * Math.PI) / 2;
-    const effectiveWidth = isVertical ? bridgeLength : bridgeWidth;
-    const effectiveLength = isVertical ? bridgeWidth : bridgeLength;
-
-    if (
-      Math.abs(rotatedX) <= effectiveWidth / 2 &&
-      Math.abs(rotatedZ) <= effectiveLength / 2
-    ) {
-      // Bridge height is at bridgeY + half the bridge height (0.95 + 0.05)
-      return bridgeY + 1;
-    }
-  }
-
-  // Check blocks
-  for (const block of blocks) {
-    const blockHalfWidth = block.size.x / 2;
-    const blockHalfDepth = block.size.z / 2;
-
-    const dx = Math.abs(x - block.position.x);
-    const dz = Math.abs(z - block.position.z);
-
-    if (dx <= blockHalfWidth && dz <= blockHalfDepth) {
-      return block.position.y + block.size.y;
-    }
-  }
-
-  // Not on any ramp, block, or bridge
-  return 0;
-};
-
-/**
- * Check if a position is under a bridge
- * @param x - X position to check
- * @param z - Z position to check
- * @param y - Y position to check
- * @returns Whether the position is under a bridge
- */
-function isUnderBridge(x: number, z: number, y: number): boolean {
-  for (const bridge of bridges) {
-    const bridgeX = bridge.position[0];
-    const bridgeY = bridge.position[1];
-    const bridgeZ = bridge.position[2];
-    const rotation = bridge.rotation || 0;
-    const scale = bridge.scale || [1, 1, 1];
-
-    // Bridge dimensions
-    const bridgeWidth = scale[0];
-    const bridgeLength = scale[2];
-
-    // Convert to bridge's local coordinates
-    const localX = x - bridgeX;
-    const localZ = z - bridgeZ;
-
-    // Rotate to align with bridge orientation
-    const cosRot = Math.cos(-rotation);
-    const sinRot = Math.sin(-rotation);
-    const rotatedX = localX * cosRot - localZ * sinRot;
-    const rotatedZ = localX * sinRot + localZ * cosRot;
-
-    // Check if point is within bridge bounds horizontally and below bridge vertically
-    // For vertical bridges (rotation ~= PI/2), swap width and length
-    const isVertical =
-      Math.abs(rotation) === Math.PI / 2 ||
-      Math.abs(rotation) === (3 * Math.PI) / 2;
-    const effectiveWidth = isVertical ? bridgeLength : bridgeWidth;
-    const effectiveLength = isVertical ? bridgeWidth : bridgeLength;
-
-    // Allow driving under bridge if the vertical distance is sufficient
-    const verticalClearance = 0.01; // Minimum clearance needed to drive under
-    if (
-      Math.abs(rotatedX) <= effectiveWidth / 2 &&
-      Math.abs(rotatedZ) <= effectiveLength / 2 &&
-      y < bridgeY - verticalClearance // Check if there's enough clearance
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 function updatePlayerPosition(
   playerId: string,
   data: { position: Position; rotation: number; speed?: number }
@@ -301,19 +130,15 @@ function updatePlayerPosition(
     const offsetX = -Math.sin(player.rotation) * distanceBehind;
     const offsetZ = -Math.cos(player.rotation) * distanceBehind;
 
-    const underBridge = isUnderBridge(
+    const { height: heightAtPosition } = calculateHeightAtPosition(
       player.position.x + offsetX,
       player.position.z + offsetZ,
       player.position.y
     );
-    const heightAtPosition = calculateHeightAtPosition(
-      player.position.x + offsetX,
-      player.position.z + offsetZ
-    );
 
     player.trailingItem.position = {
       x: player.position.x + offsetX,
-      y: underBridge ? player.position.y : heightAtPosition,
+      y: heightAtPosition,
       z: player.position.z + offsetZ,
     };
     player.trailingItem.rotation = player.rotation;
@@ -328,20 +153,16 @@ function dropItem(
   const itemId =
     itemType === ITEM_TYPES.BANANA ? generateBananaId() : generateFakeCubeId();
 
-  const underBridge = isUnderBridge(
+  const { height: heightAtPosition } = calculateHeightAtPosition(
     data.position.x,
     data.position.z,
     data.position.y
-  );
-  const heightAtPosition = calculateHeightAtPosition(
-    data.position.x,
-    data.position.z
   );
   const item = {
     id: itemId,
     position: {
       ...data.position,
-      y: underBridge ? data.position.y : heightAtPosition,
+      y: heightAtPosition,
     },
     rotation: data.rotation || 0,
     droppedBy: playerId,
@@ -365,28 +186,14 @@ function dropGreenShell(
 ): void {
   const shellId = generateGreenShellId();
 
-  const underBridge = isUnderBridge(
-    data.position.x,
-    data.position.z,
-    data.position.y
-  );
-  const heightAtPosition = calculateHeightAtPosition(
-    data.position.x,
-    data.position.z
-  );
-
   const shell = {
     id: shellId,
-    position: {
-      ...data.position,
-      y: underBridge ? data.position.y : heightAtPosition,
-    },
+    position: gameState.players[playerId].position,
     rotation: data.rotation,
     direction: data.rotation,
     speed: 16,
     droppedBy: playerId,
     droppedAt: Date.now(),
-    bounces: 0,
     verticalVelocity: 0,
     canHitOwner: false,
   };
@@ -479,21 +286,17 @@ function useItem(playerId: string): void {
       const offsetX = -Math.sin(player.rotation) * distanceBehind;
       const offsetZ = -Math.cos(player.rotation) * distanceBehind;
 
-      const underBridge = isUnderBridge(
+      const { height: heightAtPosition } = calculateHeightAtPosition(
         player.position.x + offsetX,
         player.position.z + offsetZ,
         player.position.y
-      );
-      const heightAtPosition = calculateHeightAtPosition(
-        player.position.x + offsetX,
-        player.position.z + offsetZ
       );
 
       player.trailingItem = {
         type: itemType,
         position: {
           x: player.position.x + offsetX,
-          y: underBridge ? player.position.y : heightAtPosition,
+          y: heightAtPosition,
           z: player.position.z + offsetZ,
         },
         rotation: player.rotation,
@@ -718,147 +521,86 @@ function updateGreenShells(): void {
       z: shell.position.z + moveZ,
     };
 
-    // Ensure verticalVelocity is defined
-    if (shell.verticalVelocity === undefined) {
-      shell.verticalVelocity = 0;
-    }
-
-    // Apply gravity
-    shell.verticalVelocity -= gravity * FIXED_TIMESTEP;
-    shell.verticalVelocity = Math.max(
-      -terminalVelocity,
-      shell.verticalVelocity
-    );
-
-    // Calculate new height based on gravity
-    const newHeightBasedOnGravity =
-      shell.position.y + shell.verticalVelocity * FIXED_TIMESTEP;
-
-    let bounced = false;
-
-    // Check if we're under a bridge
-    const underBridge = isUnderBridge(
+    // Calculate target height based on terrain
+    const { height: targetHeight, collisionObject } = calculateHeightAtPosition(
       newPosition.x,
       newPosition.z,
       shell.position.y
     );
+    if (targetHeight < shell.position.y) {
+      if (shell.verticalVelocity === undefined) {
+        shell.verticalVelocity = 0;
+      }
 
-    // Check battle block collisions
-    if (!underBridge) {
-      for (const block of blocks) {
-        const blockHalfWidth = block.size.x / 2;
-        const blockHalfDepth = block.size.z / 2;
+      shell.verticalVelocity -= gravity * FIXED_TIMESTEP;
+      shell.verticalVelocity = Math.max(
+        -terminalVelocity,
+        shell.verticalVelocity
+      );
 
-        const shellTooHighForCollision =
-          block.position.y + block.size.y - 0.25 < shell.position.y;
-        if (shellTooHighForCollision) {
-          continue;
-        }
+      const newHeightBasedOnGravity =
+        shell.position.y + shell.verticalVelocity * FIXED_TIMESTEP;
 
-        const dx = Math.abs(newPosition.x - block.position.x);
-        const dz = Math.abs(newPosition.z - block.position.z);
+      newPosition.y = Math.max(targetHeight, newHeightBasedOnGravity);
+
+      shell.position = newPosition;
+
+      return;
+    }
+
+    const delta = 0.1;
+    if (targetHeight <= shell.position.y + delta) {
+      shell.verticalVelocity = 0;
+      newPosition.y = targetHeight;
+      shell.position = newPosition;
+
+      return;
+    }
+
+    if (collisionObject) {
+      const collisionObjectPosition = collisionObject.position;
+      const collisionObjectScale = collisionObject.scale;
+
+      const collisionObjectHalfWidth = collisionObjectScale[0] / 2;
+      const collisionObjectHalfDepth = collisionObjectScale[2] / 2;
+
+      const shellTooHighForCollision =
+        collisionObjectPosition[1] + collisionObjectScale[1] - 0.25 <
+        shell.position.y;
+      if (!shellTooHighForCollision) {
+        const dx = Math.abs(newPosition.x - collisionObjectPosition[0]);
+        const dz = Math.abs(newPosition.z - collisionObjectPosition[2]);
 
         if (
-          dx < blockHalfWidth + shellRadius &&
-          dz < blockHalfDepth + shellRadius
+          dx < collisionObjectHalfWidth + shellRadius &&
+          dz < collisionObjectHalfDepth + shellRadius
         ) {
-          const relativeX = newPosition.x - block.position.x;
-          const relativeZ = newPosition.z - block.position.z;
+          const relativeX = newPosition.x - collisionObjectPosition[0];
+          const relativeZ = newPosition.z - collisionObjectPosition[2];
 
           const penetrationX =
-            blockHalfWidth + shellRadius - Math.abs(relativeX);
+            collisionObjectHalfWidth + shellRadius - Math.abs(relativeX);
           const penetrationZ =
-            blockHalfDepth + shellRadius - Math.abs(relativeZ);
+            collisionObjectHalfDepth + shellRadius - Math.abs(relativeZ);
 
           if (penetrationX < penetrationZ) {
             shell.rotation = -shell.rotation;
             newPosition.x =
-              block.position.x +
-              (relativeX > 0 ? 1 : -1) * (blockHalfWidth + shellRadius);
+              collisionObjectPosition[0] +
+              (relativeX > 0 ? 1 : -1) *
+                (collisionObjectHalfWidth + shellRadius);
           } else {
             shell.rotation = Math.PI - shell.rotation;
             newPosition.z =
-              block.position.z +
-              (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + shellRadius);
+              collisionObjectPosition[2] +
+              (relativeZ > 0 ? 1 : -1) *
+                (collisionObjectHalfDepth + shellRadius);
           }
-          bounced = true;
-          break;
-        }
-      }
-    }
-
-    if (bounced) {
-      shell.bounces++;
-    }
-
-    // Calculate target height based on terrain
-    const targetHeight = calculateHeightAtPosition(
-      newPosition.x,
-      newPosition.z
-    );
-    const currentHeight = calculateHeightAtPosition(
-      shell.position.x,
-      shell.position.z
-    );
-
-    // Check if we're going down a ramp (current height > target height)
-    if (currentHeight > targetHeight && !underBridge) {
-      // Smoothly transition down the ramp
-      const transitionSpeed = 5.0;
-      const targetY = Math.max(0, targetHeight);
-
-      // Interpolate between current height and target height
-      newPosition.y =
-        shell.position.y +
-        (targetY - shell.position.y) *
-          Math.min(1, transitionSpeed * FIXED_TIMESTEP);
-
-      // Reset vertical velocity when on a ramp to prevent bouncing
-      shell.verticalVelocity = Math.min(0, shell.verticalVelocity);
-    }
-    // Check if we've hit the ground
-    else if (newHeightBasedOnGravity <= targetHeight) {
-      // We've hit the ground
-      newPosition.y = targetHeight;
-      shell.verticalVelocity = 0;
-    } else {
-      // We're in the air
-      newPosition.y = newHeightBasedOnGravity;
-    }
-
-    // Handle multi-level bridges and blocks
-    if (underBridge) {
-      // Get the ground level or the level we should be at
-      let groundLevel = 0;
-
-      // Check if we're on top of any blocks
-      for (const block of blocks) {
-        const blockHalfWidth = block.size.x / 2;
-        const blockHalfDepth = block.size.z / 2;
-
-        const dx = Math.abs(newPosition.x - block.position.x);
-        const dz = Math.abs(newPosition.z - block.position.z);
-
-        // If we're above this block and it's below the bridge
-        if (
-          dx < blockHalfWidth &&
-          dz < blockHalfDepth &&
-          block.position.y < newPosition.y
-        ) {
-          // Update ground level if this block is higher
-          groundLevel = Math.max(groundLevel, block.position.y + block.size.y);
         }
       }
 
-      // Keep us at the appropriate level when under a bridge
-      newPosition.y = groundLevel;
-
-      // Prevent upward movement when under a bridge
-      shell.verticalVelocity = Math.min(0, shell.verticalVelocity);
+      shell.position = newPosition;
     }
-
-    // Update shell position
-    shell.position = newPosition;
   });
 
   // Remove old shells

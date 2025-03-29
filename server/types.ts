@@ -42,7 +42,6 @@ export type GreenShell = {
   speed: number;
   droppedBy: string;
   droppedAt: number;
-  bounces: number;
   verticalVelocity?: number;
   canHitOwner: boolean;
 };
