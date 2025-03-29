@@ -155,7 +155,6 @@ export const MultiplayerProvider = ({ children }) => {
     return true;
   };
 
-
   // Respawn function
   const respawn = () => {
     if (connected && socket.current) {

@@ -6,6 +6,7 @@ import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
 import GreenShell from "./GreenShell";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
+import { useAudio } from "../contexts/AudioContext";
 import * as THREE from "three";
 import ItemBox from "./ItemBox";
 import GameOver from "./GameOver";
@@ -13,6 +14,7 @@ import Arena from "./Arena";
 import JoystickControl from "./JoystickControl";
 import { ITEM_TYPES } from "../../server/types";
 import Minimap from "./Minimap";
+import { MuteButton } from "./MuteButton";
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
   const cameraRef = useRef();
@@ -129,6 +131,7 @@ const PlayerUpdater = ({ carRef }) => {
 
 const CarGame = () => {
   const carRef = useRef();
+  const { handleInteraction } = useAudio();
   const {
     playerId,
     players,
@@ -138,6 +141,23 @@ const CarGame = () => {
     greenShells,
     useItem,
   } = useMultiplayer();
+
+  // Handle initial interaction to start audio
+  useEffect(() => {
+    const handleInitialInteraction = () => {
+      handleInteraction();
+    };
+
+    window.addEventListener("click", handleInitialInteraction, { once: true });
+    window.addEventListener("keydown", handleInitialInteraction, { once: true });
+    window.addEventListener("touchstart", handleInitialInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("click", handleInitialInteraction);
+      window.removeEventListener("keydown", handleInitialInteraction);
+      window.removeEventListener("touchstart", handleInitialInteraction);
+    };
+  }, [handleInteraction]);
 
   // Handle key press events
   useEffect(() => {
@@ -428,6 +448,7 @@ const CarGame = () => {
           <ItemBox key={box.id} position={box.position} />
         ))}
       </Canvas>
+      <MuteButton />
       <JoystickControl
         onMove={(x, y) => {
           if (carRef.current) {
@@ -450,6 +471,7 @@ const CarGame = () => {
           padding: 10,
           borderRadius: 5,
           fontSize: "14px",
+          display: window.innerWidth <= 768 ? "none" : "block",
         }}
       >
         Press <strong>SPACE</strong> to use item
