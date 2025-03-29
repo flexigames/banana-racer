@@ -20,9 +20,13 @@ export const useAudio = () => {
 };
 
 export const AudioProvider = ({ children }) => {
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => {
+    const savedMuteState = localStorage.getItem("isMuted");
+    return savedMuteState ? JSON.parse(savedMuteState) : false;
+  });
   const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef(null);
+  const userMutedRef = useRef(isMuted);
 
   // Initialize audio
   useEffect(() => {
@@ -36,7 +40,27 @@ export const AudioProvider = ({ children }) => {
     if (audioRef.current) {
       audioRef.current.muted = isMuted;
     }
+    userMutedRef.current = isMuted;
+    localStorage.setItem("isMuted", JSON.stringify(isMuted));
   }, [isMuted]);
+
+  // Handle tab visibility changes
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (audioRef.current) {
+        if (document.hidden) {
+          audioRef.current.muted = true;
+        } else {
+          audioRef.current.muted = userMutedRef.current;
+        }
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   // Handle user interaction
   const handleInteraction = () => {
