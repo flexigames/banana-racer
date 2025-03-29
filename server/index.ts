@@ -3,7 +3,7 @@ import { Server, Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import { calculateHeightAtPosition } from "./calculate-height";
 import { bridges, itemBoxes } from "./map";
-import { Color, GameState, ITEM_TYPES, Position } from "./types";
+import { Color, GameState, ITEM_TYPES, Position, Player } from "./types";
 
 const PORT = process.env.PORT || 8080;
 export const carRadius = 0.26;
@@ -26,7 +26,7 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 5,
   [ITEM_TYPES.STAR]: 1,
-  [ITEM_TYPES.THREE_BANANAS]: 5,
+  [ITEM_TYPES.THREE_BANANAS]: 500,
   [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
 };
 
@@ -375,6 +375,26 @@ function checkCollision(
   return Math.sqrt(dx * dx + dy * dy + dz * dz) < radius;
 }
 
+function calculateTrailingItemPositions(player: Player): Position[] {
+  if (!player.trailingItem) return [];
+
+  const positions: Position[] = [];
+  const angle = player.rotation;
+  const itemSpacing = 0.3;
+  const quantity = player.trailingItem.quantity || 1;
+
+  for (let i = 0; i < quantity; i++) {
+    const distanceBehind = trailingItemDistanceBehind + i * itemSpacing;
+    positions.push({
+      x: player.position.x - Math.sin(angle) * distanceBehind,
+      y: player.position.y,
+      z: player.position.z - Math.cos(angle) * distanceBehind,
+    });
+  }
+
+  return positions;
+}
+
 function handleCollisions(): void {
   // Check player collisions with items and other players
   for (const player of Object.values(gameState.players)) {
@@ -432,15 +452,51 @@ function handleCollisions(): void {
       }
     }
 
-    // Check collision with other players
+    // Check collision with other players and their trailing items
     for (const otherPlayer of Object.values(gameState.players)) {
+      if (otherPlayer.id === player.id || otherPlayer.lives <= 0) continue;
+
+      // Check direct player collision
       if (
-        otherPlayer.id !== player.id &&
-        otherPlayer.lives > 0 &&
         checkCollision(player.position, otherPlayer.position, 2 * carRadius)
       ) {
         if (player.isStarred && !otherPlayer.isStarred) {
           onHit(otherPlayer.id);
+        }
+      }
+
+      // Check collision with other player's trailing items
+      const trailingItemPositions = calculateTrailingItemPositions(otherPlayer);
+      if (trailingItemPositions.length > 0 && otherPlayer.trailingItem) {
+        const trailingItemRadius =
+          otherPlayer.trailingItem.type === ITEM_TYPES.BANANA ||
+          otherPlayer.trailingItem.type === ITEM_TYPES.THREE_BANANAS
+            ? bananaRadius
+            : otherPlayer.trailingItem.type === ITEM_TYPES.GREEN_SHELL ||
+              otherPlayer.trailingItem.type === ITEM_TYPES.THREE_GREEN_SHELLS
+            ? shellRadius
+            : cubeRadius;
+
+        // Check collision with each trailing item position
+        for (const itemPos of trailingItemPositions) {
+          if (
+            checkCollision(
+              player.position,
+              itemPos,
+              trailingItemRadius + carRadius
+            )
+          ) {
+            // reduce quantity of trailing item
+            otherPlayer.trailingItem.quantity--;
+            if (otherPlayer.trailingItem.quantity === 0) {
+              otherPlayer.trailingItem = undefined;
+            }
+            if (player.isStarred) {
+            } else {
+              onHit(player.id);
+            }
+            break; // Stop checking other positions once a collision is found
+          }
         }
       }
     }
