@@ -23,20 +23,37 @@ const Car = ({
   const originalMaterials = useRef(new Map());
 
   // Ensure vehicle type is valid, fallback to racer if not
-  const modelName = useMemo(() => {
-    const validModels = [
-      "vehicle-racer",
-      "vehicle-truck",
-      "vehicle-suv",
-      "vehicle-monster-truck",
-      "vehicle-vintage-racer",
-      "vehicle-racer-low",
-      "vehicle-speedster",
-      "vehicle-drag-racer",
-    ];
+  // const modelName = useMemo(() => {
+  //   const validModels = [
+  //     "vehicle-racer",
+  //     "vehicle-truck",
+  //     "vehicle-suv",
+  //     "vehicle-monster-truck",
+  //     "vehicle-vintage-racer",
+  //     "vehicle-racer-low",
+  //     "vehicle-speedster",
+  //     "vehicle-drag-racer",
+  //     "kart"
+  //   ];
 
-    return validModels.includes(vehicleType) ? vehicleType : "vehicle-racer";
-  }, [vehicleType]);
+  //   return validModels.includes(vehicleType) ? vehicleType : "vehicle-racer";
+  // }, [vehicleType]);
+
+  const modelName = "kart";
+
+  // Adjust scale and rotation based on model type
+  const modelConfig = useMemo(() => {
+    if (modelName === "kart") {
+      return {
+        scale: [0.3, 0.3, 0.3],
+        rotation: [0, 0, 0]
+      };
+    }
+    return {
+      scale,
+      rotation
+    };
+  }, [modelName, scale, rotation]);
 
   // Load the vehicle model based on the vehicle type
   const vehicleModel = useModelWithMaterials(
@@ -81,21 +98,35 @@ const Car = ({
 
     // Store original materials and ensure all materials are cloned
     clone.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (Array.isArray(child.material)) {
-          const clonedMaterials = child.material.map((m) => m.clone());
-          child.material = clonedMaterials;
-          originalMaterials.current.set(child.uuid, child.material);
-        } else {
-          const clonedMaterial = child.material.clone();
-          child.material = clonedMaterial;
-          originalMaterials.current.set(child.uuid, child.material);
+      if (child.isMesh) {
+        // For kart model, ensure material is properly set
+        if (modelName === "kart") {
+          if (!child.material || !child.material.map) {
+            const material = new THREE.MeshStandardMaterial({
+              map: new THREE.TextureLoader().load('/assets/kart.png'),
+              metalness: 0.5,
+              roughness: 0.5
+            });
+            child.material = material;
+          }
+        }
+
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            const clonedMaterials = child.material.map((m) => m.clone());
+            child.material = clonedMaterials;
+            originalMaterials.current.set(child.uuid, child.material);
+          } else {
+            const clonedMaterial = child.material.clone();
+            child.material = clonedMaterial;
+            originalMaterials.current.set(child.uuid, child.material);
+          }
         }
       }
     });
 
     return clone;
-  }, [vehicleModel]);
+  }, [vehicleModel, modelName]);
 
   // Apply star shader or color
   useEffect(() => {
@@ -170,7 +201,7 @@ const Car = ({
 
   return (
     <group ref={carRef}>
-      <primitive object={clonedModel} scale={scale} rotation={rotation} />
+      <primitive object={clonedModel} scale={modelConfig.scale} rotation={modelConfig.rotation} />
       <Balloons color={color} lives={lives} isStarred={isStarred} />
 
       {/* Show trailing item if present */}
