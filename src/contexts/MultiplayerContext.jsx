@@ -8,7 +8,7 @@ import React, {
 import { io } from "socket.io-client";
 
 const LOCAL_SERVER_URL = "http://localhost:8080";
-const REMOTE_SERVER_URL = "https://api.wundertest.ai/multiplayer";
+const REMOTE_SERVER_URL = "https://bananaracer.alexandfinn.com";
 
 // Create the context
 const MultiplayerContext = createContext({
@@ -64,9 +64,7 @@ export const MultiplayerProvider = ({ children }) => {
 
     const connect = async () => {
       try {
-        socket.current = io(serverUrl, {
-          path: "/multiplayer/socket.io/",
-        });
+        socket.current = io(serverUrl);
 
         socket.current.on("connect", () => {
           setConnected(true);
