@@ -25,7 +25,7 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 5,
   [ITEM_TYPES.STAR]: 1,
-  [ITEM_TYPES.THREE_BANANAS]: 5,
+  [ITEM_TYPES.THREE_BANANAS]: 500,
   [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
 };
 
@@ -337,7 +337,6 @@ function dropItem(
     data.position.x,
     data.position.z
   );
-
   const item = {
     id: itemId,
     position: {
@@ -384,7 +383,7 @@ function dropGreenShell(
     },
     rotation: data.rotation,
     direction: data.rotation,
-    speed: 8,
+    speed: 16,
     droppedBy: playerId,
     droppedAt: Date.now(),
     bounces: 0,
@@ -399,7 +398,7 @@ function dropGreenShell(
     if (gameState.greenShells[shellId]) {
       gameState.greenShells[shellId].canHitOwner = true;
     }
-  }, 200);
+  }, 300);
 
   setTimeout(() => {
     if (gameState.greenShells[shellId]) {
@@ -667,7 +666,7 @@ function handleCollisions(): void {
       if (
         checkCollision(
           player.position,
-          { x: box.position[0], y: 0, z: box.position[2] },
+          { x: box.position[0], y: box.position[1], z: box.position[2] },
           cubeRadius + carRadius
         )
       ) {
@@ -683,6 +682,7 @@ function updateGreenShells(): void {
   const MAX_SHELL_AGE = 10000; // 10 seconds
   const gravity = 9.8; // Gravity acceleration in m/s²
   const terminalVelocity = 20; // Maximum falling speed
+  const FIXED_TIMESTEP = 1 / 60; // Fixed physics timestep (60 Hz)
 
   // For each green shell
   Object.entries(gameState.greenShells).forEach(([shellId, shell]) => {
@@ -706,13 +706,8 @@ function updateGreenShells(): void {
       return;
     }
 
-    // Initialize vertical velocity if not exists
-    if (shell.verticalVelocity === undefined) {
-      shell.verticalVelocity = 0;
-    }
-
     // Calculate movement
-    const moveSpeed = shell.speed * 0.033; // Simulate 30fps
+    const moveSpeed = shell.speed * FIXED_TIMESTEP;
     const moveX = Math.sin(shell.rotation) * moveSpeed;
     const moveZ = Math.cos(shell.rotation) * moveSpeed;
 
@@ -723,8 +718,13 @@ function updateGreenShells(): void {
       z: shell.position.z + moveZ,
     };
 
+    // Ensure verticalVelocity is defined
+    if (shell.verticalVelocity === undefined) {
+      shell.verticalVelocity = 0;
+    }
+
     // Apply gravity
-    shell.verticalVelocity -= gravity * 0.033; // Apply gravity over frame time
+    shell.verticalVelocity -= gravity * FIXED_TIMESTEP;
     shell.verticalVelocity = Math.max(
       -terminalVelocity,
       shell.verticalVelocity
@@ -732,7 +732,7 @@ function updateGreenShells(): void {
 
     // Calculate new height based on gravity
     const newHeightBasedOnGravity =
-      shell.position.y + shell.verticalVelocity * 0.033;
+      shell.position.y + shell.verticalVelocity * FIXED_TIMESTEP;
 
     let bounced = false;
 
@@ -749,13 +749,14 @@ function updateGreenShells(): void {
         const blockHalfWidth = block.size.x / 2;
         const blockHalfDepth = block.size.z / 2;
 
-        const dx = Math.abs(newPosition.x - block.position.x);
-        const dz = Math.abs(newPosition.z - block.position.z);
-
-        const shellIsTooHighForBlock = newPosition.y - 0.25 > block.position.y;
-        if (shellIsTooHighForBlock) {
+        const shellTooHighForCollision =
+          block.position.y + block.size.y - 0.25 < shell.position.y;
+        if (shellTooHighForCollision) {
           continue;
         }
+
+        const dx = Math.abs(newPosition.x - block.position.x);
+        const dz = Math.abs(newPosition.z - block.position.z);
 
         if (
           dx < blockHalfWidth + shellRadius &&
@@ -774,10 +775,8 @@ function updateGreenShells(): void {
             newPosition.x =
               block.position.x +
               (relativeX > 0 ? 1 : -1) * (blockHalfWidth + shellRadius);
-            newPosition.z = newPosition.z;
           } else {
             shell.rotation = Math.PI - shell.rotation;
-            newPosition.x = newPosition.x;
             newPosition.z =
               block.position.z +
               (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + shellRadius);
@@ -793,20 +792,69 @@ function updateGreenShells(): void {
     }
 
     // Calculate target height based on terrain
-    const nextHeight = calculateHeightAtPosition(newPosition.x, newPosition.z);
+    const targetHeight = calculateHeightAtPosition(
+      newPosition.x,
+      newPosition.z
+    );
+    const currentHeight = calculateHeightAtPosition(
+      shell.position.x,
+      shell.position.z
+    );
 
-    if (underBridge) {
-      // If under a bridge, keep the shell at ground level
-      newPosition.y = 0;
-      shell.verticalVelocity = 0;
-    } else if (newHeightBasedOnGravity <= nextHeight) {
-      const delta = nextHeight - newHeightBasedOnGravity;
-      if (delta < 0.2) {
-        newPosition.y = nextHeight;
-      }
+    // Check if we're going down a ramp (current height > target height)
+    if (currentHeight > targetHeight && !underBridge) {
+      // Smoothly transition down the ramp
+      const transitionSpeed = 5.0;
+      const targetY = Math.max(0, targetHeight);
+
+      // Interpolate between current height and target height
+      newPosition.y =
+        shell.position.y +
+        (targetY - shell.position.y) *
+          Math.min(1, transitionSpeed * FIXED_TIMESTEP);
+
+      // Reset vertical velocity when on a ramp to prevent bouncing
+      shell.verticalVelocity = Math.min(0, shell.verticalVelocity);
+    }
+    // Check if we've hit the ground
+    else if (newHeightBasedOnGravity <= targetHeight) {
+      // We've hit the ground
+      newPosition.y = targetHeight;
       shell.verticalVelocity = 0;
     } else {
+      // We're in the air
       newPosition.y = newHeightBasedOnGravity;
+    }
+
+    // Handle multi-level bridges and blocks
+    if (underBridge) {
+      // Get the ground level or the level we should be at
+      let groundLevel = 0;
+
+      // Check if we're on top of any blocks
+      for (const block of blocks) {
+        const blockHalfWidth = block.size.x / 2;
+        const blockHalfDepth = block.size.z / 2;
+
+        const dx = Math.abs(newPosition.x - block.position.x);
+        const dz = Math.abs(newPosition.z - block.position.z);
+
+        // If we're above this block and it's below the bridge
+        if (
+          dx < blockHalfWidth &&
+          dz < blockHalfDepth &&
+          block.position.y < newPosition.y
+        ) {
+          // Update ground level if this block is higher
+          groundLevel = Math.max(groundLevel, block.position.y + block.size.y);
+        }
+      }
+
+      // Keep us at the appropriate level when under a bridge
+      newPosition.y = groundLevel;
+
+      // Prevent upward movement when under a bridge
+      shell.verticalVelocity = Math.min(0, shell.verticalVelocity);
     }
 
     // Update shell position
@@ -836,7 +884,6 @@ io.on("connection", (socket: Socket) => {
   socket.emit("init", {
     id: playerId,
     color: gameState.players[playerId].color,
-    vehicle: gameState.players[playerId].vehicle,
     item: gameState.players[playerId].item,
   });
 

@@ -1,4 +1,6 @@
-const mapText = `
+const levels = [
+  // Level 0 (y = 0)
+  `
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 x__________________________________________________________x
 x___?________________________________________________?_____x
@@ -10,18 +12,18 @@ x_______>>>>>>>>>>>>>>>yyy________bbb<<<<<<<<<<<<<<<_______x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
 x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbbBBBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbbBBBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbbBBBBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyYYYYYYYYYYYyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyYYY←←←←←←←←yyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyYYY←←←←←←←←yyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy________bbbb↑↑BBBBBBBBBbbbvv_____x
-x_____vvyyyyyyyyyyyyyyyyyy========bbbb↑↑BBBBBBBBBbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbvv_____x
+x_____vvyyyyyyyyyyyyyyyyyy========bbbbbbbbbbbbbbbbbbvv_____x
 x_____yyyyyyyyyyyyyyyyyyyy========bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
 x_____yyyyyyyyyyyyyyyyyyyy________bbbbbbbbbbbbbbbbbbbb_____x
@@ -36,18 +38,18 @@ x_____________________==____________==_____________________x
 x_____gggggggggggggggggggg________rrrrrrrrrrrrrrrrrrr______x
 x_____gggggggggggggggggggg________rrrrrrrrrrrrrrrrrrr______x
 x_____gggggggggggggggggggg========rrrrrrrrrrrrrrrrrrr______x
-x_____^^gggGGGGGGGGG↓↓gggg========rrrrrrrrrrrrrrrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrr→→→→→→→→RRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrr→→→→→→→→RRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGG↓↓gggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGGGgggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGGGgggg________rrrRRRRRRRRRRRrrr^^______x
-x_____^^gggGGGGGGGGGGGgggg________rrrRRRRRRRRRRRrrr^^______x
+x_____^^gggggggggggggggggg========rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
+x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
 x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
 x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
 x_____^^gggggggggggggggggg________rrrrrrrrrrrrrrrrr^^______x
@@ -58,11 +60,73 @@ x_?________________________________________________?_______x
 x___?___________________________________________________?__x
 x______?____________________________________________?______x
 x__________________________________________________________x
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`;
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`,
+  // Level 1 (y = 2)
+  `____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+___________yyyyyyyyyyy================bbbbbbbbbbb___________
+___________yyyyyyyyyyy================bbbbbbbbbbb___________
+___________yyyyyyyyyyy________________bbbbbbbbbbb___________
+___________yyyyyyyyyyy________________^^bbbbbbbbb___________
+___________yyyyyyyyyyy________________^^bbbbbbbbb___________
+___________yyyyyyyyyyy________________^^bbbbbbbbb___________
+___________yyyyyyyyyyy________________^^bbbbbbbbb___________
+___________yyyyyyyyyyy________________^^bbbbbbbbb___________
+___________yyy<<<<<<<<________________^^bbbbbbbbb___________
+___________yyy<<<<<<<<________________^^bbbbbbbbb___________
+___________==__________________________________==___________
+___________==__________?____________?__________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________==__________?____________?__________==___________
+___________==__________________________________==___________
+___________==__________________________________==___________
+___________gggggggggvv________________>>>>>>>rrrr___________
+___________gggggggggvv________________>>>>>>>rrrr___________
+___________gggggggggvv________________rrrrrrrrrrr___________
+___________gggggggggvv________________rrrrrrrrrrr___________
+___________gggggggggvv________________rrrrrrrrrrr___________
+___________gggggggggvv________________rrrrrrrrrrr___________
+___________gggggggggvv________________rrrrrrrrrrr___________
+___________gggggggggvv________________rrrrrrrrrrr___________
+___________ggggggggggg________________rrrrrrrrrrr___________
+___________ggggggggggg================rrrrrrrrrrr___________
+___________ggggggggggg================rrrrrrrrrrr___________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________`,
+];
 
 export function loadMap() {
   try {
-    const mapRows = mapText.trim().split("\n");
+    const mapRows = levels[0].trim().split("\n");
 
     const blocks = [];
     const ramps = [];
@@ -77,233 +141,212 @@ export function loadMap() {
     const halfWidth = mapSize.width / 2;
     const halfHeight = mapSize.height / 2;
 
-    // First pass: Find continuous blocks
-    const visited = new Set();
+    // Process each level
+    levels.forEach((levelText, levelIndex) => {
+      const levelRows = levelText.trim().split("\n");
+      const levelY = levelIndex * 2; // Each level is 2 units high
 
-    mapRows.forEach((mapRow, rowIndex) => {
-      Array.from(mapRow).forEach((mapCell, columnIndex) => {
-        if (!visited.has(`${rowIndex},${columnIndex}`)) {
-          if (mapCell === "?") {
-            itemBoxes.push({
-              position: [
-                columnIndex - halfWidth + 0.5,
-                0,
-                rowIndex - halfHeight + 0.5,
-              ],
-            });
-            visited.add(`${rowIndex},${columnIndex}`);
-            return;
-          }
+      // First pass: Find continuous blocks
+      const visited = new Set();
 
-          if (
-            mapCell === "x" ||
-            mapCell === "r" ||
-            mapCell === "g" ||
-            mapCell === "b" ||
-            mapCell === "y" ||
-            mapCell === "R" ||
-            mapCell === "G" ||
-            mapCell === "B" ||
-            mapCell === "Y"
-          ) {
-            let width = 0;
-            while (
-              columnIndex + width < mapRow.length &&
-              mapRow[columnIndex + width] === mapCell &&
-              !visited.has(`${rowIndex},${columnIndex + width}`)
-            ) {
-              width++;
+      levelRows.forEach((mapRow, rowIndex) => {
+        Array.from(mapRow).forEach((mapCell, columnIndex) => {
+          if (!visited.has(`${rowIndex},${columnIndex}`)) {
+            if (mapCell === "?") {
+              itemBoxes.push({
+                position: [
+                  columnIndex - halfWidth + 0.5,
+                  levelY,
+                  rowIndex - halfHeight + 0.5,
+                ],
+              });
+              visited.add(`${rowIndex},${columnIndex}`);
+              return;
             }
 
-            let height = 0;
-            while (
-              rowIndex + height < mapRows.length &&
-              rowIndex + height < mapRows.length &&
-              mapRows[rowIndex + height][columnIndex] === mapCell &&
-              !visited.has(`${rowIndex + height},${columnIndex}`)
+            if (
+              mapCell === "x" ||
+              mapCell === "r" ||
+              mapCell === "g" ||
+              mapCell === "b" ||
+              mapCell === "y"
             ) {
-              let isFullRow = true;
-              for (let w = 0; w < width; w++) {
-                if (
-                  mapRows[rowIndex + height][columnIndex + w] !== mapCell ||
-                  visited.has(`${rowIndex + height},${columnIndex + w}`)
-                ) {
-                  isFullRow = false;
-                  break;
+              let width = 0;
+              while (
+                columnIndex + width < mapRow.length &&
+                mapRow[columnIndex + width] === mapCell &&
+                !visited.has(`${rowIndex},${columnIndex + width}`)
+              ) {
+                width++;
+              }
+
+              let height = 0;
+              while (
+                rowIndex + height < levelRows.length &&
+                rowIndex + height < levelRows.length &&
+                levelRows[rowIndex + height][columnIndex] === mapCell &&
+                !visited.has(`${rowIndex + height},${columnIndex}`)
+              ) {
+                let isFullRow = true;
+                for (let w = 0; w < width; w++) {
+                  if (
+                    levelRows[rowIndex + height][columnIndex + w] !== mapCell ||
+                    visited.has(`${rowIndex + height},${columnIndex + w}`)
+                  ) {
+                    isFullRow = false;
+                    break;
+                  }
+                }
+                if (!isFullRow) break;
+                height++;
+              }
+
+              for (let h = 0; h < height; h++) {
+                for (let w = 0; w < width; w++) {
+                  visited.add(`${rowIndex + h},${columnIndex + w}`);
                 }
               }
-              if (!isFullRow) break;
-              height++;
-            }
 
-            for (let h = 0; h < height; h++) {
-              for (let w = 0; w < width; w++) {
-                visited.add(`${rowIndex + h},${columnIndex + w}`);
+              if (width > 0 && height > 0) {
+                blocks.push({
+                  position: {
+                    x: columnIndex - halfWidth + width / 2 - 0.5,
+                    y: levelY,
+                    z: rowIndex - halfHeight + height / 2 - 0.5,
+                  },
+                  size: {
+                    x: width,
+                    y: 2,
+                    z: height,
+                  },
+                  color:
+                    mapCell === "x"
+                      ? "gray"
+                      : mapCell === "r"
+                      ? "red"
+                      : mapCell === "g"
+                      ? "green"
+                      : mapCell === "b"
+                      ? "blue"
+                      : "yellow",
+                });
               }
-            }
-
-            if (width > 0 && height > 0) {
-              blocks.push({
-                position: {
-                  x: columnIndex - halfWidth + width / 2 - 0.5,
-                  y:
-                    mapCell === "R" ||
-                    mapCell === "G" ||
-                    mapCell === "B" ||
-                    mapCell === "Y"
-                      ? 2
-                      : 0,
-                  z: rowIndex - halfHeight + height / 2 - 0.5,
-                },
-                size: {
-                  x: width,
-                  y: 2,
-                  z: height,
-                },
-                color:
-                  mapCell === "x"
-                    ? "gray"
-                    : mapCell === "r"
-                    ? "red"
-                    : mapCell === "g"
-                    ? "green"
-                    : mapCell === "b"
-                    ? "blue"
-                    : mapCell === "y"
-                    ? "yellow"
-                    : mapCell === "R"
-                    ? "red"
-                    : mapCell === "G"
-                    ? "green"
-                    : mapCell === "B"
-                    ? "blue"
-                    : "yellow",
-              });
-            }
-          } else if (
-            mapCell === ">" ||
-            mapCell === "<" ||
-            mapCell === "v" ||
-            mapCell === "^" ||
-            mapCell === "↑" ||
-            mapCell === "←" ||
-            mapCell === "→" ||
-            mapCell === "↓"
-          ) {
-            // Check for consecutive ramp symbols
-            let width = 0;
-            let height = 0;
-
-            // Check horizontal consecutive symbols
-            while (
-              columnIndex + width < mapRow.length &&
-              mapRow[columnIndex + width] === mapCell &&
-              !visited.has(`${rowIndex},${columnIndex + width}`)
+            } else if (
+              mapCell === ">" ||
+              mapCell === "<" ||
+              mapCell === "v" ||
+              mapCell === "^"
             ) {
-              width++;
-            }
+              // Check for consecutive ramp symbols
+              let width = 0;
+              let height = 0;
 
-            // Check vertical consecutive symbols
-            while (
-              rowIndex + height < mapRows.length &&
-              rowIndex + height < mapRows.length &&
-              mapRows[rowIndex + height][columnIndex] === mapCell &&
-              !visited.has(`${rowIndex + height},${columnIndex}`)
-            ) {
-              height++;
-            }
-
-            // Mark all cells in the ramp as visited
-            for (let h = 0; h < height; h++) {
-              for (let w = 0; w < width; w++) {
-                visited.add(`${rowIndex + h},${columnIndex + w}`);
+              // Check horizontal consecutive symbols
+              while (
+                columnIndex + width < mapRow.length &&
+                mapRow[columnIndex + width] === mapCell &&
+                !visited.has(`${rowIndex},${columnIndex + width}`)
+              ) {
+                width++;
               }
-            }
 
-            // Only create a ramp if we have valid dimensions
-            if (width > 0 && height > 0) {
-              let direction = 0;
-              if (mapCell === ">" || mapCell === "→") direction = 0;
-              else if (mapCell === "<" || mapCell === "←") direction = Math.PI;
-              else if (mapCell === "v" || mapCell === "↓")
-                direction = -Math.PI / 2;
-              else if (mapCell === "^" || mapCell === "↑")
-                direction = Math.PI / 2;
+              // Check vertical consecutive symbols
+              while (
+                rowIndex + height < levelRows.length &&
+                rowIndex + height < levelRows.length &&
+                levelRows[rowIndex + height][columnIndex] === mapCell &&
+                !visited.has(`${rowIndex + height},${columnIndex}`)
+              ) {
+                height++;
+              }
 
-              const isLevelTwoRamp =
-                mapCell === "↑" ||
-                mapCell === "←" ||
-                mapCell === "→" ||
-                mapCell === "↓";
+              // Mark all cells in the ramp as visited
+              for (let h = 0; h < height; h++) {
+                for (let w = 0; w < width; w++) {
+                  visited.add(`${rowIndex + h},${columnIndex + w}`);
+                }
+              }
 
-              ramps.push({
+              // Only create a ramp if we have valid dimensions
+              if (width > 0 && height > 0) {
+                let direction = 0;
+                if (mapCell === ">") direction = 0;
+                else if (mapCell === "<") direction = Math.PI;
+                else if (mapCell === "v") direction = -Math.PI / 2;
+                else if (mapCell === "^") direction = Math.PI / 2;
+
+                ramps.push({
+                  position: [
+                    columnIndex - halfWidth + width / 2 - 0.5,
+                    levelY,
+                    rowIndex - halfHeight + height / 2 - 0.5,
+                  ],
+                  rotation: direction,
+                  scale: [width, 2, height],
+                });
+              }
+            } else if (mapCell === "=") {
+              // Handle bridge symbols (both horizontal and vertical)
+              // Check for rectangular bridges
+              let width = 1;
+              let height = 1;
+
+              // First check horizontal extent
+              while (
+                columnIndex + width < mapRow.length &&
+                mapRow[columnIndex + width] === mapCell &&
+                !visited.has(`${rowIndex},${columnIndex + width}`)
+              ) {
+                width++;
+              }
+
+              // Then check vertical extent
+              while (
+                rowIndex + height < levelRows.length &&
+                levelRows[rowIndex + height][columnIndex] === mapCell &&
+                !visited.has(`${rowIndex + height},${columnIndex}`)
+              ) {
+                // Check if the entire row has bridge symbols
+                let isFullRow = true;
+                for (let w = 0; w < width; w++) {
+                  if (
+                    columnIndex + w >= mapRow.length ||
+                    levelRows[rowIndex + height][columnIndex + w] !== mapCell ||
+                    visited.has(`${rowIndex + height},${columnIndex + w}`)
+                  ) {
+                    isFullRow = false;
+                    break;
+                  }
+                }
+                if (!isFullRow) break;
+                height++;
+              }
+
+              // Mark all cells in the bridge as visited
+              for (let h = 0; h < height; h++) {
+                for (let w = 0; w < width; w++) {
+                  visited.add(`${rowIndex + h},${columnIndex + w}`);
+                }
+              }
+
+              // Create a bridge with the correct dimensions
+              bridges.push({
                 position: [
                   columnIndex - halfWidth + width / 2 - 0.5,
-                  isLevelTwoRamp ? 2 : 0,
+                  levelY + 1,
                   rowIndex - halfHeight + height / 2 - 0.5,
                 ],
-                rotation: direction,
-                scale: [width, 2, height],
+                rotation: 0,
+                scale: [width, 1, height],
               });
             }
-          } else if (mapCell === "=") {
-            // Handle bridge symbols (both horizontal and vertical)
-            // Check for rectangular bridges
-            let width = 1;
-            let height = 1;
-
-            // First check horizontal extent
-            while (
-              columnIndex + width < mapRow.length &&
-              mapRow[columnIndex + width] === mapCell &&
-              !visited.has(`${rowIndex},${columnIndex + width}`)
-            ) {
-              width++;
-            }
-
-            // Then check vertical extent
-            while (
-              rowIndex + height < mapRows.length &&
-              mapRows[rowIndex + height][columnIndex] === mapCell &&
-              !visited.has(`${rowIndex + height},${columnIndex}`)
-            ) {
-              // Check if the entire row has bridge symbols
-              let isFullRow = true;
-              for (let w = 0; w < width; w++) {
-                if (
-                  columnIndex + w >= mapRow.length ||
-                  mapRows[rowIndex + height][columnIndex + w] !== mapCell ||
-                  visited.has(`${rowIndex + height},${columnIndex + w}`)
-                ) {
-                  isFullRow = false;
-                  break;
-                }
-              }
-              if (!isFullRow) break;
-              height++;
-            }
-
-            // Mark all cells in the bridge as visited
-            for (let h = 0; h < height; h++) {
-              for (let w = 0; w < width; w++) {
-                visited.add(`${rowIndex + h},${columnIndex + w}`);
-              }
-            }
-
-            // Create a bridge with the correct dimensions
-            bridges.push({
-              position: [
-                columnIndex - halfWidth + width / 2 - 0.5,
-                1,
-                rowIndex - halfHeight + height / 2 - 0.5,
-              ],
-              rotation: 0,
-              scale: [width, 1, height],
-            });
           }
-        }
+        });
       });
     });
+
+    // Sort blocks by y level, higher levels first
+    blocks.sort((a, b) => b.position.y - a.position.y);
 
     return { blocks, ramps, bridges, itemBoxes, mapSize };
   } catch (error) {

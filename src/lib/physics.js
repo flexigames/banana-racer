@@ -1,9 +1,9 @@
 import { blocks, ramps, bridges, mapSize } from "./map";
 
 const carRadius = 0.26; // Approximate car collision radius
-const FIXED_TIMESTEP = 1/60; // Fixed physics timestep (60 Hz)
+const FIXED_TIMESTEP = 1 / 60; // Fixed physics timestep (60 Hz)
 const MAX_STEPS = 3; // Maximum number of physics steps per frame to prevent spiral of death
-const MAX_FRAME_DELTA = 1/30; // Cap frame delta at 30fps to prevent physics spikes
+const MAX_FRAME_DELTA = 1 / 30; // Cap frame delta at 30fps to prevent physics spikes
 
 // Physics state
 let physicsTimeAccumulator = 0;
@@ -324,7 +324,7 @@ export const updateObjectPosition = (object, movement, delta) => {
       const blockHalfDepth = block.size.z / 2;
 
       const playerTooHighForCollision =
-        block.position.y + 2 - 0.25 < object.position.y;
+        block.position.y + block.size.y - 0.25 < object.position.y;
       if (playerTooHighForCollision) {
         continue;
       }
@@ -477,15 +477,13 @@ export const updateObjectPosition = (object, movement, delta) => {
   // Update last valid height
   movement.lastValidHeight = targetHeight;
 
-  // Fix for teleporting to bridge top when under bridge
+  // Handle multi-level bridges and blocks
   if (underBridge) {
-    // Ensure we stay at ground level when under a bridge
-    object.position.y = 0;
+    // Get the ground level or the level we should be at
+    // We need to find the highest surface below us that isn't the bridge
+    let groundLevel = 0;
 
-    // Prevent any upward movement when under a bridge
-    movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
-
-    // Check if we're colliding with blocks while under a bridge
+    // Check if we're on top of any blocks
     for (const block of blocks) {
       const blockHalfWidth = block.size.x / 2;
       const blockHalfDepth = block.size.z / 2;
@@ -493,27 +491,63 @@ export const updateObjectPosition = (object, movement, delta) => {
       const dx = Math.abs(object.position.x - block.position.x);
       const dz = Math.abs(object.position.z - block.position.z);
 
-      if (dx < blockHalfWidth + carRadius && dz < blockHalfDepth + carRadius) {
-        // Apply sliding collision response
-        const relativeX = object.position.x - block.position.x;
-        const relativeZ = object.position.z - block.position.z;
+      // If we're above this block and it's below the bridge
+      if (
+        dx < blockHalfWidth &&
+        dz < blockHalfDepth &&
+        block.position.y < object.position.y
+      ) {
+        // Update ground level if this block is higher
+        groundLevel = Math.max(groundLevel, block.position.y + block.size.y);
+      }
+    }
 
-        const penetrationX = blockHalfWidth + carRadius - Math.abs(relativeX);
-        const penetrationZ = blockHalfDepth + carRadius - Math.abs(relativeZ);
+    // Keep us at the appropriate level when under a bridge
+    object.position.y = groundLevel;
 
-        if (penetrationX < penetrationZ) {
-          object.position.x =
-            block.position.x +
-            (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
-        } else {
-          object.position.z =
-            block.position.z +
-            (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+    // Prevent upward movement when under a bridge
+    movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
+
+    // Check for collisions with blocks at our current level
+    for (const block of blocks) {
+      const blockHalfWidth = block.size.x / 2;
+      const blockHalfDepth = block.size.z / 2;
+
+      // Skip blocks that are too high or too low for collision
+      const blockTop = block.position.y + block.size.y;
+      const playerBottom = object.position.y;
+      const playerTop = object.position.y + 0.5; // Approximate player height
+
+      // Only check collision if block is at our level
+      if (blockTop > playerBottom && block.position.y < playerTop) {
+        const dx = Math.abs(object.position.x - block.position.x);
+        const dz = Math.abs(object.position.z - block.position.z);
+
+        if (
+          dx < blockHalfWidth + carRadius &&
+          dz < blockHalfDepth + carRadius
+        ) {
+          // Apply sliding collision response
+          const relativeX = object.position.x - block.position.x;
+          const relativeZ = object.position.z - block.position.z;
+
+          const penetrationX = blockHalfWidth + carRadius - Math.abs(relativeX);
+          const penetrationZ = blockHalfDepth + carRadius - Math.abs(relativeZ);
+
+          if (penetrationX < penetrationZ) {
+            object.position.x =
+              block.position.x +
+              (relativeX > 0 ? 1 : -1) * (blockHalfWidth + carRadius);
+          } else {
+            object.position.z =
+              block.position.z +
+              (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+          }
+
+          // Reduce speed when hitting walls
+          movement.speed *= 0.9;
+          break;
         }
-
-        // Reduce speed when hitting walls under bridge
-        movement.speed *= 0.9;
-        break;
       }
     }
   }
@@ -541,13 +575,18 @@ export const shouldCreateTireEffect = (movement) => {
  * @param {number} boostFactor - Optional boost multiplier (default: 1.0)
  * @returns {Object} Updated movement state
  */
-export const runFixedStepPhysics = (movement, object, delta, boostFactor = 1.0) => {
+export const runFixedStepPhysics = (
+  movement,
+  object,
+  delta,
+  boostFactor = 1.0
+) => {
   const currentTime = performance.now();
   let frameDelta = (currentTime - lastPhysicsTime) / 1000; // Convert to seconds
-  
+
   // Cap frame delta to prevent physics spikes
   frameDelta = Math.min(frameDelta, MAX_FRAME_DELTA);
-  
+
   lastPhysicsTime = currentTime;
 
   // Accumulate time
@@ -578,7 +617,7 @@ export const runFixedStepPhysics = (movement, object, delta, boostFactor = 1.0) 
   // Store current state for next frame's interpolation
   lastPhysicsState = {
     position: object.position.clone(),
-    rotation: object.rotation.clone()
+    rotation: object.rotation.clone(),
   };
 
   return movement;
