@@ -5,9 +5,8 @@ export function MuteButton() {
   const { isMuted, toggleMute } = useAudio();
 
   return (
-    <button
+    <div
       onClick={toggleMute}
-      tabIndex="-1"
       style={{
         position: "absolute",
         top: "50px",
@@ -24,9 +23,11 @@ export function MuteButton() {
         justifyContent: "center",
         fontSize: "20px",
         zIndex: 1000,
+        outline: "none",
+        pointerEvents: "auto",
       }}
     >
       {isMuted ? "🔇" : "🔊"}
-    </button>
+    </div>
   );
 }
