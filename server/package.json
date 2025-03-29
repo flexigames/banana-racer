@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node dist/index.js",
     "build": "tsc",
-    "dev": "tsx watch index.ts"
+    "dev": "tsx watch index.ts",
+    "deploy-server": "npm run build && pm2 delete banana-racer || true && pm2 start npm --name \"banana-racer\" -- start"
   },
   "dependencies": {
     "socket.io": "^4.7.2",
