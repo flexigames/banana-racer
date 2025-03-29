@@ -8,7 +8,7 @@ import React, {
 import { io } from "socket.io-client";
 
 const LOCAL_SERVER_URL = "http://localhost:8080";
-const REMOTE_SERVER_URL = "https:/.onrender.com";
+const REMOTE_SERVER_URL = "https://api.wundertest.ai:8080";
 
 // Create the context
 const MultiplayerContext = createContext({
@@ -136,7 +136,7 @@ export const MultiplayerProvider = ({ children }) => {
 
     const playerData = players[playerId];
     if (!playerData) return false;
-    
+
     // Allow using item if we have either a trailing item or an item in slot
     if (!playerData.trailingItem && !playerData.item?.quantity) return false;
 
