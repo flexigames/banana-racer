@@ -329,7 +329,7 @@ function handleItemBoxCollection(playerId: string, itemBoxId: number): void {
   if (collectedBox.position) {
     setTimeout(() => {
       gameState.itemBoxes.push(collectedBox);
-    }, 15000);
+    }, 5000);
   }
 
   if (!player || player.isItemSpinning || player.item?.quantity > 0) {
