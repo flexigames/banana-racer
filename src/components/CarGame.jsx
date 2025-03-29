@@ -12,7 +12,7 @@ import GameOver from "./GameOver";
 import Arena from "./Arena";
 import JoystickControl from "./JoystickControl";
 import { ITEM_TYPES } from "../../server/types";
-
+import Minimap from "./Minimap";
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
   const cameraRef = useRef();
@@ -436,6 +436,8 @@ const CarGame = () => {
           }
         }}
       />
+
+    <Minimap />
 
       {/* Item instructions */}
       <div
