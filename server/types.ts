@@ -63,8 +63,6 @@ export type Player = {
   activeItem?: Item;
   trailingItem?: {
     type: string;
-    position: Position;
-    rotation: number;
     quantity: number;
   };
 };

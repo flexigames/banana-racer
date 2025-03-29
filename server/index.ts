@@ -124,25 +124,6 @@ function updatePlayerPosition(
     player.speed = data.speed;
   }
   player.lastUpdate = Date.now();
-
-  if (player.trailingItem) {
-    const distanceBehind = trailingItemDistanceBehind;
-    const offsetX = -Math.sin(player.rotation) * distanceBehind;
-    const offsetZ = -Math.cos(player.rotation) * distanceBehind;
-
-    const { height: heightAtPosition } = calculateHeightAtPosition(
-      player.position.x + offsetX,
-      player.position.z + offsetZ,
-      player.position.y
-    );
-
-    player.trailingItem.position = {
-      x: player.position.x + offsetX,
-      y: heightAtPosition,
-      z: player.position.z + offsetZ,
-    };
-    player.trailingItem.rotation = player.rotation;
-  }
 }
 
 function dropItem(
