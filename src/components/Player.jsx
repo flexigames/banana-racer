@@ -1,16 +1,18 @@
+import { useFrame } from "@react-three/fiber";
 import React, {
-  useRef,
-  useEffect,
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from "react";
-import { useFrame } from "@react-three/fiber";
-import { updateVehiclePhysics, updateObjectPosition, runFixedStepPhysics } from "../lib/physics";
-import { useVehicleControls } from "../lib/input";
-import { useMultiplayer } from "../contexts/MultiplayerContext";
 import * as THREE from "three";
+import { useMultiplayer } from "../contexts/MultiplayerContext";
+import { useVehicleControls } from "../lib/input";
+import {
+  runFixedStepPhysics
+} from "../lib/physics";
 import Car from "./Car";
 import { Star } from "./Star";
 
@@ -23,13 +25,8 @@ const Player = forwardRef((props, ref) => {
   const spinDirection = useRef(1);
   const spinSpeed = useRef(0);
 
-  const {
-    connected,
-    playerId,
-    playerColor,
-    players,
-    updatePlayerPosition,
-  } = useMultiplayer();
+  const { connected, playerId, playerColor, players, updatePlayerPosition } =
+    useMultiplayer();
 
   const lives = players[playerId]?.lives;
   const isStarred = players[playerId]?.isStarred || false;
@@ -75,8 +72,9 @@ const Player = forwardRef((props, ref) => {
       const spawnPos = getRandomSpawnPosition();
       car.current.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
       car.current.rotation.y = Math.random() * Math.PI * 2;
+      car.current.userData.playerId = playerId;
     }
-  }, []);
+  }, [playerId]);
 
   const triggerSpinOut = () => {
     if (spinningOut) return;
@@ -113,7 +111,13 @@ const Player = forwardRef((props, ref) => {
     } else {
       spinProgress.current = 0;
       try {
-        runFixedStepPhysics(movement.current, car.current, delta, isBoosted ? 2.5 : 1.0);
+        runFixedStepPhysics(
+          movement.current,
+          car.current,
+          delta,
+          isBoosted ? 2.5 : 1.0,
+          players
+        );
       } catch (error) {
         console.error("Error updating vehicle physics:", error);
       }

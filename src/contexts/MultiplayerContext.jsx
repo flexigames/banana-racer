@@ -80,6 +80,7 @@ export const MultiplayerProvider = ({ children }) => {
           setFakeCubes(Object.values(state.fakeCubes));
           setGreenShells(Object.values(state.greenShells));
           setItemBoxes(state.itemBoxes);
+          window.gameState = state;
         });
 
         socket.current.on("init", (data) => {

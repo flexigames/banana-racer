@@ -291,12 +291,13 @@ export const isUnderBridge = (x, z, y) => {
 };
 
 /**
- * Update object position based on physics
+ * Update player position based on physics
  * @param {Object} object - Reference to the object to move
  * @param {Object} movement - Movement state
  * @param {number} delta - Time delta from useFrame
+ * @param {Object} players - Object containing all players' states
  */
-export const updateObjectPosition = (object, movement, delta) => {
+export const updatePlayerPositionLocal = (object, movement, delta, players) => {
   if (!object) return;
 
   // Apply rotation
@@ -356,6 +357,48 @@ export const updateObjectPosition = (object, movement, delta) => {
           slideZ =
             block.position.z +
             (relativeZ > 0 ? 1 : -1) * (blockHalfDepth + carRadius);
+          // Keep X movement (sliding)
+          slideX = newX;
+        }
+
+        // Apply a small speed reduction when sliding
+        movement.speed *= 0.95;
+        break;
+      }
+    }
+  }
+
+  // Check player collisions
+  if (!collidedWithBlock) {
+    for (const otherPlayer of Object.values(players)) {
+      if (otherPlayer.id === object.userData?.playerId || otherPlayer.lives <= 0) continue;
+
+      const dx = Math.abs(newX - otherPlayer.position.x);
+      const dz = Math.abs(newZ - otherPlayer.position.z);
+
+      if (dx < carRadius * 2 && dz < carRadius * 2) {
+        collidedWithBlock = true;
+
+        // Determine which side was hit and apply sliding collision response
+        const relativeX = newX - otherPlayer.position.x;
+        const relativeZ = newZ - otherPlayer.position.z;
+
+        const penetrationX = carRadius * 2 - Math.abs(relativeX);
+        const penetrationZ = carRadius * 2 - Math.abs(relativeZ);
+
+        // Calculate slide direction - preserve momentum along the wall
+        if (penetrationX < penetrationZ) {
+          // Sliding along X axis (Z movement preserved)
+          slideX =
+            otherPlayer.position.x +
+            (relativeX > 0 ? 1 : -1) * (carRadius * 2);
+          // Keep Z movement (sliding)
+          slideZ = newZ;
+        } else {
+          // Sliding along Z axis (X movement preserved)
+          slideZ =
+            otherPlayer.position.z +
+            (relativeZ > 0 ? 1 : -1) * (carRadius * 2);
           // Keep X movement (sliding)
           slideX = newX;
         }
@@ -573,13 +616,15 @@ export const shouldCreateTireEffect = (movement) => {
  * @param {Object} object - Reference to the object to move
  * @param {number} delta - Time delta from useFrame
  * @param {number} boostFactor - Optional boost multiplier (default: 1.0)
+ * @param {Object} players - Object containing all players' states
  * @returns {Object} Updated movement state
  */
 export const runFixedStepPhysics = (
   movement,
   object,
   delta,
-  boostFactor = 1.0
+  boostFactor = 1.0,
+  players
 ) => {
   const currentTime = performance.now();
   let frameDelta = (currentTime - lastPhysicsTime) / 1000; // Convert to seconds
@@ -602,7 +647,7 @@ export const runFixedStepPhysics = (
   let steps = 0;
   while (physicsTimeAccumulator >= FIXED_TIMESTEP && steps < MAX_STEPS) {
     updateVehiclePhysics(movement, FIXED_TIMESTEP, boostFactor);
-    updateObjectPosition(object, movement, FIXED_TIMESTEP);
+    updatePlayerPositionLocal(object, movement, FIXED_TIMESTEP, players);
     physicsTimeAccumulator -= FIXED_TIMESTEP;
     steps++;
   }
@@ -610,7 +655,7 @@ export const runFixedStepPhysics = (
   // If we still have remaining time, do one final update with the remaining delta
   if (physicsTimeAccumulator > 0 && steps < MAX_STEPS) {
     updateVehiclePhysics(movement, physicsTimeAccumulator, boostFactor);
-    updateObjectPosition(object, movement, physicsTimeAccumulator);
+    updatePlayerPositionLocal(object, movement, physicsTimeAccumulator, players);
     physicsTimeAccumulator = 0;
   }
 
