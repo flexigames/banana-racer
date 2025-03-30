@@ -23,11 +23,18 @@ const Car = ({
 
   const modelName = "kart";
 
+  // Load wheel model
+  const wheelModel = useModelWithMaterials(
+    `/assets/wheel-medium.obj`,
+    `/assets/wheel-medium.mtl`
+  );
+
   // Adjust scale and rotation for kart
   const modelConfig = useMemo(() => {
     return {
-      scale: [0.3, 0.3, 0.3],
+      scale: [0.25, 0.25, 0.25],
       rotation: [0, 0, 0],
+      position: [0, 0.05, 0],
     };
   }, []);
 
@@ -177,7 +184,7 @@ const Car = ({
     return () => cancelAnimationFrame(animationId);
   }, [isStarred, starMaterial]);
 
-  if (!clonedModel) {
+  if (!clonedModel || !wheelModel) {
     return null;
   }
 
@@ -187,8 +194,38 @@ const Car = ({
         object={clonedModel}
         scale={modelConfig.scale}
         rotation={modelConfig.rotation}
+        position={modelConfig.position}
       />
-      <Balloons color={color} lives={lives} isStarred={isStarred} />
+      
+      {/* Add wheels */}
+      <primitive
+        object={wheelModel.clone()}
+        position={[-0.15, 0.05, 0.15]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[0.5, 0.5, 0.5]}
+      />
+      <primitive
+        object={wheelModel.clone()}
+        position={[0.15, 0.05, 0.15]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[0.5, 0.5, 0.5]}
+      />
+      <primitive
+        object={wheelModel.clone()}
+        position={[-0.15, 0.05, -0.15]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[0.5, 0.5, 0.5]}
+      />
+      <primitive
+        object={wheelModel.clone()}
+        position={[0.15, 0.05, -0.15]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[0.5, 0.5, 0.5]}
+      />
+
+      <group position={[0, 0.0, -0.15]}>
+        <Balloons color={color} lives={lives} isStarred={isStarred} />
+      </group>
 
       {/* Show trailing item if present */}
       {trailingItem && (
