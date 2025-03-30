@@ -232,7 +232,6 @@ const Car = ({
       {trailingItem && (
         <TrailingItem
           type={trailingItem.type}
-          position={{ x: 0, y: 0, z: -0.5 }}
           quantity={trailingItem.quantity}
         />
       )}
@@ -265,8 +264,41 @@ const Car = ({
 
 export default Car;
 
-function TrailingItem({ type, position, quantity }) {
-  if (!position) return null;
+function TrailingItem({ type, quantity }) {
+  const shellsRef = useRef();
+  const rotationRef = useRef(0);
+
+  useEffect(() => {
+    if (type !== ITEM_TYPES.THREE_GREEN_SHELLS) return;
+
+    let lastTime = 0;
+    const rotationSpeed = 5; // radians per second
+    let animationId;
+
+    function animate(timestamp) {
+      if (lastTime === 0) {
+        lastTime = timestamp;
+      }
+
+      const deltaTime = (timestamp - lastTime) / 1000; // convert to seconds
+      lastTime = timestamp;
+
+      rotationRef.current += rotationSpeed * deltaTime;
+      if (shellsRef.current) {
+        shellsRef.current.rotation.y = rotationRef.current;
+      }
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [type]);
 
   switch (type) {
     case ITEM_TYPES.THREE_BANANAS:
@@ -277,9 +309,9 @@ function TrailingItem({ type, position, quantity }) {
               key={index}
               rotation={0}
               position={{
-                x: position.x,
-                y: position.y,
-                z: position.z - index * 0.3,
+                x: 0,
+                y: 0,
+                z: -0.5 - index * 0.3,
               }}
               scale={[1, 1, 1]}
             />
@@ -287,57 +319,52 @@ function TrailingItem({ type, position, quantity }) {
         </>
       );
     case ITEM_TYPES.BANANA:
-      return <Banana position={position} rotation={0} scale={[1, 1, 1]} />;
+      return (
+        <Banana
+          position={{ x: 0, y: 0, z: -0.5 }}
+          rotation={0}
+          scale={[1, 1, 1]}
+        />
+      );
     case ITEM_TYPES.FAKE_CUBE:
       return (
         <ItemBox
-          position={[position.x, position.y - 0.25, position.z]}
+          position={[0, -0.25, -0.5]}
           rotation={0}
           scale={0.5}
           isFakeCube
         />
       );
+    case ITEM_TYPES.THREE_RED_SHELLS:
     case ITEM_TYPES.THREE_GREEN_SHELLS:
       return (
-        <>
-          {Array.from({ length: quantity || 3 }).map((_, index) => (
-            <Shell
-              key={index}
-              position={[position.x, position.y, position.z - index * 0.3]}
-              rotation={0}
-              color="green"
-            />
-          ))}
-        </>
+        <group ref={shellsRef} position={[0, 0.1, 0]}>
+          {Array.from({ length: quantity || 3 }).map((_, index) => {
+            const angle = (index * 2 * Math.PI) / 3;
+            const radius = 0.3;
+            return (
+              <Shell
+                key={index}
+                color={type === ITEM_TYPES.THREE_GREEN_SHELLS ? "green" : "red"}
+                position={[
+                  Math.cos(angle) * radius,
+                  0,
+                  Math.sin(angle) * radius,
+                ]}
+                rotation={0}
+                scale={0.5}
+              />
+            );
+          })}
+        </group>
       );
     case ITEM_TYPES.GREEN_SHELL:
       return (
-        <Shell
-          position={[position.x, position.y, position.z]}
-          rotation={0}
-          color="green"
-        />
+        <Shell color="green" position={[0, 0, -0.5]} rotation={0} scale={0.5} />
       );
     case ITEM_TYPES.RED_SHELL:
       return (
-        <Shell
-          position={[position.x, position.y, position.z]}
-          rotation={0}
-          color="red"
-        />
-      );
-    case ITEM_TYPES.THREE_RED_SHELLS:
-      return (
-        <>
-          {Array.from({ length: quantity || 3 }).map((_, index) => (
-            <Shell
-              key={index}
-              position={[position.x, position.y, position.z - index * 0.3]}
-              rotation={0}
-              color="red"
-            />
-          ))}
-        </>
+        <Shell color="red" position={[0, 0, -0.5]} rotation={0} scale={0.5} />
       );
     default:
       return null;

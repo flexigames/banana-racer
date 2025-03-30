@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
   const shell = useRef();
-  const scale = 0.35;
+  const scale = 0.25;
 
   useEffect(() => {
     if (!shell.current) return;

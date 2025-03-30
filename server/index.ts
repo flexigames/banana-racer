@@ -542,7 +542,41 @@ function handleCollisions(): void {
       ) {
         if (player.isStarred && !otherPlayer.isStarred) {
           onHit(otherPlayer.id);
+        } else if (
+          otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS
+        ) {
+          // Handle collision with player having green shells
+          const quantity = otherPlayer.trailingItem.quantity;
+          let collisionProbability = 0;
+
+          if (quantity === 3) {
+            collisionProbability = 0.9; // 90% chance
+          } else if (quantity === 2) {
+            collisionProbability = 0.7; // 70% chance
+          } else if (quantity === 1) {
+            collisionProbability = 0.5; // 50% chance
+          }
+
+          if (Math.random() < collisionProbability) {
+            // Reduce the trailing item quantity
+            otherPlayer.trailingItem.quantity--;
+            if (otherPlayer.trailingItem.quantity === 0) {
+              otherPlayer.trailingItem = undefined;
+            }
+
+            // If there are no trailing items left and player is not starred, hit the other player
+            if (
+              otherPlayer.trailingItem?.quantity === 0 &&
+              !otherPlayer.isStarred
+            ) {
+              onHit(otherPlayer.id);
+            }
+          }
         }
+      }
+
+      if (otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS) {
+        continue;
       }
 
       // Check collision with other player's trailing items
