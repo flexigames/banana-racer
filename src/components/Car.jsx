@@ -16,6 +16,7 @@ const Car = ({
   boosting = false,
   isStarred = false,
   trailingItem = null,
+  movement = { turn: 0 },
 }) => {
   const carRef = useRef();
   const shaderRef = useRef();
@@ -201,13 +202,13 @@ const Car = ({
       <primitive
         object={wheelModel.clone()}
         position={[-0.15, 0.05, 0.15]}
-        rotation={[Math.PI / 2, 0, 0]}
+        rotation={[Math.PI / 2, 0, -movement.turn * 0.5]}
         scale={[0.5, 0.5, 0.5]}
       />
       <primitive
         object={wheelModel.clone()}
         position={[0.15, 0.05, 0.15]}
-        rotation={[Math.PI / 2, 0, 0]}
+        rotation={[Math.PI / 2, Math.PI, movement.turn * 0.5]}
         scale={[0.5, 0.5, 0.5]}
       />
       <primitive
@@ -219,7 +220,7 @@ const Car = ({
       <primitive
         object={wheelModel.clone()}
         position={[0.15, 0.05, -0.15]}
-        rotation={[Math.PI / 2, 0, 0]}
+        rotation={[Math.PI / 2, Math.PI, 0]}
         scale={[0.5, 0.5, 0.5]}
       />
 

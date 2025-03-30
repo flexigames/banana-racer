@@ -161,6 +161,7 @@ const Player = forwardRef((props, ref) => {
           lives={lives}
           isStarred={isStarred}
           trailingItem={trailingItem}
+          movement={movement.current}
         />
       </Star>
     </group>
