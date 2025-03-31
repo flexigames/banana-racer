@@ -37,8 +37,8 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.RED_SHELL]: 3,
   [ITEM_TYPES.THREE_RED_SHELLS]: 2,
   [ITEM_TYPES.STAR]: 1,
-  [ITEM_TYPES.THREE_BANANAS]: 4,
-  [ITEM_TYPES.THREE_GREEN_SHELLS]: 3,
+  [ITEM_TYPES.THREE_BANANAS]: 400,
+  [ITEM_TYPES.THREE_GREEN_SHELLS]: 300,
 };
 
 const gameState: GameState = {
@@ -654,6 +654,57 @@ function handleCollisions(): void {
             }
             break; // Stop checking other positions once a collision is found
           }
+        }
+      }
+
+      // Check collisions of player's trailing items with green and redshells, they should decrease the quantity of the trailing item
+      // Check if player has trailing items
+      if (player.trailingItem) {
+        const trailingItemPositions = calculateTrailingItemPositions(player);
+
+        // Combine green and red shells into a single array for processing
+        const allShells = [
+          ...Object.entries(gameState.greenShells).map(([id, shell]) => ({
+            id,
+            shell,
+            type: "green",
+          })),
+          ...Object.entries(gameState.redShells).map(([id, shell]) => ({
+            id,
+            shell,
+            type: "red",
+          })),
+        ];
+
+        // Check collisions with all shells
+        for (let i = 0; i < trailingItemPositions.length; i++) {
+          const itemPos = trailingItemPositions[i];
+
+          for (const { id, shell, type } of allShells) {
+            if (!shell.canHitOwner && shell.droppedBy === player.id) continue;
+
+            if (checkCollision(shell.position, itemPos, 2 * shellRadius)) {
+              // Reduce quantity of trailing item
+              if (player.trailingItem && player.trailingItem.quantity > 0) {
+                player.trailingItem.quantity--;
+                if (player.trailingItem.quantity === 0) {
+                  player.trailingItem = undefined;
+                }
+
+                // Remove the shell from the appropriate collection
+                if (type === "green") {
+                  delete gameState.greenShells[id];
+                } else {
+                  delete gameState.redShells[id];
+                }
+
+                break; // Break the shell loop once a collision is found
+              }
+            }
+          }
+
+          // If all trailing items are gone, break the loop
+          if (!player.trailingItem) break;
         }
       }
     }
