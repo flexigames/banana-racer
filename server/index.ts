@@ -931,7 +931,7 @@ function updateRedShells(): void {
 
     // After 500ms, find the closest player and track them
     if (now - shell.droppedAt > TRACKING_DELAY) {
-      let closestPlayer = null;
+      let closestPlayer: any = null;
       let closestDistance = Infinity;
 
       // Find the closest player
@@ -951,8 +951,8 @@ function updateRedShells(): void {
 
       // If we found a player to track, adjust rotation to follow them
       if (closestPlayer) {
-        const dx = closestPlayer.position.x - shell.position.x;
-        const dz = closestPlayer.position.z - shell.position.z;
+        const dx = (closestPlayer as Player).position.x - shell.position.x;
+        const dz = (closestPlayer as Player).position.z - shell.position.z;
         shell.rotation = Math.atan2(dx, dz);
 
         // Recalculate movement based on new rotation
