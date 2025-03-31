@@ -83,7 +83,6 @@ export const MultiplayerProvider = ({ children }) => {
           setGreenShells(Object.values(state.greenShells));
           setRedShells(Object.values(state.redShells));
           setItemBoxes(state.itemBoxes);
-          window.gameState = state;
         });
 
         socket.current.on("init", (data) => {

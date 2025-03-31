@@ -11,9 +11,7 @@ import Bridge from "./Bridge";
 
 const TEXTURE_SCALE = 4; // Base size for one texture repeat
 
-console.log("bridges", bridges);
-
-const Arena = () => {
+const Arena = React.memo(() => {
   const groundRef = useRef();
   const blockRefs = useRef([]);
 
@@ -275,6 +273,8 @@ const Arena = () => {
       ))}
     </group>
   );
-};
+});
+
+Arena.displayName = "Arena";
 
 export default Arena;
