@@ -11,12 +11,14 @@ const bananaRadius = 0.1;
 const cubeRadius = 0.2;
 const shellRadius = 0.2;
 const httpServer = createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({
-    status: 'ok',
-    message: 'Kart Racing Game Server is running',
-    players: Object.keys(gameState.players).length
-  }));
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      status: "ok",
+      message: "Kart Racing Game Server is running",
+      players: Object.keys(gameState.players).length,
+    })
+  );
 });
 const io = new Server(httpServer, {
   cors: {
@@ -747,6 +749,24 @@ function updateRedShells(): void {
       }
     });
 
+    // Check collisions with green shells
+    Object.entries(gameState.greenShells).forEach(
+      ([greenShellId, greenShell]) => {
+        if (
+          checkCollision(
+            shell.position,
+            greenShell.position,
+            shellRadius + shellRadius
+          )
+        ) {
+          // Both shells are destroyed on collision
+          redShellsToRemove.push(shellId);
+          removeItem(gameState.greenShells, greenShellId);
+          return;
+        }
+      }
+    );
+
     // If shell was destroyed by banana, skip the rest
     if (redShellsToRemove.includes(shellId)) {
       return;
@@ -767,7 +787,7 @@ function updateRedShells(): void {
         if (player.id !== shell.droppedBy && player.lives > 0) {
           const distance = Math.sqrt(
             Math.pow(player.position.x - shell.position.x, 2) +
-            Math.pow(player.position.z - shell.position.z, 2)
+              Math.pow(player.position.z - shell.position.z, 2)
           );
 
           if (distance < closestDistance) {
@@ -782,7 +802,7 @@ function updateRedShells(): void {
         const dx = closestPlayer.position.x - shell.position.x;
         const dz = closestPlayer.position.z - shell.position.z;
         shell.rotation = Math.atan2(dx, dz);
-        
+
         // Recalculate movement based on new rotation
         moveX = Math.sin(shell.rotation) * moveSpeed;
         moveZ = Math.cos(shell.rotation) * moveSpeed;
@@ -917,4 +937,3 @@ httpServer.listen(PORT, () => {
 setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
-
