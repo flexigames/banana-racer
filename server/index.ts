@@ -771,6 +771,28 @@ function updateRedShells(): void {
       }
     );
 
+    // Check collisions with other red shells
+    Object.entries(gameState.redShells).forEach(
+      ([otherShellId, otherShell]) => {
+        // Skip self-collision
+        if (shellId === otherShellId) return;
+        
+        if (
+          checkCollision(
+            shell.position,
+            otherShell.position,
+            shellRadius + shellRadius
+          )
+        ) {
+          // Both red shells are destroyed on collision
+          redShellsToRemove.push(shellId);
+          redShellsToRemove.push(otherShellId);
+          return;
+        }
+      }
+    );
+
+    
     // If shell was destroyed by banana, skip the rest
     if (redShellsToRemove.includes(shellId)) {
       return;
