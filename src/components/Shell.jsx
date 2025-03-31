@@ -1,8 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 
-const GreenShell = ({ position = [0, 0, 0], rotation = 0 }) => {
+function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
   const shell = useRef();
   const scale = 0.35;
 
@@ -12,7 +11,7 @@ const GreenShell = ({ position = [0, 0, 0], rotation = 0 }) => {
     const group = shell.current;
     group.clear();
 
-    // Top half (green)
+    // Top half (colored)
     const topHalfGeometry = new THREE.SphereGeometry(
       0.4,
       32,
@@ -23,7 +22,11 @@ const GreenShell = ({ position = [0, 0, 0], rotation = 0 }) => {
       Math.PI / 2
     );
     const topHalfMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0.05, 0.4, 0.05), // Green
+      color: new THREE.Color(
+        color === "red" ? 0.4 : 0.05,
+        color === "red" ? 0.05 : 0.4,
+        0.05
+      ),
       metalness: 0.3,
       roughness: 0.7,
     });
@@ -42,7 +45,7 @@ const GreenShell = ({ position = [0, 0, 0], rotation = 0 }) => {
       Math.PI / 2
     );
     const bottomHalfMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(1, 1, 1), // White
+      color: new THREE.Color(1, 1, 1),
       metalness: 0.1,
       roughness: 0.8,
     });
@@ -53,9 +56,9 @@ const GreenShell = ({ position = [0, 0, 0], rotation = 0 }) => {
     group.position.set(position[0], position[1], position[2]);
     group.rotation.y = rotation;
     group.scale.set(scale, scale, scale);
-  }, [position, rotation, scale]);
+  }, [position, rotation, scale, color]);
 
   return <group ref={shell} />;
-};
+}
 
-export default GreenShell;
+export default Shell;

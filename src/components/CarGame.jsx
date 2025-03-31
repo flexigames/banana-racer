@@ -4,7 +4,7 @@ import { PerspectiveCamera, Grid } from "@react-three/drei";
 import Player from "./Player";
 import RemotePlayer from "./RemotePlayer";
 import Banana from "./Banana";
-import GreenShell from "./GreenShell";
+import Shell from "./Shell";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import { useAudio } from "../contexts/AudioContext";
 import * as THREE from "three";
@@ -139,6 +139,7 @@ const CarGame = () => {
     itemBoxes,
     fakeCubes,
     greenShells,
+    redShells,
     useItem,
   } = useMultiplayer();
 
@@ -149,8 +150,12 @@ const CarGame = () => {
     };
 
     window.addEventListener("click", handleInitialInteraction, { once: true });
-    window.addEventListener("keydown", handleInitialInteraction, { once: true });
-    window.addEventListener("touchstart", handleInitialInteraction, { once: true });
+    window.addEventListener("keydown", handleInitialInteraction, {
+      once: true,
+    });
+    window.addEventListener("touchstart", handleInitialInteraction, {
+      once: true,
+    });
 
     return () => {
       window.removeEventListener("click", handleInitialInteraction);
@@ -204,10 +209,12 @@ const CarGame = () => {
     "/icons/icon-banana.png",
     "/icons/icon-boost.png",
     "/icons/icon-cube.png",
-    "/icons/icon-shell.png",
+    "/icons/icon-green-shell.png",
+    "/icons/icon-green-shells.png",
+    "/icons/icon-red-shell.png",
+    "/icons/icon-red-shells.png",
     "/icons/icon-star.png",
     "/icons/icon-bananas.png",
-    "/icons/icon-shells.png",
   ];
 
   // Get remote players (all players except current player)
@@ -298,7 +305,7 @@ const CarGame = () => {
       case "green_shell":
         return (
           <img
-            src="/icons/icon-shell.png"
+            src="/icons/icon-green-shell.png"
             alt="shell"
             style={{ width: "240px", height: "240px" }}
           />
@@ -322,8 +329,24 @@ const CarGame = () => {
       case "three_green_shells":
         return (
           <img
-            src="/icons/icon-shells.png"
+            src="/icons/icon-green-shells.png"
             alt="three green shells"
+            style={{ width: "240px", height: "240px" }}
+          />
+        );
+      case "red_shell":
+        return (
+          <img
+            src="/icons/icon-red-shell.png"
+            alt="red shell"
+            style={{ width: "240px", height: "240px" }}
+          />
+        );
+      case "three_red_shells":
+        return (
+          <img
+            src="/icons/icon-red-shells.png"
+            alt="three red shells"
             style={{ width: "240px", height: "240px" }}
           />
         );
@@ -436,10 +459,21 @@ const CarGame = () => {
 
         {/* Green Shells */}
         {greenShells.map((shell) => (
-          <GreenShell
+          <Shell
             key={shell.id}
             position={[shell.position.x, shell.position.y, shell.position.z]}
             rotation={shell.rotation}
+            color="green"
+          />
+        ))}
+
+        {/* Red Shells */}
+        {redShells.map((shell) => (
+          <Shell
+            key={shell.id}
+            position={[shell.position.x, shell.position.y, shell.position.z]}
+            rotation={shell.rotation}
+            color="red"
           />
         ))}
 
@@ -458,7 +492,7 @@ const CarGame = () => {
         }}
       />
 
-    <Minimap />
+      <Minimap />
 
       {/* Item instructions */}
       <div

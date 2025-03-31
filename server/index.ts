@@ -32,6 +32,8 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.BOOST]: 2,
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 5,
+  [ITEM_TYPES.RED_SHELL]: 5,
+  [ITEM_TYPES.THREE_RED_SHELLS]: 5,
   [ITEM_TYPES.STAR]: 1,
   [ITEM_TYPES.THREE_BANANAS]: 5,
   [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
@@ -42,6 +44,7 @@ const gameState: GameState = {
   bananas: {},
   fakeCubes: {},
   greenShells: {},
+  redShells: {},
   itemBoxes: [],
 };
 
@@ -69,6 +72,10 @@ function generateFakeCubeId(): string {
 
 function generateGreenShellId(): string {
   return `green_shell_${uuidv4()}`;
+}
+
+function generateRedShellId(): string {
+  return `red_shell_${uuidv4()}`;
 }
 
 function getRandomSpawnPosition(): Position {
@@ -218,6 +225,39 @@ function dropGreenShell(playerId: string): void {
   }, 10000);
 }
 
+function dropRedShell(playerId: string): void {
+  const shellId = generateRedShellId();
+
+  const player = gameState.players[playerId];
+
+  const shell = {
+    id: shellId,
+    position: player.position,
+    rotation: player.rotation,
+    direction: player.rotation,
+    speed: 16,
+    droppedBy: playerId,
+    droppedAt: Date.now(),
+    verticalVelocity: 0,
+    canHitOwner: false,
+  };
+
+  gameState.redShells[shellId] = shell;
+
+  // Allow self-hits after 200ms
+  setTimeout(() => {
+    if (gameState.redShells[shellId]) {
+      gameState.redShells[shellId].canHitOwner = true;
+    }
+  }, 300);
+
+  setTimeout(() => {
+    if (gameState.redShells[shellId]) {
+      delete gameState.redShells[shellId];
+    }
+  }, 10000);
+}
+
 function useItem(playerId: string): void {
   const player = gameState.players[playerId];
   if (!player) return;
@@ -250,6 +290,9 @@ function useItem(playerId: string): void {
         break;
       case ITEM_TYPES.GREEN_SHELL:
         dropGreenShell(playerId);
+        break;
+      case ITEM_TYPES.RED_SHELL:
+        dropRedShell(playerId);
         break;
     }
     return;
@@ -464,6 +507,25 @@ function handleCollisions(): void {
       }
     }
 
+    // Check collision with red shells
+    for (const [shellId, shell] of Object.entries(gameState.redShells)) {
+      if (
+        checkCollision(
+          player.position,
+          shell.position,
+          shellRadius + carRadius + 0.05
+        ) &&
+        (player.isStarred || shell.canHitOwner || shell.droppedBy !== player.id)
+      ) {
+        if (player.isStarred) {
+          removeItem(gameState.redShells, shellId);
+        } else {
+          onHit(player.id);
+          removeItem(gameState.redShells, shellId);
+        }
+      }
+    }
+
     // Check collision with other players and their trailing items
     for (const otherPlayer of Object.values(gameState.players)) {
       if (otherPlayer.id === player.id || otherPlayer.lives <= 0) continue;
@@ -485,7 +547,8 @@ function handleCollisions(): void {
           otherPlayer.trailingItem.type === ITEM_TYPES.THREE_BANANAS
             ? bananaRadius
             : otherPlayer.trailingItem.type === ITEM_TYPES.GREEN_SHELL ||
-              otherPlayer.trailingItem.type === ITEM_TYPES.THREE_GREEN_SHELLS
+              otherPlayer.trailingItem.type === ITEM_TYPES.THREE_GREEN_SHELLS ||
+              otherPlayer.trailingItem.type === ITEM_TYPES.RED_SHELL
             ? shellRadius
             : cubeRadius;
 
@@ -658,6 +721,151 @@ function updateGreenShells(): void {
   });
 }
 
+function updateRedShells(): void {
+  const redShellsToRemove: string[] = [];
+  const now = Date.now();
+  const MAX_SHELL_AGE = 10000; // 10 seconds
+  const gravity = 9.8; // Gravity acceleration in m/s²
+  const terminalVelocity = 20; // Maximum falling speed
+  const FIXED_TIMESTEP = 1 / 60; // Fixed physics timestep (60 Hz)
+  const TRACKING_DELAY = 500; // Start tracking after 500ms
+
+  // For each red shell
+  Object.entries(gameState.redShells).forEach(([shellId, shell]) => {
+    // Check if shell is too old
+    if (now - shell.droppedAt > MAX_SHELL_AGE) {
+      redShellsToRemove.push(shellId);
+      return;
+    }
+
+    // Check collisions with bananas
+    Object.entries(gameState.bananas).forEach(([bananaId, banana]) => {
+      if (checkCollision(shell.position, banana.position, shellRadius)) {
+        redShellsToRemove.push(shellId);
+        removeItem(gameState.bananas, bananaId);
+        return;
+      }
+    });
+
+    // If shell was destroyed by banana, skip the rest
+    if (redShellsToRemove.includes(shellId)) {
+      return;
+    }
+
+    // Calculate movement
+    const moveSpeed = shell.speed * FIXED_TIMESTEP;
+    let moveX = Math.sin(shell.rotation) * moveSpeed;
+    let moveZ = Math.cos(shell.rotation) * moveSpeed;
+
+    // After 500ms, find the closest player and track them
+    if (now - shell.droppedAt > TRACKING_DELAY) {
+      let closestPlayer = null;
+      let closestDistance = Infinity;
+
+      // Find the closest player
+      Object.values(gameState.players).forEach((player) => {
+        if (player.id !== shell.droppedBy && player.lives > 0) {
+          const distance = Math.sqrt(
+            Math.pow(player.position.x - shell.position.x, 2) +
+            Math.pow(player.position.z - shell.position.z, 2)
+          );
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestPlayer = player;
+          }
+        }
+      });
+
+      // If we found a player to track, adjust rotation to follow them
+      if (closestPlayer) {
+        const dx = closestPlayer.position.x - shell.position.x;
+        const dz = closestPlayer.position.z - shell.position.z;
+        shell.rotation = Math.atan2(dx, dz);
+        
+        // Recalculate movement based on new rotation
+        moveX = Math.sin(shell.rotation) * moveSpeed;
+        moveZ = Math.cos(shell.rotation) * moveSpeed;
+      }
+    }
+
+    // Update position
+    const newPosition = {
+      x: shell.position.x + moveX,
+      y: shell.position.y, // Will be updated below
+      z: shell.position.z + moveZ,
+    };
+
+    // Calculate target height based on terrain
+    const { height: targetHeight, collisionObject } = calculateHeightAtPosition(
+      newPosition.x,
+      newPosition.z,
+      shell.position.y
+    );
+    if (targetHeight < shell.position.y) {
+      if (shell.verticalVelocity === undefined) {
+        shell.verticalVelocity = 0;
+      }
+
+      shell.verticalVelocity -= gravity * FIXED_TIMESTEP;
+      shell.verticalVelocity = Math.max(
+        -terminalVelocity,
+        shell.verticalVelocity
+      );
+
+      const newHeightBasedOnGravity =
+        shell.position.y + shell.verticalVelocity * FIXED_TIMESTEP;
+
+      newPosition.y = Math.max(targetHeight, newHeightBasedOnGravity);
+
+      shell.position = newPosition;
+
+      return;
+    }
+
+    const delta = 0.1;
+    if (targetHeight <= shell.position.y + delta) {
+      shell.verticalVelocity = 0;
+      newPosition.y = targetHeight;
+      shell.position = newPosition;
+
+      return;
+    }
+
+    if (collisionObject) {
+      const collisionObjectPosition = collisionObject.position;
+      const collisionObjectScale = collisionObject.scale;
+
+      const collisionObjectHalfWidth = collisionObjectScale[0] / 2;
+      const collisionObjectHalfDepth = collisionObjectScale[2] / 2;
+
+      const shellTooHighForCollision =
+        collisionObjectPosition[1] + collisionObjectScale[1] - 0.25 <
+        shell.position.y;
+      if (!shellTooHighForCollision) {
+        const dx = Math.abs(newPosition.x - collisionObjectPosition[0]);
+        const dz = Math.abs(newPosition.z - collisionObjectPosition[2]);
+
+        if (
+          dx < collisionObjectHalfWidth + shellRadius &&
+          dz < collisionObjectHalfDepth + shellRadius
+        ) {
+          // Red shells get destroyed upon collision with blocks
+          redShellsToRemove.push(shellId);
+          return;
+        }
+      }
+
+      shell.position = newPosition;
+    }
+  });
+
+  // Remove old shells
+  redShellsToRemove.forEach((shellId) => {
+    delete gameState.redShells[shellId];
+  });
+}
+
 io.on("connection", (socket: Socket) => {
   const playerId = uuidv4();
   gameState.players[playerId] = {
@@ -699,13 +907,14 @@ gameState.itemBoxes = itemBoxes.map((box, index) => ({
 setInterval(() => {
   handleCollisions();
   updateGreenShells();
+  updateRedShells();
   cleanupInactivePlayers();
 }, 1000 / 60);
 
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
 });
-
 setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
+

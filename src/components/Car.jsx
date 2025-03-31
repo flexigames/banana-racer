@@ -4,8 +4,8 @@ import { starVertexShader, starFragmentShader } from "../shaders/star";
 import * as THREE from "three";
 import Balloons from "./Balloons";
 import Banana from "./Banana";
-import GreenShell from "./GreenShell";
 import ItemBox from "./ItemBox";
+import Shell from "./Shell";
 import { ITEM_TYPES } from "../../server/types";
 
 const Car = ({
@@ -197,7 +197,7 @@ const Car = ({
         rotation={modelConfig.rotation}
         position={modelConfig.position}
       />
-      
+
       {/* Add wheels */}
       <primitive
         object={wheelModel.clone()}
@@ -266,7 +266,6 @@ const Car = ({
 export default Car;
 
 function TrailingItem({ type, position, quantity }) {
-  console.log(type, position, quantity);
   if (!position) return null;
 
   switch (type) {
@@ -302,22 +301,29 @@ function TrailingItem({ type, position, quantity }) {
       return (
         <>
           {Array.from({ length: quantity || 3 }).map((_, index) => (
-            <GreenShell
+            <Shell
               key={index}
               position={[position.x, position.y, position.z - index * 0.3]}
               rotation={0}
-              scale={0.5}
+              color="green"
             />
           ))}
         </>
       );
-
     case ITEM_TYPES.GREEN_SHELL:
       return (
-        <GreenShell
+        <Shell
           position={[position.x, position.y, position.z]}
           rotation={0}
-          scale={0.5}
+          color="green"
+        />
+      );
+    case ITEM_TYPES.RED_SHELL:
+      return (
+        <Shell
+          position={[position.x, position.y, position.z]}
+          rotation={0}
+          color="red"
         />
       );
     default:

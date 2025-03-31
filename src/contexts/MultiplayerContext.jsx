@@ -19,6 +19,7 @@ const MultiplayerContext = createContext({
   itemBoxes: [],
   fakeCubes: [],
   greenShells: [],
+  redShells: [],
   updatePlayerPosition: () => {},
   useItem: () => {},
   respawn: () => {},
@@ -42,6 +43,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [bananas, setBananas] = useState([]);
   const [fakeCubes, setFakeCubes] = useState([]);
   const [greenShells, setGreenShells] = useState([]);
+  const [redShells, setRedShells] = useState([]);
   const [itemBoxes, setItemBoxes] = useState([]);
   const [lastItemUseTime, setLastItemUseTime] = useState(0);
   const itemUseTimeout = 300; // ms
@@ -79,6 +81,7 @@ export const MultiplayerProvider = ({ children }) => {
           setBananas(Object.values(state.bananas));
           setFakeCubes(Object.values(state.fakeCubes));
           setGreenShells(Object.values(state.greenShells));
+          setRedShells(Object.values(state.redShells));
           setItemBoxes(state.itemBoxes);
           window.gameState = state;
         });
@@ -197,6 +200,7 @@ export const MultiplayerProvider = ({ children }) => {
     itemBoxes,
     fakeCubes,
     greenShells,
+    redShells,
     updatePlayerPosition,
     useItem,
     respawn,

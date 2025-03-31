@@ -15,6 +15,8 @@ export const ITEM_TYPES = {
   STAR: "star",
   THREE_BANANAS: "three_bananas",
   THREE_GREEN_SHELLS: "three_green_shells",
+  RED_SHELL: "red_shell",
+  THREE_RED_SHELLS: "three_red_shells",
 };
 
 export type Color = {
@@ -35,6 +37,18 @@ export type Item = {
 };
 
 export type GreenShell = {
+  id: string;
+  position: Position;
+  rotation: number;
+  direction: number;
+  speed: number;
+  droppedBy: string;
+  droppedAt: number;
+  verticalVelocity?: number;
+  canHitOwner: boolean;
+};
+
+export type RedShell = {
   id: string;
   position: Position;
   rotation: number;
@@ -97,5 +111,6 @@ export type GameState = {
   bananas: Record<string, Banana>;
   fakeCubes: Record<string, FakeCube>;
   greenShells: Record<string, GreenShell>;
+  redShells: Record<string, RedShell>;
   itemBoxes: ItemBox[];
 };
