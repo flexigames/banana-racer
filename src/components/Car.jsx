@@ -269,7 +269,11 @@ function TrailingItem({ type, quantity }) {
   const rotationRef = useRef(0);
 
   useEffect(() => {
-    if (type !== ITEM_TYPES.THREE_GREEN_SHELLS) return;
+    if (
+      type !== ITEM_TYPES.THREE_GREEN_SHELLS &&
+      type !== ITEM_TYPES.THREE_RED_SHELLS
+    )
+      return;
 
     let lastTime = 0;
     const rotationSpeed = 5; // radians per second
