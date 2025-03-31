@@ -437,20 +437,37 @@ function calculateTrailingItemPositions(
   if (!player.trailingItem) return [];
 
   const positions: Position[] = [];
-  const angle = player.rotation;
-  const itemSpacing = 0.3;
   const quantity =
     overrideQuantity !== undefined
       ? overrideQuantity
       : player.trailingItem.quantity || 1;
 
-  for (let i = 0; i < quantity; i++) {
-    const distanceBehind = trailingItemDistanceBehind + i * itemSpacing;
-    positions.push({
-      x: player.position.x - Math.sin(angle) * distanceBehind,
-      y: player.position.y,
-      z: player.position.z - Math.cos(angle) * distanceBehind,
-    });
+  // Handle rotating shells differently
+  if (
+    player.trailingItem.type === ITEM_TYPES.THREE_RED_SHELLS ||
+    player.trailingItem.type === ITEM_TYPES.THREE_GREEN_SHELLS
+  ) {
+    const radius = 0.3;
+    for (let i = 0; i < quantity; i++) {
+      const angle = (i * 2 * Math.PI) / quantity;
+      positions.push({
+        x: player.position.x + Math.cos(angle) * radius,
+        y: player.position.y,
+        z: player.position.z + Math.sin(angle) * radius,
+      });
+    }
+  } else {
+    // For other items, keep them trailing behind
+    const angle = player.rotation;
+    const itemSpacing = 0.3;
+    for (let i = 0; i < quantity; i++) {
+      const distanceBehind = trailingItemDistanceBehind + i * itemSpacing;
+      positions.push({
+        x: player.position.x - Math.sin(angle) * distanceBehind,
+        y: player.position.y,
+        z: player.position.z - Math.cos(angle) * distanceBehind,
+      });
+    }
   }
 
   return positions;
@@ -494,40 +511,60 @@ function handleCollisions(): void {
       }
     }
 
-    // Check collision with green shells
-    for (const [shellId, shell] of Object.entries(gameState.greenShells)) {
-      if (
-        checkCollision(
-          player.position,
-          shell.position,
-          shellRadius + carRadius + 0.05
-        ) &&
-        (player.isStarred || shell.canHitOwner || shell.droppedBy !== player.id)
-      ) {
-        if (player.isStarred) {
-          removeItem(gameState.greenShells, shellId);
-        } else {
-          onHit(player.id);
-          removeItem(gameState.greenShells, shellId);
-        }
-      }
-    }
+    const shellCollections = [
+      { collection: gameState.greenShells, type: "green" },
+      { collection: gameState.redShells, type: "red" },
+    ];
 
-    // Check collision with red shells
-    for (const [shellId, shell] of Object.entries(gameState.redShells)) {
-      if (
-        checkCollision(
-          player.position,
-          shell.position,
-          shellRadius + carRadius + 0.05
-        ) &&
-        (player.isStarred || shell.canHitOwner || shell.droppedBy !== player.id)
-      ) {
-        if (player.isStarred) {
-          removeItem(gameState.redShells, shellId);
-        } else {
-          onHit(player.id);
-          removeItem(gameState.redShells, shellId);
+    for (const { collection, type } of shellCollections) {
+      for (const [shellId, shell] of Object.entries(collection)) {
+        if (
+          checkCollision(
+            player.position,
+            shell.position,
+            shellRadius + carRadius + 0.05
+          ) &&
+          (player.isStarred ||
+            shell.canHitOwner ||
+            shell.droppedBy !== player.id)
+        ) {
+          if (player.isStarred) {
+            removeItem(collection, shellId);
+          } else {
+            // Check if player has trailing shells that can block the hit
+            let blockedHit = false;
+
+            if (
+              player.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS ||
+              player.trailingItem?.type === ITEM_TYPES.THREE_RED_SHELLS
+            ) {
+              const quantity = player.trailingItem.quantity;
+              let blockProbability = 0;
+
+              if (quantity === 3) {
+                blockProbability = 0.9; // 90% chance to block
+              } else if (quantity === 2) {
+                blockProbability = 0.7; // 70% chance to block
+              } else if (quantity === 1) {
+                blockProbability = 0.5; // 50% chance to block
+              }
+
+              if (Math.random() < blockProbability) {
+                // Reduce the trailing item quantity instead of hitting the player
+                player.trailingItem.quantity--;
+                if (player.trailingItem.quantity === 0) {
+                  player.trailingItem = undefined;
+                }
+                blockedHit = true;
+              }
+            }
+
+            if (!blockedHit) {
+              onHit(player.id);
+            }
+
+            removeItem(collection, shellId);
+          }
         }
       }
     }
@@ -538,12 +575,17 @@ function handleCollisions(): void {
 
       // Check direct player collision
       if (
-        checkCollision(player.position, otherPlayer.position, 2 * carRadius)
+        checkCollision(
+          player.position,
+          otherPlayer.position,
+          2 * carRadius + shellRadius
+        )
       ) {
         if (player.isStarred && !otherPlayer.isStarred) {
           onHit(otherPlayer.id);
         } else if (
-          otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS
+          otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS ||
+          otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_RED_SHELLS
         ) {
           // Handle collision with player having green shells
           const quantity = otherPlayer.trailingItem.quantity;
@@ -565,17 +607,17 @@ function handleCollisions(): void {
             }
 
             // If there are no trailing items left and player is not starred, hit the other player
-            if (
-              otherPlayer.trailingItem?.quantity === 0 &&
-              !otherPlayer.isStarred
-            ) {
+            if (!otherPlayer.trailingItem && !otherPlayer.isStarred) {
               onHit(otherPlayer.id);
             }
           }
         }
       }
 
-      if (otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS) {
+      if (
+        otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_GREEN_SHELLS ||
+        otherPlayer.trailingItem?.type === ITEM_TYPES.THREE_RED_SHELLS
+      ) {
         continue;
       }
 
@@ -810,7 +852,7 @@ function updateRedShells(): void {
       ([otherShellId, otherShell]) => {
         // Skip self-collision
         if (shellId === otherShellId) return;
-        
+
         if (
           checkCollision(
             shell.position,
@@ -826,7 +868,6 @@ function updateRedShells(): void {
       }
     );
 
-    
     // If shell was destroyed by banana, skip the rest
     if (redShellsToRemove.includes(shellId)) {
       return;
