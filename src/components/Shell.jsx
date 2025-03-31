@@ -34,7 +34,7 @@ function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
     topHalf.position.y = 0;
     group.add(topHalf);
 
-    // Bottom half (white)
+    // Bottom half (white for green shells, yellow for red shells)
     const bottomHalfGeometry = new THREE.SphereGeometry(
       0.4,
       32,
@@ -45,7 +45,11 @@ function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
       Math.PI / 2
     );
     const bottomHalfMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(1, 1, 1),
+      color: new THREE.Color(
+        1,
+        color === "red" ? 0.8 : 1,
+        color === "red" ? 0.2 : 1
+      ),
       metalness: 0.1,
       roughness: 0.8,
     });
