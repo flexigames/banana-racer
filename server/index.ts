@@ -35,7 +35,7 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.FAKE_CUBE]: 2,
   [ITEM_TYPES.GREEN_SHELL]: 5,
   [ITEM_TYPES.RED_SHELL]: 5,
-  [ITEM_TYPES.THREE_RED_SHELLS]: 5,
+  [ITEM_TYPES.THREE_RED_SHELLS]: 5000,
   [ITEM_TYPES.STAR]: 1,
   [ITEM_TYPES.THREE_BANANAS]: 5,
   [ITEM_TYPES.THREE_GREEN_SHELLS]: 5,
@@ -296,6 +296,9 @@ function useItem(playerId: string): void {
       case ITEM_TYPES.RED_SHELL:
         dropRedShell(playerId);
         break;
+      case ITEM_TYPES.THREE_RED_SHELLS:
+        dropRedShell(playerId);
+        break;
     }
     return;
   }
@@ -334,7 +337,8 @@ function useItem(playerId: string): void {
         type: itemType,
         quantity:
           itemType === ITEM_TYPES.THREE_BANANAS ||
-          itemType === ITEM_TYPES.THREE_GREEN_SHELLS
+          itemType === ITEM_TYPES.THREE_GREEN_SHELLS ||
+          itemType === ITEM_TYPES.THREE_RED_SHELLS
             ? 3
             : 1,
       };

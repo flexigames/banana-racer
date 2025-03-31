@@ -326,6 +326,19 @@ function TrailingItem({ type, position, quantity }) {
           color="red"
         />
       );
+    case ITEM_TYPES.THREE_RED_SHELLS:
+      return (
+        <>
+          {Array.from({ length: quantity || 3 }).map((_, index) => (
+            <Shell
+              key={index}
+              position={[position.x, position.y, position.z - index * 0.3]}
+              rotation={0}
+              color="red"
+            />
+          ))}
+        </>
+      );
     default:
       return null;
   }
