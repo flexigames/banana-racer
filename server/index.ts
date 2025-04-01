@@ -1162,6 +1162,10 @@ io.on("connection", (socket: Socket) => {
     lives: 3,
   };
 
+  if (process.env.NODE_ENV !== "development") {
+    sendToSlack(Object.keys(gameState.players).length, playerName);
+  }
+
   socket.emit("init", { id: playerId, color: playerColor, name: playerName });
   io.emit("gameState", gameState);
 
@@ -1234,3 +1238,19 @@ httpServer.listen(PORT, () => {
 setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
+
+function sendToSlack(playerCount: number, playerName: string) {
+  fetch(
+    "https://hooks.slack.com/triggers/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",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        player_count: Object.keys(gameState.players).length.toString(),
+        player_name: playerName,
+      }),
+    }
+  ).catch((error) => console.error("Error sending to Slack:", error));
+}
