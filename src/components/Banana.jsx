@@ -54,6 +54,7 @@ const Banana = ({ position, rotation, onExpire }) => {
   return (
     <group ref={banana}>
       <SoundEffect name="itemHit" playOnUnMount />
+      <SoundEffect name="use" playOnMount distance={20} />
       <primitive object={model} scale={[0.6, 0.6, 0.6]} />
     </group>
   );

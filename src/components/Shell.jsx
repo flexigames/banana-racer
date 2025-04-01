@@ -66,7 +66,7 @@ function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
   return (
     <group ref={shell}>
       <SoundEffect name="itemHit" playOnUnMount />
-      <SoundEffect name="use" playOnMount />
+      <SoundEffect name="use" playOnMount distance={20} />
     </group>
   );
 }

@@ -10,7 +10,16 @@ import { useLoader } from "@react-three/fiber";
 import { useAudio } from "../contexts/AudioContext";
 
 const SoundEffect = forwardRef(
-  ({ name, distance = 1, playOnMount = false, playOnUnMount = false }, ref) => {
+  (
+    {
+      name,
+      distance = 1,
+      volume = 1,
+      playOnMount = false,
+      playOnUnMount = false,
+    },
+    ref
+  ) => {
     const sound = useRef(null);
     const { isSoundEffectsMuted } = useAudio();
     const camera = useThree(({ camera }) => camera);
@@ -26,6 +35,7 @@ const SoundEffect = forwardRef(
             !sound.current.isPlaying &&
             !isSoundEffectsMuted
           ) {
+            sound.current.setVolume(volume);
             sound.current.play();
           }
         },
@@ -35,7 +45,7 @@ const SoundEffect = forwardRef(
           }
         },
       }),
-      [isSoundEffectsMuted]
+      [isSoundEffectsMuted, volume]
     );
 
     useEffect(() => {
@@ -43,10 +53,11 @@ const SoundEffect = forwardRef(
       if (_sound) {
         _sound.setBuffer(buffer);
         _sound.setRefDistance(distance);
+        _sound.setVolume(volume);
         if (playOnMount && !_sound.isPlaying && !isSoundEffectsMuted)
           _sound.play();
       }
-    }, [buffer, distance, playOnMount, isSoundEffectsMuted]);
+    }, [buffer, distance, volume, playOnMount, isSoundEffectsMuted]);
 
     useEffect(() => {
       const _sound = sound.current;
@@ -55,6 +66,7 @@ const SoundEffect = forwardRef(
         console.log(`Clean, up: ${playOnUnMount} ${Boolean(_sound)}`);
         if (playOnUnMount && _sound && !isSoundEffectsMuted) {
           console.log("playOnUnMount");
+          _sound.setVolume(volume);
           _sound.play();
         }
 
@@ -66,7 +78,7 @@ const SoundEffect = forwardRef(
           }, 2000);
         }
       };
-    }, [camera, listener, playOnUnMount, isSoundEffectsMuted]);
+    }, [camera, listener, playOnUnMount, isSoundEffectsMuted, volume]);
 
     return <positionalAudio ref={sound} args={[listener]} />;
   }

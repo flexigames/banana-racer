@@ -7,6 +7,7 @@ import Banana from "./Banana";
 import ItemBox from "./ItemBox";
 import Shell from "./Shell";
 import { ITEM_TYPES } from "../../server/types";
+import SoundEffect from "./SoundEffect";
 
 const Car = ({
   color = null,
@@ -246,6 +247,8 @@ const Car = ({
             <coneGeometry args={[0.25, 1.0, 16]} />
             <meshBasicMaterial color="#66ccff" transparent opacity={0.4} />
           </mesh>
+
+          <SoundEffect name="use" playOnMount distance={10} />
         </>
       )}
     </group>

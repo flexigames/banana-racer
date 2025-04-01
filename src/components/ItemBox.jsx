@@ -110,7 +110,8 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
 
   return (
     <group ref={itemBox}>
-      <SoundEffect name="pickup" playOnUnMount={!isFakeCube} />
+      <SoundEffect name="pickup" playOnUnMount={!isFakeCube} volume={0.5} />
+      <SoundEffect name="use" playOnMount={isFakeCube} distance={20} />
       <primitive object={model} scale={[scale, scale, scale]} />
     </group>
   );
