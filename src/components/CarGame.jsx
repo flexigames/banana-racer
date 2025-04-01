@@ -17,6 +17,29 @@ import { MuteButton } from "./MuteButton";
 import { UsernameEditor } from "./UsernameEditor";
 import ItemButton from "./ItemButton";
 
+// const FollowCamera = ({ target }) => {
+//   const cameraRef = useRef();
+//   const offset = new THREE.Vector3(0, 3.5, 5);
+//   const targetPosition = new THREE.Vector3();
+
+//   useFrame(() => {
+//     if (!target.current) return;
+
+//     // Get target's position and rotation
+//     const targetPos = target.current.position;
+//     const targetRot = target.current.rotation.y;
+
+//     // Calculate camera position based on target's rotation
+//     targetPosition.copy(targetPos);
+//     targetPosition.add(offset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRot));
+
+//     // Update camera position
+//     cameraRef.current.position.copy(targetPosition);
+
+//     // Set camera rotation to match target's rotation
+//     cameraRef.current.rotation.y = targetRot - Math.PI;
+//   });
+
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
   const cameraRef = useRef();
@@ -24,81 +47,67 @@ const FollowCamera = ({ target }) => {
   const targetPosition = useRef(new THREE.Vector3(0, 0, 0));
   const lastValidPosition = useRef(new THREE.Vector3(0, 3.5, 5));
   const lastUpdateTime = useRef(0);
-  const MAX_FRAME_DELTA = 1 / 30; // Cap frame delta at 30fps to prevent camera jumps
+  const MAX_FRAME_DELTA = 1 / 30;
 
   useFrame((state) => {
     if (!cameraRef.current || !target.current) return;
 
-    // Check if car is spinning out - don't move camera if it is
     const isSpinningOut = target.current.isSpinningOut?.();
 
     if (!isSpinningOut) {
       const currentTime = performance.now();
-      let frameDelta = (currentTime - lastUpdateTime.current) / 1000; // Convert to seconds
-
-      // Cap frame delta to prevent camera jumps
+      let frameDelta = (currentTime - lastUpdateTime.current) / 1000;
       frameDelta = Math.min(frameDelta, MAX_FRAME_DELTA);
-
       lastUpdateTime.current = currentTime;
 
-      // Get car's current speed for adaptive camera behavior
       const carSpeed = target.current.speed || 0;
-
-      // Update target position from the car
       targetPosition.current.set(
         target.current.position.x,
         target.current.position.y,
         target.current.position.z
       );
 
-      // Calculate camera position: behind and above the car
       const carRotation = target.current.rotation.y;
-
-      // Adaptive distance and height based on speed
-      const baseDistance = 1;
+      const baseDistance = 1.5;
       const baseHeight = 0.7;
-      const speedFactor = Math.min(Math.abs(carSpeed) / 10, 1); // Normalize speed to 0-1
-      const distance = baseDistance * (1 + speedFactor * 0.5); // Increase distance at high speeds
-      const height = baseHeight * (1 + speedFactor * 0.3); // Increase height at high speeds
+      const tiltAngle = 1;
+      const speedFactor = Math.min(Math.abs(carSpeed) / 10, 1);
+      const distance = baseDistance * (1 + speedFactor * 0.5);
+      const height = baseHeight * (1 + speedFactor * 0.3);
 
-      // Calculate position behind the car based on its rotation
       const offsetX = Math.sin(carRotation) * distance;
       const offsetZ = Math.cos(carRotation) * distance;
 
-      // Add predictive positioning based on speed
-      const predictionFactor = Math.min(Math.abs(carSpeed) / 20, 0.3); // Max 30% prediction
+      const predictionFactor = Math.min(Math.abs(carSpeed) / 20, 0.3);
       const forwardX = Math.sin(carRotation);
       const forwardZ = Math.cos(carRotation);
 
-      // Position camera behind and above the car with prediction
       position.current.set(
         targetPosition.current.x - offsetX + forwardX * predictionFactor,
         targetPosition.current.y + height,
         targetPosition.current.z - offsetZ + forwardZ * predictionFactor
       );
 
-      // Adaptive smoothing based on speed
       const baseLerpFactor = 0.15;
       const speedLerpFactor = Math.max(
         baseLerpFactor,
         Math.min(carSpeed / 20, 0.3)
       );
 
-      // Update camera position with fixed timestep
-      const lerpAmount = Math.min(1, speedLerpFactor * frameDelta * 60); // Scale by 60 to match physics timestep
+      const lerpAmount = Math.min(1, speedLerpFactor * frameDelta * 60);
       cameraRef.current.position.lerp(position.current, lerpAmount);
 
-      // Store the last valid camera position (before any spinout)
+      // Calculate angle between camera and car
+      const dx = targetPosition.current.x - cameraRef.current.position.x;
+      const dz = targetPosition.current.z - cameraRef.current.position.z;
+      const angle = Math.atan2(dx, dz);
+      // cameraRef.current.rotation.order = "YXZ";
+      cameraRef.current.rotation.y = angle - Math.PI;
+      // cameraRef.current.rotation.x = tiltAngle;
+      // tilt the camera down a bit
+
       lastValidPosition.current.copy(cameraRef.current.position);
     }
-
-    // Always make the camera look at the car, even during spinout
-    const lookTarget = new THREE.Vector3(
-      target.current.position.x,
-      target.current.position.y + 0.3, // Look slightly above the car
-      target.current.position.z
-    );
-    cameraRef.current.lookAt(lookTarget);
   });
 
   return (
