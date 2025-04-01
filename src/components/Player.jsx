@@ -59,11 +59,8 @@ const Player = forwardRef((props, ref) => {
   useVehicleControls(movement);
 
   const getRandomSpawnPosition = () => {
-    let x, z;
-    do {
-      x = (Math.random() - 0.5) * 40;
-      z = (Math.random() - 0.5) * 40;
-    } while (Math.sqrt(x * x + z * z) < 5);
+    const x = Math.random() * 5.5 - 4;
+    const z = Math.random() * 5.5 - 4;
     return { x, y: 0, z };
   };
 

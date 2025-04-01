@@ -80,24 +80,9 @@ function generateRedShellId(): string {
   return `red_shell_${uuidv4()}`;
 }
 
-function getRandomSpawnPosition(): Position {
-  const mapSize = 40;
-  let x: number, z: number;
-  do {
-    x = (Math.random() - 0.5) * mapSize;
-    z = (Math.random() - 0.5) * mapSize;
-  } while (Math.sqrt(x * x + z * z) < 5); // Ensure not too close to origin
-
-  return {
-    x,
-    y: 0,
-    z,
-  };
-}
-
 function initializePlayer(playerId: string): void {
   const player = gameState.players[playerId];
-  player.position = getRandomSpawnPosition();
+  player.position = { x: 0, y: 0, z: 0 };
   player.rotation = Math.random() * Math.PI * 2;
   player.speed = 0;
   player.lives = 3;
