@@ -385,7 +385,6 @@ const CarGame = () => {
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       {isGameOver && <GameOver />}
       <Canvas
-        dpr={[0.4, 0.4]}
         gl={{
           antialias: false,
           powerPreference: "high-performance",
@@ -394,10 +393,6 @@ const CarGame = () => {
           alpha: false,
         }}
         camera={{ fov: 75, near: 0.1, far: 1000 }}
-        style={{
-          imageRendering: "pixelated",
-          imageRendering: "crisp-edges",
-        }}
       >
         {/* Always use follow camera */}
         <FollowCamera target={carRef} />
