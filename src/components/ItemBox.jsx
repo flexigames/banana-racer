@@ -22,7 +22,6 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
     itemBoxModel.traverse((child) => {
       if (child.isMesh && child.material && child.material.map && !texture) {
         texture = child.material.map;
-        console.log("Found texture:", texture);
       }
     });
 
@@ -42,7 +41,6 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
       opacity: isFakeCube ? 0.9 : 0.6,
     });
 
-    console.log("Created shader material:", material);
     return material;
   }, [itemBoxModel, isFakeCube]);
 

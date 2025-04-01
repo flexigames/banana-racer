@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useRef,
+  useCallback,
 } from "react";
 import { io } from "socket.io-client";
 
@@ -24,6 +25,7 @@ const MultiplayerContext = createContext({
   useItem: () => {},
   respawn: () => {},
   changeName: () => {},
+  changeColor: () => {},
 });
 
 // Custom hook to use the context
@@ -120,92 +122,104 @@ export const MultiplayerProvider = ({ children }) => {
   }, [connected]);
 
   // Player functions
-  const updatePlayerPosition = (position, rotation, speed = 0) => {
-    if (connected && socket.current) {
-      socket.current.emit("update", {
-        position,
-        rotation,
-        speed,
-      });
-    }
-  };
+  const updatePlayerPosition = useCallback(
+    (position, rotation, speed = 0) => {
+      if (connected && socket.current) {
+        socket.current.emit("update", {
+          position,
+          rotation,
+          speed,
+        });
+      }
+    },
+    [connected]
+  );
 
   // Item functions
-  const useItem = (carPosition, carRotation) => {
-    if (!connected || !socket.current) return false;
+  const useItem = useCallback(
+    (carPosition, carRotation) => {
+      if (!connected || !socket.current) return false;
 
-    const now = Date.now();
-    if (now - lastItemUseTime < itemUseTimeout) return false;
+      const now = Date.now();
+      if (now - lastItemUseTime < itemUseTimeout) return false;
 
-    if (!playerId) return false;
+      if (!playerId) return false;
 
-    const playerData = players[playerId];
-    if (!playerData) return false;
+      const playerData = players[playerId];
+      if (!playerData) return false;
 
-    // Allow using item if we have either a trailing item or an item in slot
-    if (!playerData.trailingItem && !playerData.item?.quantity) return false;
+      // Allow using item if we have either a trailing item or an item in slot
+      if (!playerData.trailingItem && !playerData.item?.quantity) return false;
 
-    setLastItemUseTime(now);
+      setLastItemUseTime(now);
 
-    const itemPosition = {
-      x: carPosition.x,
-      y: 0.1,
-      z: carPosition.z,
-    };
+      const itemPosition = {
+        x: carPosition.x,
+        y: 0.1,
+        z: carPosition.z,
+      };
 
-    socket.current.emit("useItem", {
-      position: itemPosition,
-      rotation: carRotation,
-    });
+      socket.current.emit("useItem", {
+        position: itemPosition,
+        rotation: carRotation,
+      });
 
-    return true;
-  };
+      return true;
+    },
+    [connected, lastItemUseTime, playerId, players]
+  );
 
   // Respawn function
-  const respawn = () => {
+  const respawn = useCallback(() => {
     if (connected && socket.current) {
       socket.current.emit("respawn");
     }
-  };
+  }, [connected]);
 
-  const changeName = (newName) => {
-    if (!connected || !socket.current || !newName) return;
-    socket.current.emit("changeName", newName);
-  };
+  const changeName = useCallback(
+    (newName) => {
+      if (!connected || !socket.current || !newName) return;
+      console.log("[CONTEXT] Changing name to", newName);
+      socket.current.emit("changeName", newName);
+    },
+    [connected]
+  );
 
-  const changeColor = (newColor) => {
-    if (!connected || !socket.current || !newColor) return;
-    socket.current.emit("changeColor", newColor);
-  };
+  const changeColor = useCallback(
+    (newColor) => {
+      console.log("[CONTEXT] Changing color to", newColor);
+      if (!connected || !socket.current || !newColor) return;
+      socket.current.emit("changeColor", newColor);
+    },
+    [connected]
+  );
 
   // Change server URL
-  const changeServerUrl = (useLocalServer = false) => {
-    const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
+  const changeServerUrl = useCallback(
+    (useLocalServer = false) => {
+      const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
 
-    if (newUrl !== serverUrl) {
-      if (socket.current) {
-        socket.current.disconnect();
+      if (newUrl !== serverUrl) {
+        if (socket.current) {
+          socket.current.disconnect();
+        }
+
+        setServerUrl(newUrl);
+        setConnected(false);
+
+        if (useLocalServer) {
+          window.localStorage.setItem("useLocalServer", "true");
+        } else {
+          window.localStorage.removeItem("useLocalServer");
+        }
+
+        console.log(`Server URL changed to: ${newUrl}`);
       }
 
-      setServerUrl(newUrl);
-      setConnected(false);
-
-      if (useLocalServer) {
-        window.localStorage.setItem("useLocalServer", "true");
-      } else {
-        window.localStorage.removeItem("useLocalServer");
-      }
-
-      console.log(`Server URL changed to: ${newUrl}`);
-    }
-
-    return newUrl;
-  };
-
-  const changeUsername = (newName) => {
-    if (!connected || !socket.current || !newName) return;
-    socket.current.emit("changeUsername", newName);
-  };
+      return newUrl;
+    },
+    [serverUrl]
+  );
 
   // Provide context value
   const contextValue = {

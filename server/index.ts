@@ -1179,6 +1179,7 @@ io.on("connection", (socket: Socket) => {
   });
 
   socket.on("changeColor", (newColor: Color) => {
+    console.log("[SERVER] Changing color to", newColor);
     if (
       !newColor ||
       typeof newColor !== "object" ||
@@ -1187,6 +1188,8 @@ io.on("connection", (socket: Socket) => {
       newColor.l === undefined
     )
       return;
+
+    console.log("[SERVER] Changing color to", newColor);
 
     const player = gameState.players[playerId];
     if (!player) return;
@@ -1197,6 +1200,7 @@ io.on("connection", (socket: Socket) => {
   socket;
 
   socket.on("changeName", (newName: string) => {
+    console.log("[SERVER] Changing name to", newName);
     if (!newName || typeof newName !== "string" || newName.length > 64) return;
 
     const player = gameState.players[playerId];

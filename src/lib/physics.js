@@ -1,4 +1,5 @@
 import { blocks, ramps, bridges, mapSize, portals } from "./map";
+import { hslToHex } from "./color";
 
 const carRadius = 0.26; // Approximate car collision radius
 const FIXED_TIMESTEP = 1 / 60; // Fixed physics timestep (60 Hz)
@@ -697,57 +698,3 @@ export const runFixedStepPhysics = (
 
   return movement;
 };
-
-function hslToHex({ h, s, l }) {
-  // Convert h from [0,1] to [0,360]
-  h = h * 360;
-
-  // Convert s and l from [0,1] to [0,100]
-  s = s * 100;
-  l = l * 100;
-
-  // Convert HSL to RGB
-  let c = (1 - Math.abs((2 * l) / 100 - 1)) * (s / 100);
-  let x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  let m = l / 100 - c / 2;
-
-  let r = 0,
-    g = 0,
-    b = 0;
-
-  if (h >= 0 && h < 60) {
-    r = c;
-    g = x;
-    b = 0;
-  } else if (h >= 60 && h < 120) {
-    r = x;
-    g = c;
-    b = 0;
-  } else if (h >= 120 && h < 180) {
-    r = 0;
-    g = c;
-    b = x;
-  } else if (h >= 180 && h < 240) {
-    r = 0;
-    g = x;
-    b = c;
-  } else if (h >= 240 && h < 300) {
-    r = x;
-    g = 0;
-    b = c;
-  } else {
-    r = c;
-    g = 0;
-    b = x;
-  }
-
-  // Convert RGB to [0,255] and apply offset m
-  r = Math.round((r + m) * 255);
-  g = Math.round((g + m) * 255);
-  b = Math.round((b + m) * 255);
-
-  // Convert to HEX
-  return `#${r.toString(16).padStart(2, "0")}${g
-    .toString(16)
-    .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
