@@ -38,7 +38,7 @@ export const AudioProvider = ({ children }) => {
   useEffect(() => {
     audioRef.current = new Audio("/sounds/background.mp3");
     audioRef.current.loop = true;
-    audioRef.current.volume = 0.2;
+    audioRef.current.volume = 0.15;
 
     webAudioContextRef.current = new (window.AudioContext ||
       window.webkitAudioContext)();
@@ -48,6 +48,7 @@ export const AudioProvider = ({ children }) => {
       explosion: new Audio("/sounds/explosion.wav"),
       pickup: new Audio("/sounds/pickup.wav"),
       use: new Audio("/sounds/use.wav"),
+      itemHit: new Audio("/sounds/itemHit.wav"),
     };
   }, []);
 

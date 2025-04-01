@@ -1,9 +1,18 @@
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
+import { useAudio } from "../contexts/AudioContext";
 
 function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
   const shell = useRef();
   const scale = 0.25;
+
+  const { playSoundEffect } = useAudio();
+
+  useEffect(() => {
+    return () => {
+      playSoundEffect("itemHit");
+    };
+  }, []);
 
   useEffect(() => {
     if (!shell.current) return;
