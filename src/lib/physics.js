@@ -475,54 +475,6 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
     movement.lastValidHeight = targetHeight;
   }
 
-  // Apply gravity
-  const gravity = 9.8; // Gravity acceleration in m/s²
-  const terminalVelocity = 20; // Maximum falling speed
-
-  // Initialize vertical velocity if not exists
-  if (movement.verticalVelocity === undefined) {
-    movement.verticalVelocity = 0;
-  }
-
-  // Apply gravity to vertical velocity
-  movement.verticalVelocity -= gravity * delta;
-
-  // Limit falling speed
-  movement.verticalVelocity = Math.max(
-    -terminalVelocity,
-    movement.verticalVelocity
-  );
-
-  // Calculate new height
-  const newHeight = object.position.y + movement.verticalVelocity * delta;
-
-  // Check if we're going down a ramp (current height > target height)
-  if (currentHeight > targetHeight && !underBridge) {
-    // Smoothly transition down the ramp
-    const transitionSpeed = 5.0; // Adjust this value to control how quickly we follow the ramp
-    const targetY = Math.max(0, targetHeight);
-
-    // Interpolate between current height and target height
-    object.position.y =
-      object.position.y +
-      (targetY - object.position.y) * Math.min(1, transitionSpeed * delta);
-
-    // Reset vertical velocity when on a ramp to prevent bouncing
-    movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
-  }
-  // Check if we've hit the ground
-  else if (newHeight <= targetHeight) {
-    // We've hit the ground
-    object.position.y = targetHeight;
-    movement.verticalVelocity = 0;
-  } else {
-    // We're in the air
-    object.position.y = newHeight;
-  }
-
-  // Update last valid height
-  movement.lastValidHeight = targetHeight;
-
   // Handle multi-level bridges and blocks
   if (underBridge) {
     // Get the ground level or the level we should be at
@@ -548,8 +500,8 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
       }
     }
 
-    // Keep us at the appropriate level when under a bridge
-    object.position.y = groundLevel;
+    // Update target height to ground level when under bridge
+    targetHeight = groundLevel;
 
     // Prevent upward movement when under a bridge
     movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
@@ -597,6 +549,54 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
       }
     }
   }
+
+  // Apply gravity
+  const gravity = 9.8; // Gravity acceleration in m/s²
+  const terminalVelocity = 20; // Maximum falling speed
+
+  // Initialize vertical velocity if not exists
+  if (movement.verticalVelocity === undefined) {
+    movement.verticalVelocity = 0;
+  }
+
+  // Apply gravity to vertical velocity
+  movement.verticalVelocity -= gravity * delta;
+
+  // Limit falling speed
+  movement.verticalVelocity = Math.max(
+    -terminalVelocity,
+    movement.verticalVelocity
+  );
+
+  // Calculate new height
+  const newHeight = object.position.y + movement.verticalVelocity * delta;
+
+  // Check if we're going down a ramp (current height > target height)
+  if (currentHeight > targetHeight && !underBridge) {
+    // Smoothly transition down the ramp
+    const transitionSpeed = 5.0; // Adjust this value to control how quickly we follow the ramp
+    const targetY = Math.max(0, targetHeight);
+
+    // Interpolate between current height and target height
+    object.position.y =
+      object.position.y +
+      (targetY - object.position.y) * Math.min(1, transitionSpeed * delta);
+
+    // Reset vertical velocity when on a ramp to prevent bouncing
+    movement.verticalVelocity = Math.min(0, movement.verticalVelocity);
+  }
+  // Check if we've hit the ground
+  else if (newHeight <= targetHeight) {
+    // We've hit the ground
+    object.position.y = targetHeight;
+    movement.verticalVelocity = 0;
+  } else {
+    // We're in the air
+    object.position.y = newHeight;
+  }
+
+  // Update last valid height
+  movement.lastValidHeight = targetHeight;
 
   // Check portal collisions
   for (let i = 0; i < portals.length; i++) {
