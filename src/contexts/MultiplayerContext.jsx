@@ -25,7 +25,6 @@ const MultiplayerContext = createContext({
   redShells: [],
   updatePlayerPosition: () => {},
   useItem: () => {},
-  respawn: () => {},
   changeName: () => {},
   changeColor: () => {},
 });
@@ -179,13 +178,6 @@ export const MultiplayerProvider = ({ children }) => {
     [connected, lastItemUseTime, playerId, players]
   );
 
-  // Respawn function
-  const respawn = useCallback(() => {
-    if (connected && socket.current) {
-      socket.current.emit("respawn");
-    }
-  }, [connected]);
-
   const changeName = useCallback(
     (newName) => {
       if (!connected || !socket.current || !newName) return;
@@ -247,7 +239,6 @@ export const MultiplayerProvider = ({ children }) => {
     redShells,
     updatePlayerPosition,
     useItem,
-    respawn,
     changeServerUrl,
     changeName,
     changeColor,

@@ -72,21 +72,6 @@ function generateRedShellId(): string {
   return `red_shell_${uuidv4()}`;
 }
 
-function initializePlayer(playerId: string): void {
-  const player = gameState.players[playerId];
-  player.position = { x: 0, y: 0, z: 0 };
-  player.rotation = Math.random() * Math.PI * 2;
-  player.speed = 0;
-  player.lives = 3;
-  player.item = { type: ITEM_TYPES.BANANA, quantity: 0 };
-  player.trailingItem = undefined;
-  player.isSpinning = false;
-  player.isBoosted = false;
-  player.isItemSpinning = false;
-  player.isStarred = false;
-  player.activeItem = undefined;
-}
-
 function onHit(playerId: string, duration: number = 3000): void {
   const player = gameState.players[playerId];
   if (!player || player.lives <= 0 || player.isSpinning || player.isStarred)
@@ -1049,11 +1034,6 @@ io.on("connection", (socket: Socket) => {
 
   socket.on("useItem", (data) => {
     useItem(playerId);
-  });
-
-  socket.on("respawn", () => {
-    initializePlayer(playerId);
-    io.emit("gameState", gameState);
   });
 
   socket.on("changeColor", (newColor: Color) => {
