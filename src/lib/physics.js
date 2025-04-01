@@ -291,7 +291,6 @@ export const isUnderBridge = (x, z, y) => {
   return false;
 };
 
-
 /**
  * Update player position based on physics
  * @param {Object} object - Reference to the object to move
@@ -600,7 +599,8 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
   }
 
   // Check portal collisions
-  for (const portal of portals) {
+  for (let i = 0; i < portals.length; i++) {
+    const portal = portals[i];
     const portalX = portal.position[0];
     const portalZ = portal.position[2];
     const portalWidth = portal.width || 1;
@@ -614,9 +614,16 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
       const playerColor = player.color;
       const hexColor = hslToHex(playerColor);
       const playerName = player.name || "Player";
-      const targetUrl = `https://portal.pieter.com?ref=https://drive.alexandfinn.com&color=${encodeURIComponent(
+
+      const baseUrl =
+        i === 0 && window.portalRef
+          ? window.portalRef
+          : "https://portal.pieter.com";
+
+      const targetUrl = `${baseUrl}?ref=https://drive.alexandfinn.com&color=${encodeURIComponent(
         hexColor
       )}&username=${encodeURIComponent(playerName)}`;
+
       window.location.href = targetUrl;
       return;
     }

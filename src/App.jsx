@@ -10,6 +10,7 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const username = params.get("username");
     const color = params.get("color");
+    const portalRef = params.get("ref");
 
     if (username) {
       changeName(username);
@@ -17,6 +18,10 @@ function App() {
 
     if (color) {
       changeColor(hexToHsl(color));
+    }
+
+    if (portalRef) {
+      window.portalRef = portalRef;
     }
   }, [changeName, changeColor]);
 
