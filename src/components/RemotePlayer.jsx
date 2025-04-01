@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import Car from "./Car";
 import { Star } from "./Star";
+import { Text, Billboard } from "@react-three/drei";
 
 const RemotePlayer = ({
   playerId,
@@ -13,6 +14,7 @@ const RemotePlayer = ({
   lives,
   isStarred = false,
   trailingItem = null,
+  name,
 }) => {
   const car = useRef();
   const targetPosition = useRef(
@@ -162,6 +164,24 @@ const RemotePlayer = ({
           trailingItem={trailingItem}
         />
       </Star>
+      {name && (
+        <group position={[0, 0.7, 0]}>
+          <Billboard follow={true} lockX={false} lockY={false} lockZ={false}>
+            <Text
+              position={[0, 0, 0]}
+              fontSize={0.2}
+              color="white"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.02}
+              outlineBlur={0.02}
+              outlineColor="black"
+            >
+              {name}
+            </Text>
+          </Billboard>
+        </group>
+      )}
     </group>
   );
 };

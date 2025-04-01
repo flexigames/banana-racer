@@ -28,15 +28,17 @@ const Player = forwardRef((props, ref) => {
   const { connected, playerId, playerColor, players, updatePlayerPosition } =
     useMultiplayer();
 
-  const lives = players[playerId]?.lives;
-  const isStarred = players[playerId]?.isStarred || false;
+  const player = useMemo(() => players[playerId], [players, playerId]);
+
+  const lives = player?.lives;
+  const isStarred = player?.isStarred || false;
 
   useImperativeHandle(ref, () => car.current);
 
   const effectiveColor = colorProp || playerColor;
 
-  const isBoosted = players[playerId]?.isBoosted || false;
-  const isDead = players[playerId]?.lives <= 0;
+  const isBoosted = player?.isBoosted || false;
+  const isDead = player?.lives <= 0;
 
   const carColor = useMemo(() => {
     if (!effectiveColor) return null;
