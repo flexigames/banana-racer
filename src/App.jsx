@@ -6,7 +6,9 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const portalRef = params.get("ref");
     if (portalRef) {
-      window.portalRef = portalRef;
+      window.portalRef = portalRef.startsWith("http")
+        ? portalRef
+        : `https://${portalRef}`;
     }
   }, []);
 

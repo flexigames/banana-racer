@@ -620,7 +620,7 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
           ? window.portalRef
           : "https://portal.pieter.com";
 
-      const targetUrl = `${baseUrl}?ref=https://drive.alexandfinn.com&color=${encodeURIComponent(
+      const targetUrl = `${baseUrl}?ref=drive.alexandfinn.com&color=${encodeURIComponent(
         hexColor
       )}&username=${encodeURIComponent(playerName)}`;
 
