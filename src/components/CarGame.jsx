@@ -624,7 +624,7 @@ const CarGame = () => {
             }
 
             .game-ui {
-              bottom: 5px;
+              bottom: env(safe-area-inset-bottom, 5px);
             }
           }
         `}
