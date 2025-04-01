@@ -17,29 +17,6 @@ import { MuteButton } from "./MuteButton";
 import { UsernameEditor } from "./UsernameEditor";
 import ItemButton from "./ItemButton";
 
-// const FollowCamera = ({ target }) => {
-//   const cameraRef = useRef();
-//   const offset = new THREE.Vector3(0, 3.5, 5);
-//   const targetPosition = new THREE.Vector3();
-
-//   useFrame(() => {
-//     if (!target.current) return;
-
-//     // Get target's position and rotation
-//     const targetPos = target.current.position;
-//     const targetRot = target.current.rotation.y;
-
-//     // Calculate camera position based on target's rotation
-//     targetPosition.copy(targetPos);
-//     targetPosition.add(offset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRot));
-
-//     // Update camera position
-//     cameraRef.current.position.copy(targetPosition);
-
-//     // Set camera rotation to match target's rotation
-//     cameraRef.current.rotation.y = targetRot - Math.PI;
-//   });
-
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
   const cameraRef = useRef();
@@ -584,11 +561,11 @@ const CarGame = () => {
           .game-ui {
             position: absolute;
             bottom: 30px;
-            left: 0;
-            right: 0;
+            left: 30px;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             pointer-events: none;
+            z-index: 100;
           }
           
           .item-display {
@@ -619,6 +596,17 @@ const CarGame = () => {
           }
 
           @media (max-width: 768px) {
+            .game-ui {
+              position: fixed;
+              bottom: 140px;
+              left: 25px;
+              display: flex;
+              justify-content: flex-start;
+              pointer-events: none;
+              z-index: 100;
+              padding-bottom: env(safe-area-inset-bottom);
+            }
+
             .item-display {
               padding: 5px 5px;
               min-width: 70px;
@@ -630,14 +618,6 @@ const CarGame = () => {
               width: 120px !important;
               height: 120px !important;
               transform: scale(0.6);
-            }
-
-            .game-ui {
-              position: fixed;
-              left: 0;
-              right: 0;
-              bottom: 5px;
-              padding-bottom: env(safe-area-inset-bottom);
             }
           }
         `}
