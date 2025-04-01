@@ -201,7 +201,7 @@ const CarGame = () => {
     if (carRef.current && isSpinning) {
       carRef.current.triggerSpinOut();
       const position = carRef.current.position;
-      playSoundEffect("explosion", { x: position.x, y: position.y, z: position.z });
+      playSoundEffect("spinout", { x: position.x, y: position.y, z: position.z });
     }
   }, [isSpinning, playSoundEffect]);
 

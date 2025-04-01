@@ -49,6 +49,7 @@ export const AudioProvider = ({ children }) => {
       pickup: new Audio("/sounds/pickup.wav"),
       use: new Audio("/sounds/use.wav"),
       itemHit: new Audio("/sounds/itemHit.wav"),
+      spinout: new Audio("/sounds/spinout.wav"),
     };
   }, []);
 

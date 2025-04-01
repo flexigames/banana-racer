@@ -83,7 +83,7 @@ const RemotePlayer = ({
 
   useEffect(() => {
     if (isSpinning) {
-      playSoundEffect("explosion", {
+      playSoundEffect("spinout", {
         x: position.x,
         y: position.y,
         z: position.z,
