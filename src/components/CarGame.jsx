@@ -15,6 +15,7 @@ import JoystickControl from "./JoystickControl";
 import Minimap from "./Minimap";
 import { MuteButton } from "./MuteButton";
 import { UsernameEditor } from "./UsernameEditor";
+import ItemButton from "./ItemButton";
 
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
@@ -381,6 +382,18 @@ const CarGame = () => {
     return {};
   };
 
+  function handleItemUse() {
+    if (carRef.current) {
+      const carPosition = carRef.current.position.clone();
+      const carRotation = carRef.current.rotation.y;
+
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 300);
+
+      useItem(carPosition, carRotation);
+    }
+  }
+
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       {isGameOver && <GameOver />}
@@ -488,6 +501,9 @@ const CarGame = () => {
           }
         }}
       />
+      <div className="mobile-only">
+        <ItemButton onPress={handleItemUse} />
+      </div>
 
       <Minimap />
 
@@ -536,15 +552,7 @@ const CarGame = () => {
             cursor: currentItem?.quantity > 0 ? "pointer" : "default",
             pointerEvents: currentItem?.quantity > 0 ? "auto" : "none",
           }}
-          onClick={() => {
-            if (carRef.current && currentItem?.quantity > 0) {
-              const carPosition = carRef.current.position.clone();
-              const carRotation = carRef.current.rotation.y;
-              setIsAnimating(true);
-              setTimeout(() => setIsAnimating(false), 300);
-              useItem(carPosition, carRotation);
-            }
-          }}
+          onClick={handleItemUse}
         >
           {getItemDisplayText(currentItem)}
         </div>
@@ -599,6 +607,25 @@ const CarGame = () => {
             height: 240px !important;
             transform: scale(1.2);
             transform-origin: center;
+          }
+
+          @media (max-width: 768px) {
+            .item-display {
+              padding: 5px 5px;
+              min-width: 70px;
+              min-height: 70px;
+              font-size: 16px;
+            }
+
+            .item-display img {
+              width: 120px !important;
+              height: 120px !important;
+              transform: scale(0.6);
+            }
+
+            .game-ui {
+              bottom: 5px;
+            }
           }
         `}
       </style>
