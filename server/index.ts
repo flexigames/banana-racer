@@ -1036,7 +1036,7 @@ io.on("connection", (socket: Socket) => {
   console.log("[SERVER] New player connected", playerName, "with id", playerId);
 
   if (process.env.NODE_ENV !== "development") {
-    sendToSlack(Object.keys(gameState.players).length, "New Player");
+    sendToSlack(Object.keys(gameState.players).length, playerName);
   }
 
   socket.emit("init", { id: playerId, color: playerColor });
