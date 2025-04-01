@@ -119,7 +119,8 @@ const PlayerUpdater = ({ carRef }) => {
 
 const CarGame = () => {
   const carRef = useRef();
-  const { handleInteraction, playSoundEffect, updateListenerPosition } = useAudio();
+  const { handleInteraction, playSoundEffect, updateListenerPosition } =
+    useAudio();
   const {
     playerId,
     players,
@@ -150,6 +151,7 @@ const CarGame = () => {
       handleInteraction();
     };
 
+    // First set of event listeners
     window.addEventListener("click", handleInitialInteraction, { once: true });
     window.addEventListener("keydown", handleInitialInteraction, {
       once: true,
@@ -158,7 +160,26 @@ const CarGame = () => {
       once: true,
     });
 
+    // Second set of event listeners for redundancy with 200ms delay
+    setTimeout(() => {
+      window.addEventListener("click", handleInitialInteraction, {
+        once: true,
+      });
+      window.addEventListener("keydown", handleInitialInteraction, {
+        once: true,
+      });
+      window.addEventListener("touchstart", handleInitialInteraction, {
+        once: true,
+      });
+    }, 200);
+
     return () => {
+      // Clean up first set
+      window.removeEventListener("click", handleInitialInteraction);
+      window.removeEventListener("keydown", handleInitialInteraction);
+      window.removeEventListener("touchstart", handleInitialInteraction);
+
+      // Clean up second set
       window.removeEventListener("click", handleInitialInteraction);
       window.removeEventListener("keydown", handleInitialInteraction);
       window.removeEventListener("touchstart", handleInitialInteraction);
@@ -201,7 +222,11 @@ const CarGame = () => {
     if (carRef.current && isSpinning) {
       carRef.current.triggerSpinOut();
       const position = carRef.current.position;
-      playSoundEffect("spinout", { x: position.x, y: position.y, z: position.z });
+      playSoundEffect("spinout", {
+        x: position.x,
+        y: position.y,
+        z: position.z,
+      });
     }
   }, [isSpinning, playSoundEffect]);
 

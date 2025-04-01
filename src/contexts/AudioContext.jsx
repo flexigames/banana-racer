@@ -104,20 +104,21 @@ export const AudioProvider = ({ children }) => {
       const listenerPos = {
         x: webAudioContextRef.current.listener.positionX.value,
         y: webAudioContextRef.current.listener.positionY.value,
-        z: webAudioContextRef.current.listener.positionZ.value
+        z: webAudioContextRef.current.listener.positionZ.value,
       };
-      
+
       const distance = Math.sqrt(
         Math.pow(position.x - listenerPos.x, 2) +
-        Math.pow(position.y - listenerPos.y, 2) +
-        Math.pow(position.z - listenerPos.z, 2)
+          Math.pow(position.y - listenerPos.y, 2) +
+          Math.pow(position.z - listenerPos.z, 2)
       );
 
       const maxDistance = 50;
       const minDistance = 5;
-      const volume = Math.max(0, Math.min(1, 
-        1 - ((distance - minDistance) / (maxDistance - minDistance))
-      ));
+      const volume = Math.max(
+        0,
+        Math.min(1, 1 - (distance - minDistance) / (maxDistance - minDistance))
+      );
       sound.volume = volume;
     }
 
