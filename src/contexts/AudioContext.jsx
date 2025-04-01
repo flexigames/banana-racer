@@ -9,6 +9,8 @@ import React, {
 const AudioContext = createContext({
   isMuted: false,
   toggleMute: () => {},
+  playSoundEffect: () => {},
+  updateListenerPosition: () => {},
 });
 
 export const useAudio = () => {
@@ -27,24 +29,43 @@ export const AudioProvider = ({ children }) => {
   const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef(null);
   const userMutedRef = useRef(isMuted);
+  const soundEffectsRef = useRef({});
+  const webAudioContextRef = useRef(null);
+  const listenerRef = useRef(null);
+  const sourceNodesRef = useRef({});
+  const pannerNodesRef = useRef({});
 
-  // Initialize audio
   useEffect(() => {
     audioRef.current = new Audio("/sounds/background.mp3");
     audioRef.current.loop = true;
     audioRef.current.volume = 0.2;
+
+    webAudioContextRef.current = new (window.AudioContext ||
+      window.webkitAudioContext)();
+    listenerRef.current = webAudioContextRef.current.listener;
+
+    soundEffectsRef.current = {
+      explosion: new Audio("/sounds/explosion.wav"),
+      pickup: new Audio("/sounds/pickup.wav"),
+      use: new Audio("/sounds/use.wav"),
+    };
   }, []);
 
-  // Handle mute state changes
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isMuted;
+    }
+    if (webAudioContextRef.current) {
+      if (isMuted) {
+        webAudioContextRef.current.suspend();
+      } else {
+        webAudioContextRef.current.resume();
+      }
     }
     userMutedRef.current = isMuted;
     localStorage.setItem("isMuted", JSON.stringify(isMuted));
   }, [isMuted]);
 
-  // Handle tab visibility changes
   useEffect(() => {
     function handleVisibilityChange() {
       if (audioRef.current) {
@@ -62,32 +83,99 @@ export const AudioProvider = ({ children }) => {
     };
   }, []);
 
-  // Handle user interaction
-  const handleInteraction = () => {
+  function handleInteraction() {
     if (!hasInteracted && audioRef.current) {
       audioRef.current.play().catch((error) => {
         console.error("Error playing audio:", error);
       });
       setHasInteracted(true);
     }
-  };
+  }
 
-  // Cleanup on unmount
+  function playSoundEffect(effectName, position = null) {
+    if (isMuted || !soundEffectsRef.current[effectName]) return;
+
+    const sound = soundEffectsRef.current[effectName];
+    sound.currentTime = 0;
+
+    if (position && webAudioContextRef.current) {
+      const listenerPos = {
+        x: webAudioContextRef.current.listener.positionX.value,
+        y: webAudioContextRef.current.listener.positionY.value,
+        z: webAudioContextRef.current.listener.positionZ.value
+      };
+      
+      const distance = Math.sqrt(
+        Math.pow(position.x - listenerPos.x, 2) +
+        Math.pow(position.y - listenerPos.y, 2) +
+        Math.pow(position.z - listenerPos.z, 2)
+      );
+
+      const maxDistance = 50;
+      const minDistance = 5;
+      const volume = Math.max(0, Math.min(1, 
+        1 - ((distance - minDistance) / (maxDistance - minDistance))
+      ));
+      sound.volume = volume;
+    }
+
+    sound.play().catch((error) => {
+      console.error("Error playing sound effect:", error);
+    });
+  }
+
+  function updateListenerPosition(position, forward, up) {
+    if (!listenerRef.current) return;
+
+    listenerRef.current.setPosition(position.x, position.y, position.z);
+    listenerRef.current.setOrientation(
+      forward.x,
+      forward.y,
+      forward.z,
+      up.x,
+      up.y,
+      up.z
+    );
+  }
+
   useEffect(() => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      Object.values(soundEffectsRef.current).forEach((sound) => {
+        sound.pause();
+        sound.currentTime = 0;
+      });
+
+      Object.values(sourceNodesRef.current).forEach((source) => {
+        source.disconnect();
+      });
+      Object.values(pannerNodesRef.current).forEach((panner) => {
+        panner.disconnect();
+      });
+
+      if (webAudioContextRef.current) {
+        webAudioContextRef.current.close();
+      }
     };
   }, []);
 
-  const toggleMute = () => {
+  function toggleMute() {
     setIsMuted((prev) => !prev);
-  };
+  }
 
   return (
-    <AudioContext.Provider value={{ isMuted, toggleMute, handleInteraction }}>
+    <AudioContext.Provider
+      value={{
+        isMuted,
+        toggleMute,
+        handleInteraction,
+        playSoundEffect,
+        updateListenerPosition,
+      }}
+    >
       {children}
     </AudioContext.Provider>
   );

@@ -9,7 +9,7 @@ import React, {
 import { io } from "socket.io-client";
 import { getUserName } from "../lib/username";
 import { hexToHsl } from "../lib/color";
-
+import { useAudio } from "./AudioContext";
 const LOCAL_SERVER_URL = "http://localhost:8080";
 const REMOTE_SERVER_URL = "https://bananaracer.alexandfinn.com";
 
@@ -40,6 +40,7 @@ export const useMultiplayer = () => {
 
 // Provider component
 export const MultiplayerProvider = ({ children }) => {
+  const { playSoundEffect } = useAudio();
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(getPlayerId);
   const [playerColor, setPlayerColor] = useState(getPlayerColor);
@@ -167,6 +168,8 @@ export const MultiplayerProvider = ({ children }) => {
         y: 0.1,
         z: carPosition.z,
       };
+
+      playSoundEffect("use", itemPosition);
 
       socket.current.emit("useItem", {
         position: itemPosition,

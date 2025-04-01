@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import Car from "./Car";
 import { Star } from "./Star";
 import { Text, Billboard } from "@react-three/drei";
+import { useAudio } from "../contexts/AudioContext";
 
 const RemotePlayer = ({
   playerId,
@@ -13,10 +14,12 @@ const RemotePlayer = ({
   color,
   lives,
   isStarred = false,
+  isSpinning = false,
   trailingItem = null,
   name,
 }) => {
   const car = useRef();
+  const { playSoundEffect } = useAudio();
   const targetPosition = useRef(
     new THREE.Vector3(position.x, position.y, position.z)
   );
@@ -77,6 +80,16 @@ const RemotePlayer = ({
       }, 3000);
     }
   }, [position, rotation, speed]);
+
+  useEffect(() => {
+    if (isSpinning) {
+      playSoundEffect("explosion", {
+        x: position.x,
+        y: position.y,
+        z: position.z,
+      });
+    }
+  }, [isSpinning]);
 
   // Smoothly interpolate to target position/rotation on each frame
   useFrame((_, delta) => {

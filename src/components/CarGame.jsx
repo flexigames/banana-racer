@@ -119,7 +119,7 @@ const PlayerUpdater = ({ carRef }) => {
 
 const CarGame = () => {
   const carRef = useRef();
-  const { handleInteraction } = useAudio();
+  const { handleInteraction, playSoundEffect, updateListenerPosition } = useAudio();
   const {
     playerId,
     players,
@@ -130,6 +130,19 @@ const CarGame = () => {
     redShells,
     useItem,
   } = useMultiplayer();
+
+  // Update camera position for 3D audio
+  useEffect(() => {
+    if (carRef.current) {
+      const position = carRef.current.position;
+      const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        carRef.current.rotation.y
+      );
+      const up = new THREE.Vector3(0, 1, 0);
+      updateListenerPosition(position, forward, up);
+    }
+  }, [updateListenerPosition]);
 
   // Handle initial interaction to start audio
   useEffect(() => {
@@ -187,8 +200,10 @@ const CarGame = () => {
   useEffect(() => {
     if (carRef.current && isSpinning) {
       carRef.current.triggerSpinOut();
+      const position = carRef.current.position;
+      playSoundEffect("explosion", { x: position.x, y: position.y, z: position.z });
     }
-  }, [isSpinning]);
+  }, [isSpinning, playSoundEffect]);
 
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);
@@ -423,6 +438,7 @@ const CarGame = () => {
               speed={player.speed || 0}
               color={player.color}
               lives={player.lives}
+              isSpinning={player.isSpinning}
               isStarred={player.isStarred}
               trailingItem={player.trailingItem}
               name={player.name}
