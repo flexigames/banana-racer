@@ -12,6 +12,7 @@ const AudioContext = createContext({
   toggleMusicMute: () => {},
   toggleSoundEffectsMute: () => {},
   updateListenerPosition: () => {},
+  hasInteracted: false,
 });
 
 export const useAudio = () => {
@@ -136,6 +137,7 @@ export const AudioProvider = ({ children }) => {
         toggleSoundEffectsMute,
         handleInteraction,
         updateListenerPosition,
+        hasInteracted,
       }}
     >
       {children}

@@ -15,6 +15,8 @@ import Car from "./Car";
 import { Star } from "./Star";
 import { portals } from "../lib/map";
 import SoundEffect from "./SoundEffect";
+import DrivingSound from "./DrivingSound";
+import { useAudio } from "../contexts/AudioContext";
 
 const Player = forwardRef((props, ref) => {
   const { color: colorProp, vehicle: vehicleProp, trailingItem } = props;
@@ -26,6 +28,7 @@ const Player = forwardRef((props, ref) => {
   const spinSpeed = useRef(0);
   const [hasSpawnedAtPortal, setHasSpawnedAtPortal] = useState(false);
   const soundEffectRef = useRef();
+  const drivingSoundRef = useRef();
 
   const { connected, playerId, playerColor, players, updatePlayerPosition } =
     useMultiplayer();
@@ -159,6 +162,7 @@ const Player = forwardRef((props, ref) => {
         const speed = parseFloat(movement.current.speed.toFixed(2));
 
         updatePlayerPosition(position, rotation, speed);
+        drivingSoundRef.current?.updateFrequency(speed);
       }
     }
   });
@@ -169,6 +173,8 @@ const Player = forwardRef((props, ref) => {
     isSpinningOut: () => spinningOut,
     movement: movement.current,
   }));
+
+  const { hasInteracted } = useAudio();
 
   if (isDead) return null;
 
@@ -187,6 +193,7 @@ const Player = forwardRef((props, ref) => {
         />
       </Star>
       <SoundEffect name="spinout" ref={soundEffectRef} />
+      {hasInteracted && <DrivingSound ref={drivingSoundRef} />}
     </group>
   );
 });

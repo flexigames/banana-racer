@@ -63,9 +63,7 @@ const SoundEffect = forwardRef(
       const _sound = sound.current;
       camera.add(listener);
       return () => {
-        console.log(`Clean, up: ${playOnUnMount} ${Boolean(_sound)}`);
         if (playOnUnMount && _sound && !isSoundEffectsMuted) {
-          console.log("playOnUnMount");
           _sound.setVolume(volume);
           _sound.play();
         }
