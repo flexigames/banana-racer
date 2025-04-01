@@ -2,8 +2,8 @@ import React from "react";
 
 function ItemButton({ onPress }) {
   return (
-    <button
-      onClick={onPress}
+    <div
+      onTouchEnd={onPress}
       style={{
         position: "fixed",
         bottom: "20px",
@@ -12,19 +12,24 @@ function ItemButton({ onPress }) {
         height: "60px",
         borderRadius: "50%",
         backgroundColor: "rgba(128, 128, 128, 0.5)",
-        border: "none",
-        color: "white",
-        fontSize: "24px",
-        fontWeight: "bold",
-        cursor: "pointer",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1000,
+        userSelect: "none",
+        touchAction: "none",
       }}
     >
-      A
-    </button>
+      <span
+        style={{
+          color: "white",
+          fontSize: "24px",
+          fontWeight: "bold",
+        }}
+      >
+        A
+      </span>
+    </div>
   );
 }
 
