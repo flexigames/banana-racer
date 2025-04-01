@@ -6,10 +6,10 @@ function ItemButton({ onPress }) {
       onTouchEnd={onPress}
       style={{
         position: "fixed",
-        bottom: "20px",
+        bottom: "35px",
         right: "20px",
-        width: "60px",
-        height: "60px",
+        width: "75px",
+        height: "75px",
         borderRadius: "50%",
         backgroundColor: "rgba(128, 128, 128, 0.5)",
         display: "flex",
