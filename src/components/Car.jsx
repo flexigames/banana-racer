@@ -6,6 +6,8 @@ import Balloons from "./Balloons";
 import Banana from "./Banana";
 import ItemBox from "./ItemBox";
 import Shell from "./Shell";
+import DustEffect from "./DustEffect";
+import TireMarkManager from "./TireMarkManager";
 import { ITEM_TYPES } from "../../server/types";
 
 const Car = ({
@@ -21,6 +23,7 @@ const Car = ({
   const carRef = useRef();
   const shaderRef = useRef();
   const originalMaterials = useRef(new Map());
+  const dustPosition = useMemo(() => new THREE.Vector3(0, 0, -0.25), []);
 
   const modelName = "kart";
 
@@ -197,6 +200,8 @@ const Car = ({
         rotation={modelConfig.rotation}
         position={modelConfig.position}
       />
+      <DustEffect position={dustPosition} />
+      <TireMarkManager carRef={carRef} movement={movement} />
 
       {/* Add wheels */}
       <primitive
