@@ -12,10 +12,10 @@ import ItemBox from "./ItemBox";
 import GameOver from "./GameOver";
 import Arena from "./Arena";
 import JoystickControl from "./JoystickControl";
-import { ITEM_TYPES } from "../../server/types";
 import Minimap from "./Minimap";
 import { MuteButton } from "./MuteButton";
 import { UsernameEditor } from "./UsernameEditor";
+
 // Camera component that follows the player
 const FollowCamera = ({ target }) => {
   const cameraRef = useRef();

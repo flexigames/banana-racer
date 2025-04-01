@@ -291,6 +291,7 @@ export const isUnderBridge = (x, z, y) => {
   return false;
 };
 
+
 /**
  * Update player position based on physics
  * @param {Object} object - Reference to the object to move

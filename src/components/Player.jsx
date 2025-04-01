@@ -10,11 +10,10 @@ import React, {
 import * as THREE from "three";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import { useVehicleControls } from "../lib/input";
-import {
-  runFixedStepPhysics
-} from "../lib/physics";
+import { runFixedStepPhysics } from "../lib/physics";
 import Car from "./Car";
 import { Star } from "./Star";
+import { portals } from "../lib/map";
 
 const Player = forwardRef((props, ref) => {
   const { color: colorProp, vehicle: vehicleProp, trailingItem } = props;
@@ -24,6 +23,7 @@ const Player = forwardRef((props, ref) => {
   const spinTimer = useRef(null);
   const spinDirection = useRef(1);
   const spinSpeed = useRef(0);
+  const [hasSpawnedAtPortal, setHasSpawnedAtPortal] = useState(false);
 
   const { connected, playerId, playerColor, players, updatePlayerPosition } =
     useMultiplayer();
@@ -58,6 +58,23 @@ const Player = forwardRef((props, ref) => {
 
   useVehicleControls(movement);
 
+  const getSpawnPosition = () => {
+    const params = new URLSearchParams(window.location.search);
+    const isPortal = params.get("portal");
+
+    if (isPortal === "true" && !hasSpawnedAtPortal) {
+      setHasSpawnedAtPortal(true);
+      const portal = portals[0];
+      return {
+        x: portal.position[0],
+        y: 0,
+        z: portal.position[2] + 1,
+      };
+    }
+
+    return getRandomSpawnPosition();
+  };
+
   const getRandomSpawnPosition = () => {
     const x = Math.random() * 5.5 - 4;
     const z = Math.random() * 5.5 - 4;
@@ -66,7 +83,8 @@ const Player = forwardRef((props, ref) => {
 
   useEffect(() => {
     if (car.current) {
-      const spawnPos = getRandomSpawnPosition();
+      const spawnPos = getSpawnPosition();
+      console.log("[APP] Spawn position", spawnPos);
       car.current.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
       car.current.rotation.y = Math.random() * Math.PI * 2;
       car.current.userData.playerId = playerId;
