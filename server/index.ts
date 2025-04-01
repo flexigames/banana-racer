@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { calculateHeightAtPosition } from "./calculate-height";
 import { itemBoxes } from "./map";
 import { Color, GameState, ITEM_TYPES, Player, Position } from "./types";
+import jsonpatch from "fast-json-patch";
 
 const PORT = process.env.PORT || 8080;
 export const carRadius = 0.26;
@@ -49,6 +50,8 @@ const gameState: GameState = {
   redShells: {},
   itemBoxes: [],
 };
+
+const observer = jsonpatch.observe(gameState);
 
 const trailingItemDistanceBehind = 0.5;
 
@@ -1025,8 +1028,7 @@ io.on("connection", (socket: Socket) => {
     sendToSlack(Object.keys(gameState.players).length, playerName, portalRef);
   }
 
-  socket.emit("init", { id: playerId, color: playerColor });
-  io.emit("gameState", gameState);
+  socket.emit("init", gameState);
 
   socket.on("update", (data) => {
     updatePlayerPosition(playerId, data);
@@ -1053,7 +1055,6 @@ io.on("connection", (socket: Socket) => {
     if (!player) return;
 
     player.color = newColor;
-    io.emit("gameState", gameState);
   });
   socket;
 
@@ -1064,12 +1065,10 @@ io.on("connection", (socket: Socket) => {
     if (!player) return;
 
     player.name = newName;
-    io.emit("gameState", gameState);
   });
 
   socket.on("disconnect", () => {
     delete gameState.players[playerId];
-    io.emit("gameState", gameState);
   });
 });
 
@@ -1083,16 +1082,19 @@ setInterval(() => {
   updateGreenShells();
   updateRedShells();
   cleanupInactivePlayers();
+  const patch = jsonpatch.generate(observer as any);
+  io.emit("gameStatePatch", patch);
 }, 1000 / 60);
 
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
 });
-setInterval(() => {
-  io.emit("gameState", { ...gameState });
-}, 10);
 
-function sendToSlack(playerCount: number, playerName: string, portalRef: string) {
+function sendToSlack(
+  playerCount: number,
+  playerName: string,
+  portalRef: string
+) {
   fetch(
     "https://hooks.slack.com/triggers/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",
     {

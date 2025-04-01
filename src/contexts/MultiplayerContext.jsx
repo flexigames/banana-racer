@@ -9,6 +9,7 @@ import React, {
 import { io } from "socket.io-client";
 import { getUserName } from "../lib/username";
 import { hexToHsl } from "../lib/color";
+import jsonpatch from "fast-json-patch";
 
 const LOCAL_SERVER_URL = "http://localhost:8080";
 const REMOTE_SERVER_URL = "https://bananaracer.alexandfinn.com";
@@ -38,6 +39,14 @@ export const useMultiplayer = () => {
   return context;
 };
 
+let gameState = {
+  players: {},
+  bananas: [],
+  itemBoxes: [],
+  fakeCubes: [],
+  greenShells: [],
+  redShells: [],
+};
 // Provider component
 export const MultiplayerProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
@@ -86,22 +95,35 @@ export const MultiplayerProvider = ({ children }) => {
           setConnected(true);
         });
 
+        socket.current.on("init", (data) => {
+          console.log("initial game state", data);
+          gameState = data;
+          setPlayers(data.players);
+          setBananas(Object.values(data.bananas));
+          setFakeCubes(Object.values(data.fakeCubes));
+          setGreenShells(Object.values(data.greenShells));
+          setRedShells(Object.values(data.redShells));
+          setItemBoxes(data.itemBoxes);
+        });
+
         socket.current.on("disconnect", () => {
           setConnected(false);
         });
 
-        socket.current.on("gameState", (state) => {
-          setPlayers(state.players);
-          setBananas(Object.values(state.bananas));
-          setFakeCubes(Object.values(state.fakeCubes));
-          setGreenShells(Object.values(state.greenShells));
-          setRedShells(Object.values(state.redShells));
-          setItemBoxes(state.itemBoxes);
-        });
-
-        socket.current.on("init", (data) => {
-          setPlayerId(data.id);
-          setPlayerColor(data.color);
+        socket.current.on("gameStatePatch", (patch) => {
+          jsonpatch.applyPatch(gameState, patch);
+          if (patch.some((p) => p.path.startsWith("/players")))
+            setPlayers(gameState.players);
+          if (patch.some((p) => p.path.startsWith("/bananas")))
+            setBananas(Object.values(gameState.bananas));
+          if (patch.some((p) => p.path.startsWith("/fakeCubes")))
+            setFakeCubes(Object.values(gameState.fakeCubes));
+          if (patch.some((p) => p.path.startsWith("/greenShells")))
+            setGreenShells(Object.values(gameState.greenShells));
+          if (patch.some((p) => p.path.startsWith("/redShells")))
+            setRedShells(Object.values(gameState.redShells));
+          if (patch.some((p) => p.path.startsWith("/itemBoxes")))
+            setItemBoxes(gameState.itemBoxes);
         });
 
         socket.current.on("error", (error) => {
