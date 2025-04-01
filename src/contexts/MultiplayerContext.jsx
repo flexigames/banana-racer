@@ -7,6 +7,8 @@ import React, {
   useCallback,
 } from "react";
 import { io } from "socket.io-client";
+import { getUserName } from "../lib/username";
+import { hexToHsl } from "../lib/color";
 
 const LOCAL_SERVER_URL = "http://localhost:8080";
 const REMOTE_SERVER_URL = "https://bananaracer.alexandfinn.com";
@@ -40,9 +42,10 @@ export const useMultiplayer = () => {
 // Provider component
 export const MultiplayerProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
-  const [playerId, setPlayerId] = useState(null);
-  const [playerColor, setPlayerColor] = useState(null);
-  const [playerName, setPlayerName] = useState(null);
+  const [playerId, setPlayerId] = useState(getPlayerId);
+  const [playerColor, setPlayerColor] = useState(getPlayerColor);
+  const [playerName, setPlayerName] = useState(getUserName);
+
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
   const [fakeCubes, setFakeCubes] = useState([]);
@@ -70,7 +73,13 @@ export const MultiplayerProvider = ({ children }) => {
 
     const connect = async () => {
       try {
-        socket.current = io(serverUrl);
+        socket.current = io(serverUrl, {
+          auth: {
+            name: playerName,
+            id: playerId,
+            color: playerColor,
+          },
+        });
 
         socket.current.on("connect", () => {
           setConnected(true);
@@ -92,7 +101,6 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.on("init", (data) => {
           setPlayerId(data.id);
           setPlayerColor(data.color);
-          setPlayerName(data.name);
         });
 
         socket.current.on("error", (error) => {
@@ -110,7 +118,7 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.disconnect();
       }
     };
-  }, [serverUrl]);
+  }, [serverUrl, playerName]);
 
   // Connection status change
   useEffect(() => {
@@ -180,6 +188,8 @@ export const MultiplayerProvider = ({ children }) => {
     (newName) => {
       if (!connected || !socket.current || !newName) return;
       console.log("[CONTEXT] Changing name to", newName);
+      localStorage.setItem("playerName", newName);
+      setPlayerName(newName);
       socket.current.emit("changeName", newName);
     },
     [connected]
@@ -249,3 +259,37 @@ export const MultiplayerProvider = ({ children }) => {
 };
 
 export default MultiplayerProvider;
+
+function getPlayerColor() {
+  const params = new URLSearchParams(window.location.search);
+  const colorParam = params.get("color");
+  if (colorParam) {
+    const hslColor = hexToHsl(colorParam);
+    localStorage.setItem("playerColor", JSON.stringify(hslColor));
+    return hslColor;
+  }
+
+  const colorLocal = localStorage.getItem("playerColor");
+  if (colorLocal) {
+    return JSON.parse(colorLocal);
+  }
+
+  const color = {
+    h: Math.random(),
+    s: 0.65,
+    l: 0.55,
+  };
+  localStorage.setItem("playerColor", JSON.stringify(color));
+  return color;
+}
+
+function getPlayerId() {
+  const playerId = localStorage.getItem("playerId");
+  if (playerId) {
+    return playerId;
+  }
+
+  const randomId = crypto.randomUUID();
+  localStorage.setItem("playerId", randomId);
+  return randomId;
+}

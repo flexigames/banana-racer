@@ -52,135 +52,6 @@ const gameState: GameState = {
 
 const trailingItemDistanceBehind = 0.5;
 
-function generateRandomColor(): Color {
-  return {
-    h: Math.random(),
-    s: 0.65,
-    l: 0.55,
-  };
-}
-
-function generateRandomUserName(): string {
-  const adjectives = [
-    "Speedy",
-    "Swift",
-    "Fast",
-    "Quick",
-    "Rapid",
-    "Turbo",
-    "Zoom",
-    "Dash",
-    "Flash",
-    "Bolt",
-    "Nimble",
-    "Agile",
-    "Fleet",
-    "Lively",
-    "Dynamic",
-    "Vibrant",
-    "Energetic",
-    "Powerful",
-    "Mighty",
-    "Brave",
-    "Daring",
-    "Fearless",
-    "Bold",
-    "Valiant",
-    "Courageous",
-    "Heroic",
-    "Gallant",
-    "Noble",
-    "Royal",
-    "Elite",
-    "Supreme",
-    "Ultimate",
-    "Prime",
-    "Peak",
-    "Top",
-    "Best",
-    "Finest",
-    "Greatest",
-    "Champion",
-    "Victor",
-    "Winner",
-    "Master",
-    "Expert",
-    "Ace",
-    "Pro",
-    "Veteran",
-    "Legend",
-    "Icon",
-    "Star",
-    "Superstar",
-  ];
-  const nouns = [
-    "Racer",
-    "Driver",
-    "Kart",
-    "Speedster",
-    "Champion",
-    "Pro",
-    "Master",
-    "Legend",
-    "Hero",
-    "Star",
-    "Warrior",
-    "Knight",
-    "Gladiator",
-    "Fighter",
-    "Combatant",
-    "Contender",
-    "Challenger",
-    "Rival",
-    "Opponent",
-    "Adversary",
-    "Pilot",
-    "Navigator",
-    "Captain",
-    "Commander",
-    "Leader",
-    "Chief",
-    "Boss",
-    "Head",
-    "Director",
-    "Manager",
-    "Expert",
-    "Specialist",
-    "Professional",
-    "Veteran",
-    "Virtuoso",
-    "Maestro",
-    "Guru",
-    "Sage",
-    "Wizard",
-    "Sorcerer",
-    "Phoenix",
-    "Dragon",
-    "Tiger",
-    "Lion",
-    "Eagle",
-    "Hawk",
-    "Falcon",
-    "Wolf",
-    "Panther",
-    "Jaguar",
-    "Thunder",
-    "Lightning",
-    "Storm",
-    "Hurricane",
-    "Tornado",
-    "Cyclone",
-    "Typhoon",
-    "Blizzard",
-    "Avalanche",
-    "Tsunami",
-  ];
-  const randomAdjective =
-    adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-  return `${randomAdjective} ${randomNoun}`;
-}
-
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
@@ -1145,9 +1016,9 @@ function updateRedShells(): void {
 }
 
 io.on("connection", (socket: Socket) => {
-  const playerId = uuidv4();
-  const playerName = generateRandomUserName();
-  const playerColor = generateRandomColor();
+  const playerId = socket.handshake.auth.id;
+  const playerName = socket.handshake.auth.name;
+  const playerColor = socket.handshake.auth.color;
 
   gameState.players[playerId] = {
     id: playerId,
@@ -1162,11 +1033,13 @@ io.on("connection", (socket: Socket) => {
     lives: 3,
   };
 
+  console.log("[SERVER] New player connected", playerName, "with id", playerId);
+
   if (process.env.NODE_ENV !== "development") {
-    sendToSlack(Object.keys(gameState.players).length, playerName);
+    sendToSlack(Object.keys(gameState.players).length, "New Player");
   }
 
-  socket.emit("init", { id: playerId, color: playerColor, name: playerName });
+  socket.emit("init", { id: playerId, color: playerColor });
   io.emit("gameState", gameState);
 
   socket.on("update", (data) => {
@@ -1204,7 +1077,6 @@ io.on("connection", (socket: Socket) => {
   socket;
 
   socket.on("changeName", (newName: string) => {
-    console.log("[SERVER] Changing name to", newName);
     if (!newName || typeof newName !== "string" || newName.length > 64) return;
 
     const player = gameState.players[playerId];
