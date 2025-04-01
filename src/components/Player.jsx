@@ -10,9 +10,7 @@ import React, {
 import * as THREE from "three";
 import { useMultiplayer } from "../contexts/MultiplayerContext";
 import { useVehicleControls } from "../lib/input";
-import {
-  runFixedStepPhysics
-} from "../lib/physics";
+import { runFixedStepPhysics } from "../lib/physics";
 import Car from "./Car";
 import { Star } from "./Star";
 
