@@ -169,8 +169,6 @@ export const MultiplayerProvider = ({ children }) => {
         z: carPosition.z,
       };
 
-      playSoundEffect("use", itemPosition);
-
       socket.current.emit("useItem", {
         position: itemPosition,
         rotation: carRotation,

@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import Car from "./Car";
 import { Star } from "./Star";
 import { Text, Billboard } from "@react-three/drei";
-import { useAudio } from "../contexts/AudioContext";
+import SoundEffect from "./SoundEffect";
 
 const RemotePlayer = ({
   playerId,
@@ -19,7 +19,6 @@ const RemotePlayer = ({
   name,
 }) => {
   const car = useRef();
-  const { playSoundEffect } = useAudio();
   const targetPosition = useRef(
     new THREE.Vector3(position.x, position.y, position.z)
   );
@@ -30,6 +29,8 @@ const RemotePlayer = ({
   );
   const lastUpdateTime = useRef(Date.now());
   const [boosting, setBoosting] = useState(false);
+
+  const soundEffectRef = useRef();
 
   // Convert the server color to a THREE.Color object
   const playerColor = useMemo(() => {
@@ -83,13 +84,9 @@ const RemotePlayer = ({
 
   useEffect(() => {
     if (isSpinning) {
-      playSoundEffect("spinout", {
-        x: position.x,
-        y: position.y,
-        z: position.z,
-      });
+      soundEffectRef.current?.play();
     }
-  }, [isSpinning, playSoundEffect]);
+  }, [isSpinning]);
 
   // Smoothly interpolate to target position/rotation on each frame
   useFrame((_, delta) => {
@@ -166,6 +163,7 @@ const RemotePlayer = ({
       position={[position.x, position.y, position.z]}
       rotation={[0, rotation, 0]}
     >
+      <SoundEffect name="spinout" playOnUnMount />
       <Star isActive={isStarred} color={[1, 1, 0]}>
         <Car
           color={playerColor}

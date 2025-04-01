@@ -119,8 +119,7 @@ const PlayerUpdater = ({ carRef }) => {
 
 const CarGame = () => {
   const carRef = useRef();
-  const { handleInteraction, playSoundEffect, updateListenerPosition } =
-    useAudio();
+  const { handleInteraction, updateListenerPosition } = useAudio();
   const {
     playerId,
     players,
@@ -221,14 +220,8 @@ const CarGame = () => {
   useEffect(() => {
     if (carRef.current && isSpinning) {
       carRef.current.triggerSpinOut();
-      const position = carRef.current.position;
-      playSoundEffect("spinout", {
-        x: position.x,
-        y: position.y,
-        z: position.z,
-      });
     }
-  }, [isSpinning, playSoundEffect]);
+  }, [isSpinning]);
 
   // Item animation states
   const [spinningItemIndex, setSpinningItemIndex] = useState(0);

@@ -2,24 +2,10 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { useModelWithMaterials, prepareModel } from "../lib/loaders";
 import { rainbowVertexShader, rainbowFragmentShader } from "../shaders/rainbow";
 import * as THREE from "three";
-import { useAudio } from "../contexts/AudioContext";
+import SoundEffect from "./SoundEffect";
 
 const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
   const itemBox = useRef();
-  const { playSoundEffect } = useAudio();
-  const shaderRef = useRef();
-
-  useEffect(() => {
-    return () => {
-      if (!isFakeCube) {
-        playSoundEffect("pickup", {
-          x: position[0],
-          y: position[1],
-          z: position[2],
-        });
-      }
-    };
-  }, [playSoundEffect]);
 
   // Load the item box model
   const itemBoxModel = useModelWithMaterials(
@@ -124,6 +110,7 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
 
   return (
     <group ref={itemBox}>
+      <SoundEffect name="pickup" playOnUnMount={!isFakeCube} />
       <primitive object={model} scale={[scale, scale, scale]} />
     </group>
   );

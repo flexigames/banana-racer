@@ -1,16 +1,13 @@
 import React, { useRef, useEffect } from "react";
+import SoundEffect from "./SoundEffect";
+
 import { useLoader } from "@react-three/fiber";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader";
 import * as THREE from "three";
-import { useAudio } from "../contexts/AudioContext";
+
 const Banana = ({ position, rotation, onExpire }) => {
   const banana = useRef();
-  const { playSoundEffect } = useAudio();
-
-  useEffect(() => {
-    return () => playSoundEffect("itemHit");
-  }, [playSoundEffect]);
 
   // Load the banana model
   const materials = useLoader(MTLLoader, "/assets/item-banana.mtl");
@@ -56,6 +53,7 @@ const Banana = ({ position, rotation, onExpire }) => {
 
   return (
     <group ref={banana}>
+      <SoundEffect name="itemHit" playOnUnMount />
       <primitive object={model} scale={[0.6, 0.6, 0.6]} />
     </group>
   );

@@ -14,6 +14,7 @@ import { runFixedStepPhysics } from "../lib/physics";
 import Car from "./Car";
 import { Star } from "./Star";
 import { portals } from "../lib/map";
+import SoundEffect from "./SoundEffect";
 
 const Player = forwardRef((props, ref) => {
   const { color: colorProp, vehicle: vehicleProp, trailingItem } = props;
@@ -24,6 +25,7 @@ const Player = forwardRef((props, ref) => {
   const spinDirection = useRef(1);
   const spinSpeed = useRef(0);
   const [hasSpawnedAtPortal, setHasSpawnedAtPortal] = useState(false);
+  const soundEffectRef = useRef();
 
   const { connected, playerId, playerColor, players, updatePlayerPosition } =
     useMultiplayer();
@@ -95,6 +97,9 @@ const Player = forwardRef((props, ref) => {
 
   const triggerSpinOut = () => {
     if (spinningOut) return;
+
+    soundEffectRef.current?.play();
+
     spinSpeed.current = movement.current.speed;
     setSpinningOut(true);
     movement.current.forward = 0;
@@ -181,6 +186,7 @@ const Player = forwardRef((props, ref) => {
           movement={movement.current}
         />
       </Star>
+      <SoundEffect name="spinout" ref={soundEffectRef} />
     </group>
   );
 });

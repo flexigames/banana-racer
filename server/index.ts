@@ -38,7 +38,7 @@ const ITEM_PROBABILITIES = {
   [ITEM_TYPES.THREE_RED_SHELLS]: 2,
   [ITEM_TYPES.STAR]: 1,
   [ITEM_TYPES.THREE_BANANAS]: 4,
-  [ITEM_TYPES.THREE_GREEN_SHELLS]: 3,
+  [ITEM_TYPES.THREE_GREEN_SHELLS]: 300,
 };
 
 const gameState: GameState = {
@@ -1092,7 +1092,11 @@ setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
 
-function sendToSlack(playerCount: number, playerName: string, portalRef: string) {
+function sendToSlack(
+  playerCount: number,
+  playerName: string,
+  portalRef: string
+) {
   fetch(
     "https://hooks.slack.com/triggers/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",
     {
