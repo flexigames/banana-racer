@@ -1,6 +1,6 @@
-import { useLoader } from '@react-three/fiber';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { useLoader } from "@react-three/fiber";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
 /**
  * Load an OBJ model with its MTL materials
@@ -14,7 +14,17 @@ export const useModelWithMaterials = (objPath, mtlPath) => {
     materials.preload();
     loader.setMaterials(materials);
   });
-  
+
+  return model;
+};
+
+export const useModel = (objPath) => {
+  const model = useLoader(OBJLoader, objPath);
+  model.traverse((child) => {
+    if (child.isMesh) {
+      child.material.color.setHex(0x000000);
+    }
+  });
   return model;
 };
 
@@ -24,13 +34,13 @@ export const useModelWithMaterials = (objPath, mtlPath) => {
  */
 export const prepareModel = (model) => {
   if (!model) return;
-  
+
   model.traverse((child) => {
     if (child.isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
     }
   });
-  
+
   return model;
-}; 
+};

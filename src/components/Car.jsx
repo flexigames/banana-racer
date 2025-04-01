@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from "react";
-import { useModelWithMaterials, prepareModel } from "../lib/loaders";
+import { useModelWithMaterials, useModel, prepareModel } from "../lib/loaders";
 import { starVertexShader, starFragmentShader } from "../shaders/star";
 import * as THREE from "three";
 import Balloons from "./Balloons";
@@ -19,10 +19,7 @@ const Car = ({
   movement = { turn: 0 },
 }) => {
   const carRef = useRef();
-  const shaderRef = useRef();
   const originalMaterials = useRef(new Map());
-
-  const modelName = "kart";
 
   // Load wheel model
   const wheelModel = useModelWithMaterials(
@@ -31,18 +28,13 @@ const Car = ({
   );
 
   // Adjust scale and rotation for kart
-  const modelConfig = useMemo(() => {
-    return {
-      scale: [0.25, 0.25, 0.25],
-      rotation: [0, 0, 0],
-      position: [0, 0.05, 0],
-    };
-  }, []);
+  const modelConfig = getModelConfig();
+  const modelName = modelConfig.name;
 
   // Load the vehicle model based on the vehicle type
   const vehicleModel = useModelWithMaterials(
-    `/assets/kart.obj`,
-    `/assets/kart.mtl`
+    `/assets/${modelName}.obj`,
+    `/assets/${modelName}.mtl`
   );
 
   // Create star shader material
@@ -58,8 +50,8 @@ const Car = ({
     });
 
     // For kart model, ensure we have a texture for the star shader
-    if (!texture && modelName === "kart") {
-      texture = new THREE.TextureLoader().load("/assets/kart.png");
+    if (!texture) {
+      texture = new THREE.TextureLoader().load(`/assets/${modelName}.png`);
     }
 
     if (!texture) {
@@ -89,15 +81,13 @@ const Car = ({
     clone.traverse((child) => {
       if (child.isMesh) {
         // For kart model, ensure material is properly set
-        if (modelName === "kart") {
-          if (!child.material || !child.material.map) {
-            const material = new THREE.MeshStandardMaterial({
-              map: new THREE.TextureLoader().load("/assets/kart.png"),
-              metalness: 0.5,
-              roughness: 0.5,
-            });
-            child.material = material;
-          }
+        if (!child.material || !child.material.map) {
+          const material = new THREE.MeshStandardMaterial({
+            map: new THREE.TextureLoader().load(`/assets/${modelName}.png`),
+            metalness: 0.5,
+            roughness: 0.5,
+          });
+          child.material = material;
         }
 
         if (child.material) {
@@ -373,4 +363,25 @@ function TrailingItem({ type, quantity }) {
     default:
       return null;
   }
+}
+
+function getModelConfig() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const ref = urlParams.get("ref") ?? "";
+
+  if (ref.includes("fly.pieter.com")) {
+    return {
+      name: "cessna",
+      scale: [0.5, 0.5, 0.5],
+      rotation: [0, 0, 0],
+      position: [0, 0.05, 0],
+    };
+  }
+
+  return {
+    name: "kart",
+    scale: [0.25, 0.25, 0.25],
+    rotation: [0, 0, 0],
+    position: [0, 0.05, 0],
+  };
 }
