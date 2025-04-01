@@ -494,6 +494,25 @@ const CarGame = () => {
 
       <Minimap />
 
+      {/* Username display */}
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "rgba(0,0,0,0.7)",
+          color: "white",
+          padding: "10px 20px",
+          borderRadius: 5,
+          fontSize: "18px",
+          fontWeight: "bold",
+          textAlign: "center",
+        }}
+      >
+        {players[playerId]?.name || "Player"}
+      </div>
+
       {/* Item instructions */}
       <div
         style={{

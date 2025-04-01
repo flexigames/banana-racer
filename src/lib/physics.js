@@ -1,4 +1,4 @@
-import { blocks, ramps, bridges, mapSize } from "./map";
+import { blocks, ramps, bridges, mapSize, portals } from "./map";
 
 const carRadius = 0.26; // Approximate car collision radius
 const FIXED_TIMESTEP = 1 / 60; // Fixed physics timestep (60 Hz)
@@ -371,7 +371,11 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
   // Check player collisions
   if (!collidedWithBlock) {
     for (const otherPlayer of Object.values(players)) {
-      if (otherPlayer.id === object.userData?.playerId || otherPlayer.lives <= 0) continue;
+      if (
+        otherPlayer.id === object.userData?.playerId ||
+        otherPlayer.lives <= 0
+      )
+        continue;
 
       const dx = Math.abs(newX - otherPlayer.position.x);
       const dz = Math.abs(newZ - otherPlayer.position.z);
@@ -390,15 +394,13 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
         if (penetrationX < penetrationZ) {
           // Sliding along X axis (Z movement preserved)
           slideX =
-            otherPlayer.position.x +
-            (relativeX > 0 ? 1 : -1) * (carRadius * 2);
+            otherPlayer.position.x + (relativeX > 0 ? 1 : -1) * (carRadius * 2);
           // Keep Z movement (sliding)
           slideZ = newZ;
         } else {
           // Sliding along Z axis (X movement preserved)
           slideZ =
-            otherPlayer.position.z +
-            (relativeZ > 0 ? 1 : -1) * (carRadius * 2);
+            otherPlayer.position.z + (relativeZ > 0 ? 1 : -1) * (carRadius * 2);
           // Keep X movement (sliding)
           slideX = newX;
         }
@@ -594,6 +596,29 @@ export const updatePlayerPositionLocal = (object, movement, delta, players) => {
       }
     }
   }
+
+  // Check portal collisions
+  for (const portal of portals) {
+    const portalX = portal.position[0];
+    const portalZ = portal.position[2];
+    const portalWidth = portal.width || 1;
+    const portalHalfWidth = portalWidth / 2;
+
+    const dx = Math.abs(object.position.x - portalX);
+    const dz = Math.abs(object.position.z - portalZ);
+
+    if (dx <= portalHalfWidth && dz <= 0.5) {
+      const player = players[object.userData?.playerId];
+      const playerColor = player.color;
+      const hexColor = hslToHex(playerColor);
+      const playerName = player.name || "Player";
+      const targetUrl = `https://portal.pieter.com?ref=https://drive.alexandfinn.com&color=${encodeURIComponent(
+        hexColor
+      )}&username=${encodeURIComponent(playerName)}`;
+      window.location.href = targetUrl;
+      return;
+    }
+  }
 };
 
 /**
@@ -655,7 +680,12 @@ export const runFixedStepPhysics = (
   // If we still have remaining time, do one final update with the remaining delta
   if (physicsTimeAccumulator > 0 && steps < MAX_STEPS) {
     updateVehiclePhysics(movement, physicsTimeAccumulator, boostFactor);
-    updatePlayerPositionLocal(object, movement, physicsTimeAccumulator, players);
+    updatePlayerPositionLocal(
+      object,
+      movement,
+      physicsTimeAccumulator,
+      players
+    );
     physicsTimeAccumulator = 0;
   }
 
@@ -667,3 +697,57 @@ export const runFixedStepPhysics = (
 
   return movement;
 };
+
+function hslToHex({ h, s, l }) {
+  // Convert h from [0,1] to [0,360]
+  h = h * 360;
+
+  // Convert s and l from [0,1] to [0,100]
+  s = s * 100;
+  l = l * 100;
+
+  // Convert HSL to RGB
+  let c = (1 - Math.abs((2 * l) / 100 - 1)) * (s / 100);
+  let x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  let m = l / 100 - c / 2;
+
+  let r = 0,
+    g = 0,
+    b = 0;
+
+  if (h >= 0 && h < 60) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if (h >= 60 && h < 120) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if (h >= 120 && h < 180) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if (h >= 180 && h < 240) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if (h >= 240 && h < 300) {
+    r = x;
+    g = 0;
+    b = c;
+  } else {
+    r = c;
+    g = 0;
+    b = x;
+  }
+
+  // Convert RGB to [0,255] and apply offset m
+  r = Math.round((r + m) * 255);
+  g = Math.round((g + m) * 255);
+  b = Math.round((b + m) * 255);
+
+  // Convert to HEX
+  return `#${r.toString(16).padStart(2, "0")}${g
+    .toString(16)
+    .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}

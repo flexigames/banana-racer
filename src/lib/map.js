@@ -1,7 +1,7 @@
 const levels = [
   // Level 0 (y = 0)
   `
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxppxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 x__________________________________________________________x
 x___?________________________________________________?_____x
 x_____?________________________________________________?___x
@@ -193,6 +193,7 @@ export function loadMap() {
     const ramps = [];
     const bridges = [];
     const itemBoxes = [];
+    const portals = [];
     const mapSize = {
       width: mapRows[0]?.length || 0,
       height: mapRows.length || 0,
@@ -223,6 +224,32 @@ export function loadMap() {
               });
               visited.add(`${rowIndex},${columnIndex}`);
               return;
+            }
+
+            if (mapCell === "p") {
+              let width = 0;
+              while (
+                columnIndex + width < mapRow.length &&
+                mapRow[columnIndex + width] === mapCell &&
+                !visited.has(`${rowIndex},${columnIndex + width}`)
+              ) {
+                width++;
+              }
+
+              for (let w = 0; w < width; w++) {
+                visited.add(`${rowIndex},${columnIndex + w}`);
+              }
+
+              if (width > 0) {
+                portals.push({
+                  position: [
+                    columnIndex - halfWidth + width / 2 - 0.5,
+                    levelY,
+                    rowIndex - halfHeight + 0.5,
+                  ],
+                  width: width
+                });
+              }
             }
 
             if (
@@ -409,7 +436,7 @@ export function loadMap() {
     // Sort blocks by y level, higher levels first
     blocks.sort((a, b) => b.position.y - a.position.y);
 
-    return { blocks, ramps, bridges, itemBoxes, mapSize };
+    return { blocks, ramps, bridges, itemBoxes, portals, mapSize };
   } catch (error) {
     console.error("Error loading map:", error);
     return {
@@ -417,15 +444,17 @@ export function loadMap() {
       ramps: [],
       bridges: [],
       itemBoxes: [],
+      portals: [],
       mapSize: { width: 0, height: 0 },
     };
   }
 }
 
-const { blocks, ramps, bridges, itemBoxes, mapSize } = loadMap();
+const { blocks, ramps, bridges, itemBoxes, portals, mapSize } = loadMap();
 
 console.log("ramps", ramps);
 console.log("bridges", bridges);
 console.log("itemBoxes", itemBoxes);
+console.log("portals", portals);
 
-export { blocks, ramps, bridges, itemBoxes, mapSize };
+export { blocks, ramps, bridges, itemBoxes, portals, mapSize };

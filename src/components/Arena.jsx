@@ -6,7 +6,7 @@ import {
   createWallTexture,
   createBlockFloorTexture,
 } from "../lib/textures";
-import { blocks, ramps, bridges, mapSize } from "../lib/map";
+import { blocks, ramps, bridges, portals, mapSize } from "../lib/map";
 import Bridge from "./Bridge";
 
 const TEXTURE_SCALE = 4; // Base size for one texture repeat
@@ -270,6 +270,24 @@ const Arena = React.memo(() => {
           rotation={bridge.rotation}
           scale={bridge.scale}
         />
+      ))}
+
+      {/* Portals from map */}
+      {portals.map((portal, index) => (
+        <mesh
+          key={`portal-${index}`}
+          position={[portal.position[0], portal.position[1] + 1, portal.position[2] - 0.5]}
+          scale={[portal.width, 2, 0.8]}
+        >
+          <boxGeometry />
+          <meshStandardMaterial
+            color="#0088FF"
+            roughness={0.3}
+            metalness={0.8}
+            transparent={true}
+            opacity={0.7}
+          />
+        </mesh>
       ))}
     </group>
   );
