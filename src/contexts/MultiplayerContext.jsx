@@ -178,7 +178,7 @@ export const MultiplayerProvider = ({ children }) => {
 
       return true;
     },
-    [connected, lastItemUseTime, playerId, players]
+    [connected, lastItemUseTime, playerId, players, playSoundEffect]
   );
 
   const changeName = useCallback(

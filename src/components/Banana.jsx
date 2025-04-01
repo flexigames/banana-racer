@@ -10,7 +10,7 @@ const Banana = ({ position, rotation, onExpire }) => {
 
   useEffect(() => {
     return () => playSoundEffect("itemHit");
-  }, []);
+  }, [playSoundEffect]);
 
   // Load the banana model
   const materials = useLoader(MTLLoader, "/assets/item-banana.mtl");

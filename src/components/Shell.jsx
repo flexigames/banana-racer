@@ -12,7 +12,7 @@ function Shell({ position = [0, 0, 0], rotation = 0, color = "green" }) {
     return () => {
       playSoundEffect("itemHit");
     };
-  }, []);
+  }, [playSoundEffect]);
 
   useEffect(() => {
     if (!shell.current) return;

@@ -13,7 +13,7 @@ import GameOver from "./GameOver";
 import Arena from "./Arena";
 import JoystickControl from "./JoystickControl";
 import Minimap from "./Minimap";
-import { MuteButton } from "./MuteButton";
+import { MuteButtons } from "./MuteButton";
 import { UsernameEditor } from "./UsernameEditor";
 import ItemButton from "./ItemButton";
 
@@ -519,7 +519,7 @@ const CarGame = () => {
           <ItemBox key={box.id} position={box.position} />
         ))}
       </Canvas>
-      <MuteButton />
+      <MuteButtons />
       <JoystickControl
         onMove={(x, y) => {
           if (carRef.current) {

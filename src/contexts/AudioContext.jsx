@@ -7,8 +7,10 @@ import React, {
 } from "react";
 
 const AudioContext = createContext({
-  isMuted: false,
-  toggleMute: () => {},
+  isMusicMuted: false,
+  isSoundEffectsMuted: false,
+  toggleMusicMute: () => {},
+  toggleSoundEffectsMute: () => {},
   playSoundEffect: () => {},
   updateListenerPosition: () => {},
 });
@@ -22,13 +24,18 @@ export const useAudio = () => {
 };
 
 export const AudioProvider = ({ children }) => {
-  const [isMuted, setIsMuted] = useState(() => {
-    const savedMuteState = localStorage.getItem("isMuted");
+  const [isMusicMuted, setIsMusicMuted] = useState(() => {
+    const savedMuteState = localStorage.getItem("isMusicMuted");
     return savedMuteState ? JSON.parse(savedMuteState) : false;
   });
+  const [isSoundEffectsMuted, setIsSoundEffectsMuted] = useState(() => {
+    const savedMuteState = localStorage.getItem("isSoundEffectsMuted");
+    return savedMuteState ? JSON.parse(savedMuteState) : false;
+  });
+  console.log("isSoundEffectsMuted", isSoundEffectsMuted);
   const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef(null);
-  const userMutedRef = useRef(isMuted);
+  const userMusicMutedRef = useRef(isMusicMuted);
   const soundEffectsRef = useRef({});
   const webAudioContextRef = useRef(null);
   const listenerRef = useRef(null);
@@ -55,18 +62,22 @@ export const AudioProvider = ({ children }) => {
 
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.muted = isMuted;
+      audioRef.current.muted = isMusicMuted;
     }
     if (webAudioContextRef.current) {
-      if (isMuted) {
+      if (isSoundEffectsMuted) {
         webAudioContextRef.current.suspend();
       } else {
         webAudioContextRef.current.resume();
       }
     }
-    userMutedRef.current = isMuted;
-    localStorage.setItem("isMuted", JSON.stringify(isMuted));
-  }, [isMuted]);
+    userMusicMutedRef.current = isMusicMuted;
+    localStorage.setItem("isMusicMuted", JSON.stringify(isMusicMuted));
+    localStorage.setItem(
+      "isSoundEffectsMuted",
+      JSON.stringify(isSoundEffectsMuted)
+    );
+  }, [isMusicMuted, isSoundEffectsMuted]);
 
   useEffect(() => {
     function handleVisibilityChange() {
@@ -74,7 +85,7 @@ export const AudioProvider = ({ children }) => {
         if (document.hidden) {
           audioRef.current.muted = true;
         } else {
-          audioRef.current.muted = userMutedRef.current;
+          audioRef.current.muted = userMusicMutedRef.current;
         }
       }
     }
@@ -95,7 +106,9 @@ export const AudioProvider = ({ children }) => {
   }
 
   function playSoundEffect(effectName, position = null) {
-    if (isMuted || !soundEffectsRef.current[effectName]) return;
+    console.log("playSoundEffect", effectName);
+    if (isSoundEffectsMuted || !soundEffectsRef.current[effectName]) return;
+    console.log("isSoundEffectsMuted", isSoundEffectsMuted);
 
     const sound = soundEffectsRef.current[effectName];
     sound.currentTime = 0;
@@ -165,15 +178,21 @@ export const AudioProvider = ({ children }) => {
     };
   }, []);
 
-  function toggleMute() {
-    setIsMuted((prev) => !prev);
+  function toggleMusicMute() {
+    setIsMusicMuted((prev) => !prev);
+  }
+
+  function toggleSoundEffectsMute() {
+    setIsSoundEffectsMuted((prev) => !prev);
   }
 
   return (
     <AudioContext.Provider
       value={{
-        isMuted,
-        toggleMute,
+        isMusicMuted,
+        isSoundEffectsMuted,
+        toggleMusicMute,
+        toggleSoundEffectsMute,
         handleInteraction,
         playSoundEffect,
         updateListenerPosition,

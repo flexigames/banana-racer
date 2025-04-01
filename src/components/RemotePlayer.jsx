@@ -89,7 +89,7 @@ const RemotePlayer = ({
         z: position.z,
       });
     }
-  }, [isSpinning]);
+  }, [isSpinning, playSoundEffect]);
 
   // Smoothly interpolate to target position/rotation on each frame
   useFrame((_, delta) => {
