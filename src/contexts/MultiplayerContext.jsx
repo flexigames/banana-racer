@@ -72,12 +72,14 @@ export const MultiplayerProvider = ({ children }) => {
     console.log("[CONTEXT] Initializing connection to", serverUrl);
 
     const connect = async () => {
+      const params = new URLSearchParams(window.location.search);
       try {
         socket.current = io(serverUrl, {
           auth: {
             name: playerName,
             id: playerId,
             color: playerColor,
+            portalRef: params.get("ref"),
           },
         });
 

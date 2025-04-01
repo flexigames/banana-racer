@@ -1019,6 +1019,7 @@ io.on("connection", (socket: Socket) => {
   const playerId = socket.handshake.auth.id;
   const playerName = socket.handshake.auth.name;
   const playerColor = socket.handshake.auth.color;
+  const portalRef = socket.handshake.auth.portalRef;
 
   gameState.players[playerId] = {
     id: playerId,
@@ -1036,7 +1037,7 @@ io.on("connection", (socket: Socket) => {
   console.log("[SERVER] New player connected", playerName, "with id", playerId);
 
   if (process.env.NODE_ENV !== "development") {
-    sendToSlack(Object.keys(gameState.players).length, playerName);
+    sendToSlack(Object.keys(gameState.players).length, playerName, portalRef);
   }
 
   socket.emit("init", { id: playerId, color: playerColor });
@@ -1111,7 +1112,7 @@ setInterval(() => {
   io.emit("gameState", { ...gameState });
 }, 10);
 
-function sendToSlack(playerCount: number, playerName: string) {
+function sendToSlack(playerCount: number, playerName: string, portalRef: string) {
   fetch(
     "https://hooks.slack.com/triggers/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",
     {
@@ -1120,8 +1121,9 @@ function sendToSlack(playerCount: number, playerName: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        player_count: Object.keys(gameState.players).length.toString(),
+        player_count: playerCount,
         player_name: playerName,
+        portal_ref: portalRef,
       }),
     }
   ).catch((error) => console.error("Error sending to Slack:", error));
