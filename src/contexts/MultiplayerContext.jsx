@@ -23,6 +23,7 @@ const MultiplayerContext = createContext({
   updatePlayerPosition: () => {},
   useItem: () => {},
   respawn: () => {},
+  changeName: () => {},
 });
 
 // Custom hook to use the context
@@ -39,6 +40,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(null);
   const [playerColor, setPlayerColor] = useState(null);
+  const [playerName, setPlayerName] = useState(null);
   const [players, setPlayers] = useState({});
   const [bananas, setBananas] = useState([]);
   const [fakeCubes, setFakeCubes] = useState([]);
@@ -88,6 +90,7 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.on("init", (data) => {
           setPlayerId(data.id);
           setPlayerColor(data.color);
+          setPlayerName(data.name);
         });
 
         socket.current.on("error", (error) => {
@@ -165,6 +168,16 @@ export const MultiplayerProvider = ({ children }) => {
     }
   };
 
+  const changeName = (newName) => {
+    if (!connected || !socket.current || !newName) return;
+    socket.current.emit("changeName", newName);
+  };
+
+  const changeColor = (newColor) => {
+    if (!connected || !socket.current || !newColor) return;
+    socket.current.emit("changeColor", newColor);
+  };
+
   // Change server URL
   const changeServerUrl = (useLocalServer = false) => {
     const newUrl = useLocalServer ? LOCAL_SERVER_URL : REMOTE_SERVER_URL;
@@ -189,11 +202,17 @@ export const MultiplayerProvider = ({ children }) => {
     return newUrl;
   };
 
+  const changeUsername = (newName) => {
+    if (!connected || !socket.current || !newName) return;
+    socket.current.emit("changeUsername", newName);
+  };
+
   // Provide context value
   const contextValue = {
     connected,
     playerId,
     playerColor,
+    playerName,
     players,
     bananas,
     itemBoxes,
@@ -204,6 +223,8 @@ export const MultiplayerProvider = ({ children }) => {
     useItem,
     respawn,
     changeServerUrl,
+    changeName,
+    changeColor,
   };
 
   return (

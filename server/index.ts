@@ -1146,35 +1146,69 @@ function updateRedShells(): void {
 
 io.on("connection", (socket: Socket) => {
   const playerId = uuidv4();
+  const playerName = generateRandomUserName();
+  const playerColor = generateRandomColor();
+
   gameState.players[playerId] = {
     id: playerId,
     socket: socket.id,
-    position: { x: 0, y: 0.1, z: 0 },
+    position: { x: 0, y: 0, z: 0 },
     rotation: 0,
     speed: 0,
-    color: generateRandomColor(),
-    name: generateRandomUserName(),
+    color: playerColor,
     lastUpdate: Date.now(),
+    name: playerName,
     item: { type: ITEM_TYPES.BANANA, quantity: 0 },
     lives: 3,
   };
 
-  socket.emit("init", {
-    id: playerId,
-    color: gameState.players[playerId].color,
-    item: gameState.players[playerId].item,
+  socket.emit("init", { id: playerId, color: playerColor, name: playerName });
+  io.emit("gameState", gameState);
+
+  socket.on("update", (data) => {
+    updatePlayerPosition(playerId, data);
   });
 
-  initializePlayer(playerId);
+  socket.on("useItem", (data) => {
+    useItem(playerId);
+  });
 
-  socket.on("update", (data) => updatePlayerPosition(playerId, data));
-  socket.on("useItem", (data) => useItem(playerId));
   socket.on("respawn", () => {
     initializePlayer(playerId);
+    io.emit("gameState", gameState);
+  });
+
+  socket.on("changeColor", (newColor: Color) => {
+    if (
+      !newColor ||
+      typeof newColor !== "object" ||
+      newColor.h === undefined ||
+      newColor.s === undefined ||
+      newColor.l === undefined
+    )
+      return;
+
+    const player = gameState.players[playerId];
+    if (!player) return;
+
+    player.color = newColor;
+    io.emit("gameState", gameState);
+  });
+  socket;
+
+  socket.on("changeName", (newName: string) => {
+    if (!newName || typeof newName !== "string" || newName.length > 64) return;
+
+    const player = gameState.players[playerId];
+    if (!player) return;
+
+    player.name = newName;
+    io.emit("gameState", gameState);
   });
 
   socket.on("disconnect", () => {
     delete gameState.players[playerId];
+    io.emit("gameState", gameState);
   });
 });
 
