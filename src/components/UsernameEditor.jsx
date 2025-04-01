@@ -44,6 +44,7 @@ export function UsernameEditor({ playerId }) {
         style={{ cursor: "pointer" }}
       >
         {player.name}
+        <span style={{ marginLeft: "4px", opacity: 0.7 }}>✏️</span>
       </span>
     );
   }
