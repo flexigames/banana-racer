@@ -15,7 +15,7 @@ const ItemBox = ({ position = [0, 0, 0], isFakeCube = false, scale = 1 }) => {
         playSoundEffect("pickup", {x: position[0], y: position[1], z: position[2]});
       }
     };
-  }, [playSoundEffect]);
+  }, []);
 
   // Load the item box model
   const itemBoxModel = useModelWithMaterials(
