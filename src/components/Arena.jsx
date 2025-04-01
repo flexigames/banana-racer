@@ -8,6 +8,7 @@ import {
 } from "../lib/textures";
 import { blocks, ramps, bridges, portals, mapSize } from "../lib/map";
 import Bridge from "./Bridge";
+import PortalText from "./PortalText";
 
 const TEXTURE_SCALE = 4; // Base size for one texture repeat
 
@@ -274,20 +275,38 @@ const Arena = React.memo(() => {
 
       {/* Portals from map */}
       {portals.map((portal, index) => (
-        <mesh
-          key={`portal-${index}`}
-          position={[portal.position[0], portal.position[1] + 1, portal.position[2] - 0.5]}
-          scale={[portal.width, 2, 0.8]}
-        >
-          <boxGeometry />
-          <meshStandardMaterial
-            color="#0088FF"
-            roughness={0.3}
-            metalness={0.8}
-            transparent={true}
-            opacity={0.7}
+        <group key={`portal-${index}`}>
+          <mesh
+            position={[
+              portal.position[0],
+              portal.position[1] + 1,
+              portal.position[2] - 0.5,
+            ]}
+            scale={[portal.width, 2, 0.8]}
+          >
+            <boxGeometry />
+            <meshStandardMaterial
+              color="#0088FF"
+              roughness={0.3}
+              metalness={0.8}
+              transparent={true}
+              opacity={0.7}
+            />
+          </mesh>
+          <PortalText
+            position={[
+              portal.position[0],
+              portal.position[1] + 2.6,
+              portal.position[2] - 0.5,
+            ]}
+            rotation={[0, index === 0 ? 0 : Math.PI, 0]}
+            text={
+              index === 0 && window.portalRef
+                ? `Back to ${window.portalRef.replace("https://", "")}`
+                : "Play a random game"
+            }
           />
-        </mesh>
+        </group>
       ))}
     </group>
   );
