@@ -310,5 +310,11 @@ function getModelName() {
     return "plane";
   }
 
+  const gooseKeywords = ["goose", "quack", "bird", "birds", "duck"];
+
+  if (gooseKeywords.some((site) => ref.includes(site))) {
+    return "goose";
+  }
+
   return "kart";
 }
