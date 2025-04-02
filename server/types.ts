@@ -69,6 +69,7 @@ export type Player = {
   color: Color;
   lastUpdate: number;
   name: string;
+  modelName: string;
   item: Item;
   lives: number;
   isSpinning?: boolean;

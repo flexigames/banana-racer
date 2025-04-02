@@ -460,6 +460,7 @@ const CarGame = () => {
               isStarred={player.isStarred}
               trailingItem={player.trailingItem}
               name={player.name}
+              modelName={player.modelName}
             />
           </group>
         ))}

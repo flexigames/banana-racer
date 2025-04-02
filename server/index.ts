@@ -1005,6 +1005,7 @@ io.on("connection", (socket: Socket) => {
   const playerName = socket.handshake.auth.name;
   const playerColor = socket.handshake.auth.color;
   const portalRef = socket.handshake.auth.portalRef;
+  const modelName = socket.handshake.auth.modelName || "kart";
 
   gameState.players[playerId] = {
     id: playerId,
@@ -1015,6 +1016,7 @@ io.on("connection", (socket: Socket) => {
     color: playerColor,
     lastUpdate: Date.now(),
     name: playerName,
+    modelName: modelName,
     item: { type: ITEM_TYPES.BANANA, quantity: 0 },
     lives: 3,
   };

@@ -18,6 +18,7 @@ const Car = ({
   isStarred = false,
   trailingItem = null,
   movement = { turn: 0 },
+  modelName = "kart",
 }) => {
   const carRef = useRef();
   const originalMaterials = useRef(new Map());
@@ -29,8 +30,7 @@ const Car = ({
   );
 
   // Adjust scale and rotation for kart
-  const modelConfig = getModelConfig();
-  const modelName = modelConfig.name;
+  const modelConfig = getModelConfig(modelName);
 
   // Load the vehicle model based on the vehicle type
   const vehicleModel = useModelWithMaterials(
@@ -368,23 +368,27 @@ function TrailingItem({ type, quantity }) {
   }
 }
 
-function getModelConfig() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const ref = urlParams.get("ref") ?? "";
-
-  if (ref.includes("fly.pieter.com")) {
-    return {
-      name: "cessna",
-      scale: [0.5, 0.5, 0.5],
+function getModelConfig(modelName = "kart") {
+  const configs = {
+    kart: {
+      name: "kart",
+      scale: [0.25, 0.25, 0.25],
       rotation: [0, 0, 0],
       position: [0, 0.05, 0],
-    };
-  }
-
-  return {
-    name: "kart",
-    scale: [0.25, 0.25, 0.25],
-    rotation: [0, 0, 0],
-    position: [0, 0.05, 0],
+    },
+    boat: {
+      name: "boat",
+      scale: [0.3, 0.3, 0.3],
+      rotation: [0, 0, 0],
+      position: [0, 0.05, 0],
+    },
+    plane: {
+      name: "cessna",
+      scale: [0.4, 0.4, 0.4],
+      rotation: [0, 0, 0],
+      position: [0, 0.03, 0],
+    },
   };
+
+  return configs[modelName] || configs.kart;
 }

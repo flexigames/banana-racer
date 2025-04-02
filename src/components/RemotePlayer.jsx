@@ -17,6 +17,7 @@ const RemotePlayer = ({
   isSpinning = false,
   trailingItem = null,
   name,
+  modelName = "kart",
 }) => {
   const car = useRef();
   const targetPosition = useRef(
@@ -173,6 +174,7 @@ const RemotePlayer = ({
           lives={lives}
           isStarred={isStarred}
           trailingItem={trailingItem}
+          modelName={modelName}
         />
       </Star>
       {name && (

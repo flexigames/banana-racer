@@ -1,0 +1,3 @@
+newmtl planemap
+Kd 1 1 1
+map_Kd plane.png

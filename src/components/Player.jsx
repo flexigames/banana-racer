@@ -27,7 +27,7 @@ const Player = forwardRef((props, ref) => {
   const [hasSpawnedAtPortal, setHasSpawnedAtPortal] = useState(false);
   const soundEffectRef = useRef();
 
-  const { connected, playerId, playerColor, players, updatePlayerPosition } =
+  const { connected, playerId, playerColor, players, updatePlayerPosition, modelName } =
     useMultiplayer();
 
   const player = useMemo(() => players[playerId], [players, playerId]);
@@ -184,6 +184,7 @@ const Player = forwardRef((props, ref) => {
           isStarred={isStarred}
           trailingItem={trailingItem}
           movement={movement.current}
+          modelName={modelName}
         />
       </Star>
       <SoundEffect name="spinout" ref={soundEffectRef} />

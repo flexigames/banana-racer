@@ -44,6 +44,7 @@ export const MultiplayerProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState(getPlayerId);
   const [playerColor, setPlayerColor] = useState(getPlayerColor);
+  const [modelName, setModelName] = useState(getModelName);
   const [playerName, setPlayerName] = useState(getUserName);
 
   const [players, setPlayers] = useState({});
@@ -80,6 +81,7 @@ export const MultiplayerProvider = ({ children }) => {
             id: playerId,
             color: playerColor,
             portalRef: params.get("ref"),
+            modelName: modelName,
           },
         });
 
@@ -100,11 +102,6 @@ export const MultiplayerProvider = ({ children }) => {
           setItemBoxes(state.itemBoxes);
         });
 
-        socket.current.on("init", (data) => {
-          setPlayerId(data.id);
-          setPlayerColor(data.color);
-        });
-
         socket.current.on("error", (error) => {
           console.error("[CONTEXT] Connection error:", error);
         });
@@ -120,7 +117,7 @@ export const MultiplayerProvider = ({ children }) => {
         socket.current.disconnect();
       }
     };
-  }, [serverUrl, playerName]);
+  }, [serverUrl, playerName, modelName]);
 
   // Connection status change
   useEffect(() => {
@@ -232,6 +229,7 @@ export const MultiplayerProvider = ({ children }) => {
     playerId,
     playerColor,
     playerName,
+    modelName,
     players,
     bananas,
     itemBoxes,
@@ -286,4 +284,31 @@ function getPlayerId() {
   const randomId = crypto.randomUUID();
   localStorage.setItem("playerId", randomId);
   return randomId;
+}
+
+function getModelName() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get("ref") ?? "";
+
+  const boatKeywords = [
+    "tidefall.io",
+    "sail",
+    "jetski",
+    "viberacer.heyferrante.com",
+    "yacht",
+    "viberates.io",
+    "boat",
+  ];
+
+  if (boatKeywords.some((site) => ref.includes(site))) {
+    return "boat";
+  }
+
+  const planeKeywords = ["fly", "airplane", "airport"];
+
+  if (planeKeywords.some((site) => ref.includes(site))) {
+    return "plane";
+  }
+
+  return "kart";
 }
