@@ -316,5 +316,11 @@ function getModelName() {
     return "goose";
   }
 
+  const zuckKeywords = ["metaverse"];
+
+  if (zuckKeywords.some((site) => ref.includes(site))) {
+    return "zuck";
+  }
+
   return "kart";
 }

@@ -394,6 +394,12 @@ function getModelConfig(modelName = "kart") {
       rotation: [0, 0, 0],
       position: [0, 0.03, 0],
     },
+    zuck: {
+      name: "zuck",
+      scale: [0.3, 0.3, 0.3],
+      rotation: [0, 0, 0],
+      position: [0, 0.07, 0],
+    },
   };
 
   return configs[modelName] || configs.kart;
