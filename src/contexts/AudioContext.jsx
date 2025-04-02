@@ -83,6 +83,21 @@ export const AudioProvider = ({ children }) => {
     };
   }, []);
 
+  useEffect(() => {
+    function handleKeyPress(event) {
+      if (event.key.toLowerCase() === "m") {
+        const newMuteState = !isMusicMuted || !isSoundEffectsMuted;
+        setIsMusicMuted(newMuteState);
+        setIsSoundEffectsMuted(newMuteState);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyPress);
+    return () => {
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isMusicMuted, isSoundEffectsMuted]);
+
   function handleInteraction() {
     if (!hasInteracted && audioRef.current) {
       audioRef.current.play().catch((error) => {
