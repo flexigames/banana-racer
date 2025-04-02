@@ -1024,7 +1024,10 @@ io.on("connection", (socket: Socket) => {
   console.log("[SERVER] New player connected", playerName, "with id", playerId);
 
   if (process.env.NODE_ENV !== "development") {
-    sendToSlack(Object.keys(gameState.players).length, playerName, portalRef);
+    const lowerName = playerName.toLowerCase();
+    if (!lowerName.includes("alex") && !lowerName.includes("finn")) {
+      sendToSlack(Object.keys(gameState.players).length, playerName, portalRef);
+    }
   }
 
   socket.emit("init", { id: playerId, color: playerColor });
